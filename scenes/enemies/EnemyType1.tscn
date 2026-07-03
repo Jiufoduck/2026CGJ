@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://253htnqnf3pa"]
 
-[ext_resource type="Script" path="res://scripts/enemies/EnemyType1.gd" id="1_5psb6"]
+[ext_resource type="Script" uid="uid://hpy3rbq4g6b1" path="res://scripts/enemies/EnemyType1.gd" id="1_5psb6"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_enemy_body"]
 radius = 24.0
@@ -11,7 +11,6 @@ radius = 36.0
 [node name="EnemyType1" type="CharacterBody2D" unique_id=141443469]
 collision_layer = 8
 collision_mask = 2
-safe_margin = 0.001
 script = ExtResource("1_5psb6")
 max_health = 5.0
 contact_damage_cooldown = 3.0

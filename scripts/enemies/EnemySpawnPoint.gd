@@ -27,7 +27,7 @@ func _ready() -> void:
 	add_to_group("enemy_spawn_points")
 	_refresh_label()
 	start_spawn_loop()
-        
+
 func start_spawn_loop():
 	var core = EnemyUtils.get_body_core()
 	while true:

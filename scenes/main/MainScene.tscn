@@ -27,7 +27,7 @@ color = Color(0.12, 0.15, 0.17, 1)
 polygon = PackedVector2Array(0, -450, 4300, -450, 4300, 450, 0, 450)
 
 [node name="TopWall" type="StaticBody2D" parent="Level" unique_id=783944713]
-position = Vector2(2150, -480)
+position = Vector2(2155, -270)
 collision_layer = 4
 collision_mask = 0
 
@@ -39,7 +39,7 @@ polygon = PackedVector2Array(-2150, -30, 2150, -30, 2150, 30, -2150, 30)
 shape = SubResource("RectangleShape2D_wall_horizontal")
 
 [node name="BottomWall" type="StaticBody2D" parent="Level" unique_id=743372559]
-position = Vector2(2150, 480)
+position = Vector2(2155, 270)
 collision_layer = 4
 collision_mask = 0
 
@@ -147,24 +147,24 @@ position = Vector2(240, 0)
 [node name="TaskPoints" type="Node2D" parent="." unique_id=1089374011]
 
 [node name="TaskCoordinateA_Top" parent="TaskPoints" unique_id=1423366708 instance=ExtResource("5_task_scene")]
-position = Vector2(1075, -318)
+position = Vector2(1076, -184)
 
 [node name="TaskCoordinateA_Bottom" parent="TaskPoints" unique_id=746792171 instance=ExtResource("5_task_scene")]
-position = Vector2(1075, 318)
+position = Vector2(1075, 193)
 assigned_player_id = 2
 
 [node name="TaskCoordinateB_Top" parent="TaskPoints" unique_id=1875426733 instance=ExtResource("5_task_scene")]
-position = Vector2(2150, -318)
+position = Vector2(2151, -184)
 
 [node name="TaskCoordinateB_Bottom" parent="TaskPoints" unique_id=1462128224 instance=ExtResource("5_task_scene")]
-position = Vector2(2150, 318)
+position = Vector2(2150, 193)
 assigned_player_id = 2
 
 [node name="TaskCoordinateC_Top" parent="TaskPoints" unique_id=214977104 instance=ExtResource("5_task_scene")]
-position = Vector2(3225, -318)
+position = Vector2(3226, -184)
 
 [node name="TaskCoordinateC_Bottom" parent="TaskPoints" unique_id=2144504814 instance=ExtResource("5_task_scene")]
-position = Vector2(3225, 318)
+position = Vector2(3225, 193)
 assigned_player_id = 2
 
 [node name="Obstacles" type="Node2D" parent="." unique_id=1091223125]
@@ -217,3 +217,4 @@ limit_right = 4300
 limit_bottom = 450
 
 [node name="HUD" parent="." unique_id=1530108984 instance=ExtResource("4_hud_scene")]
+visible = false

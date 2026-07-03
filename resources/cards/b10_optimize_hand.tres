@@ -1,6 +1,6 @@
 [gd_resource type="Resource" load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://scripts/card/CardDefinition.gd" id="1_card_definition"]
+[ext_resource type="Script" path="res://scripts/card/definitions/CardB10OptimizeHandDefinition.gd" id="1_card_definition"]
 
 [resource]
 script = ExtResource("1_card_definition")
@@ -13,4 +13,3 @@ description = "消耗。向自己的牌堆加入 1 张恢复连线，并随机�
 effect_id = "optimize_hand"
 base_cooldown = 2.0
 restore_cards_to_add = 1
-

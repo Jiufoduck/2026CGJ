@@ -12,4 +12,3 @@ func play(start_position: Vector2, end_position: Vector2, lifetime: float) -> vo
 	var tween := create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, maxf(0.01, lifetime))
 	tween.finished.connect(queue_free)
-

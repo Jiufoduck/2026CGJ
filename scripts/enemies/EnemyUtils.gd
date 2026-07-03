@@ -5,7 +5,7 @@ class_name EnemyUtils
 static func get_root():
 	var tree := Engine.get_main_loop() as SceneTree
 	return tree.root
-	
+
 static func get_main_scene():
 	return get_root().get_node('MainScene')
 

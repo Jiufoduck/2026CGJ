@@ -11,7 +11,7 @@ func _ready() -> void:
 	if damage_area != null:
 		damage_area.queue_free()
 		damage_area = null
-		
+
 func _try_damage_body() -> void:
 	# 禁用近战逻辑
 	if contact_damage_timer > 0.0 or damage_area == null:

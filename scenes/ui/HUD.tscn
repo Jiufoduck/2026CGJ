@@ -364,6 +364,23 @@ theme_override_constants/separation = 8
 layout_mode = 2
 text = "按键映射"
 
+[node name="InputPresetRow" type="HBoxContainer" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/KeyMappingSection"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="InputPresetLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/KeyMappingSection/InputPresetRow"]
+custom_minimum_size = Vector2(190, 34)
+layout_mode = 2
+text = "输入预设"
+vertical_alignment = 1
+
+[node name="InputPresetToggleButton" type="Button" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/KeyMappingSection/InputPresetRow"]
+custom_minimum_size = Vector2(330, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "当前：手柄 Xbox / Nintendo    切换到：键盘"
+
 [node name="KeyBindRows" type="VBoxContainer" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/KeyMappingSection"]
 layout_mode = 2
 size_flags_horizontal = 3

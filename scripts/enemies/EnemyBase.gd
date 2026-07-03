@@ -12,6 +12,8 @@ class_name EnemyBase
 # - current_health：敌人当前血量。
 # - contact_damage_timer：距离下一次允许接触伤害还剩多少秒。
 # - card_frozen：是否被 B9 群体冻结。冻结时停止移动和攻击。
+# - overwhelming：卡牌或其他系统施加的击退/推开速度。非零时优先按它移动。
+# - decreasing_factor：overwhelming 每帧保留的速度比例，由 _on_overwhelmed 传入。
 # - visual_polygon：敌人的白模视觉节点引用。节点在 tscn 中存在，不由脚本创建。
 # - damage_area：敌人用于检测肉体接触的 Area2D。远程敌人可以移除它。
 # - _ready()：初始化血量、分组、伤害区域和视觉样式。
@@ -20,6 +22,7 @@ class_name EnemyBase
 # - force_defeat()：卡牌直接消灭敌人的入口。
 # - is_alive()：返回敌人是否仍能被卡牌影响。
 # - apply_knockback(motion)：按碰撞移动敌人一段距离，用于清场和击退。
+# - _on_overwhelmed(dir, amount, dec)：接收击退方向、强度和衰减，供 B7 击退等效果对接。
 # - set_card_frozen(enabled)：切换卡牌冻结状态。
 # - is_card_frozen()：返回当前是否被卡牌冻结。
 # - _try_damage_body()：检查伤害区域内是否有肉体，有则按冷却扣血并传入伤害来源。
@@ -37,6 +40,8 @@ class_name EnemyBase
 var current_health := 30.0
 var contact_damage_timer := 0.0
 var card_frozen := false
+var overwhelming := Vector2.ZERO
+var decreasing_factor := 0.7
 
 @onready var visual_polygon: Polygon2D = $Visual
 @onready var damage_area: Area2D = get_node_or_null(^"DamageArea")
@@ -57,7 +62,14 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		return
 
-	if can_move and move_direction.length() > 0.0:
+	if not overwhelming.is_zero_approx():
+		velocity = overwhelming
+		move_and_slide()
+		overwhelming *= clampf(decreasing_factor, 0.0, 1.0)
+		if overwhelming.length() <= 2.0:
+			overwhelming = Vector2.ZERO
+
+	elif can_move and move_direction.length() > 0.0:
 		velocity = move_direction.normalized() * move_speed
 		move_and_slide()
 		if get_slide_collision_count() > 0:
@@ -66,8 +78,16 @@ func _physics_process(delta: float) -> void:
 	else:
 		velocity = Vector2.ZERO
 
+
 	_try_damage_body()
 
+
+func _on_overwhelmed(dir: Vector2, amount: float, dec: float) -> void:
+	if dir.is_zero_approx() or amount <= 0.0 or not is_alive():
+		return
+
+	overwhelming = dir.normalized() * amount
+	decreasing_factor = clampf(dec, 0.0, 1.0)
 
 func take_damage(amount: float) -> void:
 	if amount <= 0.0 or current_health <= 0.0:
@@ -93,15 +113,16 @@ func apply_knockback(motion: Vector2) -> void:
 	if motion.length() <= 0.001 or not is_alive():
 		return
 
-	var collision := move_and_collide(motion)
-	if collision != null:
-		velocity = Vector2.ZERO
+	_on_overwhelmed(motion.normalized(), motion.length(), decreasing_factor)
 
 
 func set_card_frozen(enabled: bool) -> void:
 	card_frozen = enabled
 	if card_frozen:
 		velocity = Vector2.ZERO
+		modulate = Color(0.45, 0.85, 1.0, 1.0)
+	else:
+		modulate = Color.WHITE
 
 
 func is_card_frozen() -> bool:

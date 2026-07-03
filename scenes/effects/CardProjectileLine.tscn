@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://e0d5qpruut32"]
 
-[ext_resource type="Script" path="res://scripts/effects/CardProjectileLine.gd" id="1_projectile_script"]
+[ext_resource type="Script" uid="uid://bu8h68c68ij1t" path="res://scripts/effects/CardProjectileLine.gd" id="1_projectile_script"]
 
-[node name="CardProjectileLine" type="Line2D"]
+[node name="CardProjectileLine" type="Line2D" unique_id=975656140]
 width = 6.0
 default_color = Color(1, 0.95, 0.25, 1)
 joint_mode = 2

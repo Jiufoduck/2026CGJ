@@ -1,6 +1,6 @@
 [gd_resource type="Resource" load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://scripts/card/CardDefinition.gd" id="1_card_definition"]
+[ext_resource type="Script" path="res://scripts/card/definitions/CardA2CollisionChargeDefinition.gd" id="1_card_definition"]
 
 [resource]
 script = ExtResource("1_card_definition")
@@ -15,4 +15,3 @@ base_cooldown = 2.0
 enemy_damage_amount = 4.0
 move_speed_scale = 0.65
 hit_radius = 48.0
-

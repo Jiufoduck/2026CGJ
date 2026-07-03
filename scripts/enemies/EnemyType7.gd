@@ -19,6 +19,7 @@ func _physics_process(delta: float) -> void:
 	rotate(deg_to_rad(rotation_speed * delta))
 	if can_shoot:
 		shoot()
+	super(delta)
 
 func shoot():
 	assert(can_shoot)

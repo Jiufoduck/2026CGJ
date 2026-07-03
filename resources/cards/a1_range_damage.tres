@@ -1,0 +1,16 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/card/CardDefinition.gd" id="1_card_definition"]
+
+[resource]
+script = ExtResource("1_card_definition")
+id = "a1_range_damage"
+card_name = "范围伤害"
+owner_player_id = 1
+card_type = "attack"
+tags = PackedStringArray()
+description = "对以当前连线长度为直径的圆内的肉体和怪物造成 5 点伤害。"
+effect_id = "range_damage"
+base_cooldown = 2.0
+damage_amount = 5.0
+

@@ -12,6 +12,8 @@ radius = 34.0
 [node name="EnemyType4" type="CharacterBody2D" unique_id=1380354210]
 collision_layer = 8
 collision_mask = 0
+motion_mode = 1
+wall_min_slide_angle = 0.0
 script = ExtResource("1_tfd0a")
 bullet = ExtResource("2_jrb1x")
 shoot_interval = 2.0

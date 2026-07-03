@@ -1,0 +1,16 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/card/CardDefinition.gd" id="1_card_definition"]
+
+[resource]
+script = ExtResource("1_card_definition")
+id = "a5_restore_generation"
+card_name = "恢复生成"
+owner_player_id = 1
+card_type = "other"
+tags = PackedStringArray("consumable", "break", "restore_generation")
+description = "消耗，断裂。使用后向自己的牌堆加入 3 张恢复连线。"
+effect_id = "restore_generation"
+base_cooldown = 2.0
+restore_cards_to_add = 3
+

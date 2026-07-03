@@ -1,0 +1,17 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/card/CardDefinition.gd" id="1_card_definition"]
+
+[resource]
+script = ExtResource("1_card_definition")
+id = "b8_cd_distribution"
+card_name = "CD分配"
+owner_player_id = 2
+card_type = "other"
+tags = PackedStringArray("break", "consumable")
+description = "断裂，消耗。你的当前 CD 翻倍，对方当前 CD 减半。"
+effect_id = "cd_distribution"
+base_cooldown = 2.0
+cooldown_self_multiplier = 2.0
+cooldown_other_multiplier = 0.5
+

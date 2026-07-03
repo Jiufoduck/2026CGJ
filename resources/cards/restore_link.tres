@@ -1,0 +1,14 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/card/CardDefinition.gd" id="1_card_definition"]
+
+[resource]
+script = ExtResource("1_card_definition")
+id = "restore_link"
+card_name = "恢复连线"
+owner_player_id = 0
+card_type = "other"
+tags = PackedStringArray("restore")
+description = "恢复牌。连线期间不能打出；断线期间打出后恢复肉体满血并重新连接两个玩家。"
+effect_id = "restore_link"
+base_cooldown = 2.0

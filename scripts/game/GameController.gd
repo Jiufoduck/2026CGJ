@@ -8,7 +8,9 @@ class_name GameController
 # - ACTION_P2_PASS_CARD：玩家 2 选择不打出当前牌的输入动作名。当前牌会放到牌堆底部并进入 2 秒冷却。
 # - OPPOSING_INPUT_DOT：判断两个玩家是否几乎反向用力的点乘阈值。它只用于识别正在把连线拉开的状态，不会让两人立刻静止。
 # - SHARED_INPUT_DOT：判断两个玩家是否基本同向移动的点乘阈值。达到阈值时优先保留共同移动速度，满足“共同移动不会有阻力”。
-# - CardDeckScript：显式预加载卡牌脚本，用于创建两个玩家的独立牌堆和恢复连线卡，避免空项目首次导入时 class_name 缓存未就绪。
+# - CardDeckScript：显式预加载牌堆脚本，用于创建两个玩家的独立牌堆。
+# - CardCatalogScript：显式预加载卡牌目录脚本，用于读取 13 张卡牌资源、初始牌组和玩家奖励池。
+# - CardEffectRunnerScript：显式预加载卡牌效果执行器脚本，用于执行 13 张卡牌的实际效果。
 # - player_one_path/player_two_path：两个玩家实例的 NodePath。角色本体放在 Player.tscn，主场景只引用实例。
 # - body_core_path：肉体节点 NodePath。肉体碰撞体和视觉放在 BodyCore.tscn。
 # - hud_path：HUD 节点 NodePath。UI 结构放在 HUD.tscn，脚本只更新文本和进度条。
@@ -40,20 +42,22 @@ class_name GameController
 # - decks_by_player：两个玩家的独立牌堆字典。键为玩家编号，值为 CardDeck。
 # - game_has_ended：游戏是否已经胜利或失败。结束后禁用玩家输入和卡牌输入。
 # - reward_choice_active：当前是否正在等待玩家选择任务点奖励。为 true 时暂停游戏流程，只允许 HUD 奖励按钮响应。
+# - card_effect_runner：运行时创建的卡牌效果执行器。它只负责逻辑，不承担场景结构；世界暂停时也要暂停效果检测。
 # - _ready()：读取节点、注册输入、建立牌堆、连接任务点/肉体信号，把主世界相机同步给 HUD 的 SubViewport，并初始化 HUD。
 # - _physics_process(delta)：每帧推进摄像机、移动、连线、卡牌冷却、任务终点和 HUD。
 # - _ensure_default_input_actions()：注册默认键位，保证空项目运行时可以直接测试。
 # - _register_key_action(action_name, physical_keycode)：把某个按键加入输入动作，避免 ProjectSettings 缺失时无输入。
-# - _build_initial_decks()：创建两个玩家各自 6 张、内容不同的初始牌堆。
+# - _build_initial_decks()：按 CardCatalog 创建两个玩家各自 3 张、内容不同的初始牌堆。
 # - _connect_task_points()：连接主场景中所有任务点的领取信号。
 # - _sync_level_length_from_scene()：从 RightWall 和 FinishLine 推导关卡右边界，避免场景拉长后相机仍停在旧长度。
 # - _get_finish_x()：读取 FinishLine 的多边形顶点，换算出世界坐标下的结算 x。
 # - _handle_card_input()：处理玩家打牌和暂时不打牌。
-# - _play_card_for_player(player_id)：应用攻击牌循环、其他牌消耗和恢复连线牌效果。
-# - _pass_card_for_player(player_id)：记录玩家选择不打出当前牌，把它放到牌堆底部，并等待冷却后查看下一张。
+# - _play_card_for_player(player_id)：处理非法出牌、牌堆移动、卡牌效果执行和 HUD 反馈。
+# - _pass_card_for_player(player_id)：记录玩家选择不打出当前牌，把它放到牌堆底部，并按合法/非法状态设置冷却。
 # - _advance_camera(delta, snap_to_target)：让摄像机自动跟随两个玩家中心，同时保持向右推进，并限制在主场景边界内。
 # - _get_camera_target_position(delta)：计算摄像机本帧应追向的位置，综合玩家中心、前视距离、最低滚动速度和场景边界。
 # - _move_players(delta)：读取两个玩家输入，并根据连线是否断开选择弹性连线移动或独立移动。
+# - _get_player_move_speed(player)：读取玩家当前实际速度，支持 A2 临时移速倍率。
 # - _calculate_linked_velocities(input_one, input_two)：按参考牵引控制器的软距离/张力思路计算速度；反向移动可继续拉开，只有达到最大长度才挡住继续拉远。
 # - _get_body_drag_ratio()：肉体被 net 卡住并落后时，计算玩家远离肉体方向应承受的额外阻力比例。
 # - _apply_body_drag_resistance(velocity, player_position, drag_ratio)：只削弱玩家远离肉体方向的速度，允许玩家正常回头靠近肉体。
@@ -78,7 +82,7 @@ class_name GameController
 # - _on_link_broken_started(seconds_left)：断线倒计时时刷新 HUD。
 # - _on_link_restored()：恢复连线后刷新 HUD 和消息。
 # - _on_game_over_requested()：断线超过 10 秒后结束游戏。
-# - _on_task_point_claimed(point, player_id, reward_cards)：任务点被指定玩家拾取后，打开三选一卡牌奖励。
+# - _on_task_point_claimed(point, player_id, reward_cards)：任务点被指定玩家拾取后，优先使用手动奖励；为空时从玩家奖励池随机生成 3 张牌。
 
 const ACTION_P1_PLAY_CARD := "p1_play_card"
 const ACTION_P1_PASS_CARD := "p1_pass_card"
@@ -87,6 +91,8 @@ const ACTION_P2_PASS_CARD := "p2_pass_card"
 const OPPOSING_INPUT_DOT := -0.65
 const SHARED_INPUT_DOT := 0.65
 const CardDeckScript = preload("res://scripts/card/CardDeck.gd")
+const CardCatalogScript = preload("res://scripts/card/CardCatalog.gd")
+const CardEffectRunnerScript = preload("res://scripts/card/CardEffectRunner.gd")
 
 @export var player_one_path: NodePath = ^"Actors/PlayerOne"
 @export var player_two_path: NodePath = ^"Actors/PlayerTwo"
@@ -129,6 +135,7 @@ const CardDeckScript = preload("res://scripts/card/CardDeck.gd")
 var decks_by_player := {}
 var game_has_ended := false
 var reward_choice_active := false
+var card_effect_runner
 
 
 func _ready() -> void:
@@ -137,6 +144,10 @@ func _ready() -> void:
 	_ensure_default_input_actions()
 	hud.initialize(camera)
 	_sync_level_length_from_scene()
+	card_effect_runner = CardEffectRunnerScript.new()
+	card_effect_runner.process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_child(card_effect_runner)
+	card_effect_runner.setup(self)
 	_build_initial_decks()
 	_connect_task_points()
 	hud.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -152,6 +163,9 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	if game_has_ended:
+		return
+	if get_tree().paused:
+		_update_hud()
 		return
 	if reward_choice_active:
 		_update_hud()
@@ -201,24 +215,10 @@ func _register_key_action(action_name: StringName, physical_keycode: int) -> voi
 
 func _build_initial_decks() -> void:
 	var player_one_deck = CardDeckScript.new()
-	player_one_deck.setup(1, [
-		CardDeckScript.make_card("p1_attack_quick", "轻击", CardDeckScript.CARD_TYPE_ATTACK, "玩家 1 的快速攻击牌。当前阶段只执行攻击牌循环到底部的牌堆规则。"),
-		CardDeckScript.make_card("p1_attack_pin", "牵制射击", CardDeckScript.CARD_TYPE_ATTACK, "玩家 1 的牵制攻击牌。具体战斗效果等待后续卡牌内容补充。"),
-		CardDeckScript.make_card("p1_attack_break", "破甲打击", CardDeckScript.CARD_TYPE_ATTACK, "玩家 1 的破甲攻击牌。当前保留攻击牌身份和循环规则。"),
-		CardDeckScript.make_card("p1_other_guard", "护盾准备", CardDeckScript.CARD_TYPE_OTHER, "玩家 1 的其他牌。打出后从战斗牌堆移除。"),
-		CardDeckScript.make_card("p1_other_step", "短距推进", CardDeckScript.CARD_TYPE_OTHER, "玩家 1 的其他牌。打出后从战斗牌堆移除。"),
-		CardDeckScript.make_card("p1_other_mark", "目标标记", CardDeckScript.CARD_TYPE_OTHER, "玩家 1 的其他牌。打出后从战斗牌堆移除。"),
-	])
+	player_one_deck.setup(1, CardCatalogScript.make_initial_deck(1))
 
 	var player_two_deck = CardDeckScript.new()
-	player_two_deck.setup(2, [
-		CardDeckScript.make_card("p2_attack_heavy", "重击", CardDeckScript.CARD_TYPE_ATTACK, "玩家 2 的重攻击牌。当前阶段只执行攻击牌循环到底部的牌堆规则。"),
-		CardDeckScript.make_card("p2_attack_sweep", "横扫", CardDeckScript.CARD_TYPE_ATTACK, "玩家 2 的范围攻击牌。具体战斗效果等待后续卡牌内容补充。"),
-		CardDeckScript.make_card("p2_attack_pierce", "穿刺", CardDeckScript.CARD_TYPE_ATTACK, "玩家 2 的穿刺攻击牌。当前保留攻击牌身份和循环规则。"),
-		CardDeckScript.make_card("p2_other_recover", "治疗准备", CardDeckScript.CARD_TYPE_OTHER, "玩家 2 的其他牌。打出后从战斗牌堆移除。"),
-		CardDeckScript.make_card("p2_other_push", "强行推进", CardDeckScript.CARD_TYPE_OTHER, "玩家 2 的其他牌。打出后从战斗牌堆移除。"),
-		CardDeckScript.make_card("p2_other_anchor", "牵引稳定", CardDeckScript.CARD_TYPE_OTHER, "玩家 2 的其他牌。打出后从战斗牌堆移除。"),
-	])
+	player_two_deck.setup(2, CardCatalogScript.make_initial_deck(2))
 
 	decks_by_player[1] = player_one_deck
 	decks_by_player[2] = player_two_deck
@@ -278,23 +278,38 @@ func _handle_card_input() -> void:
 
 func _play_card_for_player(player_id: int) -> void:
 	var deck = decks_by_player[player_id]
-	var played_card: Dictionary = deck.play_current_card()
+	var current_card: Dictionary = deck.peek_current_card()
+	if current_card.is_empty():
+		return
+	if not card_effect_runner.can_player_play(player_id):
+		hud.set_message("P%d 暂时无法出牌" % player_id)
+		return
+	if not card_effect_runner.is_card_playable(current_card):
+		hud.set_message("P%d 当前不能打出 %s" % [player_id, current_card.get("name", "未命名牌")])
+		return
+
+	var cooldown_seconds: float = card_effect_runner.get_play_cooldown(player_id, current_card)
+	var played_card: Dictionary = deck.play_current_card(body_core.is_link_active(), cooldown_seconds)
 	if played_card.is_empty():
 		return
 
-	if played_card.get("id", "") == CardDeckScript.CARD_RESTORE_LINK_ID:
-		body_core.restore_link()
-		hud.set_message("P%d 打出恢复连线" % player_id)
-	else:
-		hud.set_message("P%d 打出 %s" % [player_id, played_card.get("name", "未命名牌")])
+	card_effect_runner.on_card_success_started(player_id, played_card)
+	card_effect_runner.apply_card(player_id, played_card)
+	hud.set_message("P%d 打出 %s" % [player_id, played_card.get("name", "未命名牌")])
 
 
 func _pass_card_for_player(player_id: int) -> void:
 	var deck = decks_by_player[player_id]
-	var passed_card: Dictionary = deck.pass_current_card()
+	var current_card: Dictionary = deck.peek_current_card()
+	if current_card.is_empty():
+		return
+
+	var cooldown_seconds: float = card_effect_runner.get_pass_cooldown(player_id, current_card)
+	var passed_card: Dictionary = deck.pass_current_card(cooldown_seconds)
 	if passed_card.is_empty():
 		return
 
+	card_effect_runner.on_card_passed(player_id, passed_card)
 	hud.set_message("P%d 跳过 %s，放到牌堆底部" % [player_id, passed_card.get("name", "未命名牌")])
 
 
@@ -342,13 +357,15 @@ func _move_players(delta: float) -> void:
 		_apply_link_spring_recoil(delta, input_one, input_two)
 		_apply_body_drag_distance_constraint(delta, input_one, input_two)
 	else:
-		player_one.move_with_velocity(input_one * float(player_one.move_speed))
-		player_two.move_with_velocity(input_two * float(player_two.move_speed))
+		player_one.move_with_velocity(input_one * _get_player_move_speed(player_one))
+		player_two.move_with_velocity(input_two * _get_player_move_speed(player_two))
 
 
 func _calculate_linked_velocities(input_one: Vector2, input_two: Vector2) -> Array:
-	var velocity_one: Vector2 = input_one * float(player_one.move_speed)
-	var velocity_two: Vector2 = input_two * float(player_two.move_speed)
+	var player_one_speed := _get_player_move_speed(player_one)
+	var player_two_speed := _get_player_move_speed(player_two)
+	var velocity_one: Vector2 = input_one * player_one_speed
+	var velocity_two: Vector2 = input_two * player_two_speed
 
 	var separation: Vector2 = player_two.global_position - player_one.global_position
 	var distance: float = separation.length()
@@ -378,14 +395,23 @@ func _calculate_linked_velocities(input_one: Vector2, input_two: Vector2) -> Arr
 	var one_is_moving: bool = input_one.length() > 0.0
 	var two_is_moving: bool = input_two.length() > 0.0
 	if one_is_moving and not two_is_moving:
-		var pull_speed: float = float(player_one.move_speed) * taut_solo_follower_speed_share * tension_ratio
+		var pull_speed: float = player_one_speed * taut_solo_follower_speed_share * tension_ratio
 		velocity_two += -direction * pull_speed
 		velocity_one *= lerpf(1.0, taut_solo_mover_scale, tension_ratio)
 	elif two_is_moving and not one_is_moving:
-		var pull_speed: float = float(player_two.move_speed) * taut_solo_follower_speed_share * tension_ratio
+		var pull_speed: float = player_two_speed * taut_solo_follower_speed_share * tension_ratio
 		velocity_one += direction * pull_speed
 		velocity_two *= lerpf(1.0, taut_solo_mover_scale, tension_ratio)
 	return [velocity_one, velocity_two]
+
+
+func _get_player_move_speed(player: Node) -> float:
+	if player.has_method("get_current_move_speed"):
+		return float(player.get_current_move_speed())
+	var fallback_speed = player.get("move_speed")
+	if fallback_speed == null:
+		return 0.0
+	return float(fallback_speed)
 
 
 func _get_body_drag_ratio() -> float:
@@ -676,4 +702,7 @@ func _on_game_over_requested() -> void:
 
 
 func _on_task_point_claimed(_point: Node, player_id: int, reward_cards: Array) -> void:
-	_start_reward_choice(player_id, reward_cards)
+	var final_reward_cards := reward_cards
+	if final_reward_cards.is_empty():
+		final_reward_cards = CardCatalogScript.make_reward_choices(player_id)
+	_start_reward_choice(player_id, final_reward_cards)

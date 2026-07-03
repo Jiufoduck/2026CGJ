@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/card/CardDefinition.gd" id="1_card_definition"]
+
+[resource]
+script = ExtResource("1_card_definition")
+id = "b9_group_freeze"
+card_name = "群体冻结"
+owner_player_id = 2
+card_type = "other"
+tags = PackedStringArray("break", "consumable")
+description = "断裂，消耗。连线断裂期间，怪物停止行动。"
+effect_id = "group_freeze"
+base_cooldown = 2.0
+

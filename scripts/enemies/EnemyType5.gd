@@ -16,7 +16,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	var core = EnemyUtils.get_body_core()
-	
+
 	if not is_charging:
 		var dir = core.global_position - global_position
 		if dir.length() < charge_range:
@@ -24,7 +24,7 @@ func _physics_process(delta: float) -> void:
 		else:
 			dir = dir.normalized()
 			move_direction = EnemyUtils.force_left(dir)
-	
+
 	super._physics_process(delta)
 
 func calib_movedir(force_left: bool):

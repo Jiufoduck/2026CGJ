@@ -1,0 +1,16 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/card/CardDefinition.gd" id="1_card_definition"]
+
+[resource]
+script = ExtResource("1_card_definition")
+id = "b11_focused_fire"
+card_name = "集中火力"
+owner_player_id = 2
+card_type = "other"
+tags = PackedStringArray()
+description = "到下一次连线断裂前，你无法出牌；另一位玩家出牌或跳过后的 CD 固定为 0.5 秒。"
+effect_id = "focused_fire"
+base_cooldown = 2.0
+focused_ally_cooldown = 0.5
+

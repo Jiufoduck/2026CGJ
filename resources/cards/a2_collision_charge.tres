@@ -1,0 +1,18 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/card/CardDefinition.gd" id="1_card_definition"]
+
+[resource]
+script = ExtResource("1_card_definition")
+id = "a2_collision_charge"
+card_name = "撞击怪物"
+owner_player_id = 1
+card_type = "attack"
+tags = PackedStringArray()
+description = "你的移速减少到 65%，直到任一玩家成功打出下一张牌。期间靠近怪物时，对其造成 4 点伤害。"
+effect_id = "collision_charge"
+base_cooldown = 2.0
+enemy_damage_amount = 4.0
+move_speed_scale = 0.65
+hit_radius = 48.0
+

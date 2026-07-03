@@ -19,7 +19,7 @@ func _physics_process(delta: float) -> void:
 	rotate(deg_to_rad(rotation_speed * delta))
 	if can_shoot:
 		shoot()
-	
+
 func shoot():
 	assert(can_shoot)
 	can_shoot = false
@@ -34,7 +34,7 @@ func shoot():
 		spawn_bullet(pos, dir)
 	await get_tree().create_timer(shoot_interval).timeout
 	can_shoot = true
-	
+
 func spawn_bullet(pos: Vector2, dir: Vector2):
 	var obj = bullet.instantiate() as Bullet
 	obj.global_position = pos

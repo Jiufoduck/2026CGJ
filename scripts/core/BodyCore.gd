@@ -6,6 +6,7 @@ class_name BodyCore
 # - link_broken_started(seconds_left)：血量见底并断开连线时发出。HUD 用它显示 10 秒倒计时。
 # - link_restored()：恢复连线时发出。HUD 和主控制器用它恢复正常显示。
 # - game_over_requested()：断线超过允许时间后发出。主控制器收到后结束游戏。
+# - damaged_by_enemy(amount, source_enemy)：肉体被敌人或敌人子弹伤害时发出。A3 反杀怪物会监听它。
 # - max_health：肉体最大血量。恢复连线时会恢复到这个数值。
 # - broken_game_over_seconds：断线后距离游戏结束的秒数。文档明确要求断开 10 秒游戏结束。
 # - snapback_initial_speed：肉体挣脱 net 后回弹到连线中心的初始高速。
@@ -26,7 +27,8 @@ class_name BodyCore
 # - start_snapback()：net 被挣脱时调用，启动初始高速、随后减速的回弹运动。
 # - advance_snapback_to_position(target_position, delta)：按当前回弹速度朝连线中心移动一小段。
 # - is_snapback_active()：返回肉体是否仍处于回弹状态。
-# - take_hit(amount)：处理受击扣血；血量归零时断开连线并启动 10 秒倒计时。
+# - take_hit(amount, source_enemy)：处理受击扣血；血量归零时断开连线并启动 10 秒倒计时。
+# - force_break_link()：卡牌直接断线入口。它把肉体血量归零并启动断线倒计时。
 # - restore_link()：恢复连线并回满血量，用于恢复连线卡。
 # - is_link_active()：返回连线是否仍然存在，主控制器据此决定是否施加弹性牵引。
 # - _break_link()：内部断线流程，集中设置状态和发信号。
@@ -36,6 +38,7 @@ signal health_changed(current_health: float, max_health: float)
 signal link_broken_started(seconds_left: float)
 signal link_restored
 signal game_over_requested
+signal damaged_by_enemy(amount: float, source_enemy: Node)
 
 @export var max_health := 100.0
 @export var broken_game_over_seconds := 10.0
@@ -136,15 +139,26 @@ func is_snapback_active() -> bool:
 	return snapback_active
 
 
-func take_hit(amount: float) -> void:
+func take_hit(amount: float, source_enemy: Node = null) -> void:
 	if amount <= 0.0 or link_broken:
 		return
 
 	current_health = maxf(0.0, current_health - amount)
 	health_changed.emit(current_health, max_health)
+	if source_enemy != null:
+		damaged_by_enemy.emit(amount, source_enemy)
 	_refresh_visual_state()
 	if current_health <= 0.0:
 		_break_link()
+
+
+func force_break_link() -> void:
+	if link_broken:
+		return
+
+	current_health = 0.0
+	health_changed.emit(current_health, max_health)
+	_break_link()
 
 
 func restore_link() -> void:

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/card/CardDefinition.gd" id="1_card_definition"]
+
+[resource]
+script = ExtResource("1_card_definition")
+id = "a3_counterattack"
+card_name = "反杀怪物"
+owner_player_id = 1
+card_type = "attack"
+tags = PackedStringArray()
+description = "任一玩家下一张牌打出前，下一只攻击肉体的怪物仍会造成一次伤害，随后被消灭。"
+effect_id = "counterattack"
+base_cooldown = 2.0
+projectile_lifetime = 0.35
+

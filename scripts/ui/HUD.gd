@@ -5,12 +5,15 @@ class_name GameHUD
 # - health_label：显示肉体血量文字的 Label。文档要求血量放在醒目位置，因此它位于 HUD 顶部。
 # - health_bar：显示肉体血量比例的 ProgressBar。它和 health_label 一起强化受击反馈。
 # - link_status_label：显示连线稳定、断线倒计时、胜利或失败状态的 Label。
+# - death_countdown_panel：断线后显示在屏幕上的死亡倒计时面板，避免只在底部状态栏里显示而被忽略。
+# - death_countdown_label：死亡倒计时数字文本。BodyCore 断线倒计时每帧刷新它。
 # - player_one_card_label：玩家 1 当前牌显示。它只读牌堆顶，不改变牌堆。
 # - player_two_card_label：玩家 2 当前牌显示。它只读牌堆顶，不改变牌堆。
 # - player_one_count_label：玩家 1 当前战斗牌堆剩余数量。
 # - player_two_count_label：玩家 2 当前战斗牌堆剩余数量。
 # - message_label：显示最近一次卡牌、任务点或结束状态消息。
 # - reward_choice_overlay：任务点奖励三选一界面根节点。默认隐藏，玩家到达专属任务点后显示。
+# - reward_choice_panel：任务点奖励三选一界面的中心面板。显示/隐藏动画会缩放它。
 # - reward_title_label：奖励界面标题，显示是哪个玩家正在选择奖励。
 # - reward_hint_label：奖励界面提示，说明只能选择一张牌加入该玩家牌堆。
 # - reward_choice_buttons：三个奖励按钮的数组。每个按钮对应一张候选牌，按钮文本由卡牌名称、类型和说明组成。
@@ -25,12 +28,15 @@ class_name GameHUD
 # - settings_config：把按键和音量保存到 user://settings.cfg，避免下次启动丢失。
 # - active_reward_player_id：当前正在选择奖励的玩家编号。选择按钮发信号时会把这个编号传给主控制器。
 # - active_reward_cards：当前显示的 3 张候选牌数据。选择按钮按索引从这里取出被选择的牌。
+# - reward_choice_tween：奖励面板显示/隐藏动画的 Tween。它使用暂停无关模式，保证世界时停期间 UI 动画继续播放。
 # - card_reward_selected(player_id, card_data)：玩家点选某张奖励牌时发出，主控制器收到后把牌加入对应玩家牌堆。
 # - _ready()：缓存 tscn 中已经布好的 UI 节点，并设置初始提示为空。
 # - _input(event)：处理 ESC 打开/关闭暂停菜单，并在改键模式下捕获下一次按键。
 # - _process(delta)：每帧同步 SubViewport 的镜像相机，避免 UI 视口和主相机脱节。
 # - initialize(world_camera)：接收主相机，把主场景 World2D 交给 SubViewport，并立即同步一次视角。
 # - _sync_subviewport_camera()：复制主相机的位置、缩放和边界到 SubViewport 专属相机。
+# - _set_pause_independent_ui_tree(node)：把 HUD 下的 UI 节点设为 Always，确保世界暂停时按钮和 UI 逻辑仍能响应。
+# - create_pause_independent_tween()：创建不受 get_tree().paused 影响的 UI Tween，后续 HUD 动画统一走这个入口。
 # - _open_pause_menu()/_resume_game()：打开暂停菜单和继续游戏。
 # - _show_settings_panel()/_show_pause_main_panel()：在一级菜单和设置二级菜单之间切换。
 # - _build_key_mapping_rows()：根据 REBIND_ACTIONS 创建按键映射 UI。
@@ -47,6 +53,8 @@ class_name GameHUD
 # - set_game_result(message)：显示最终结果，并把结果同步到连线状态区域。
 # - show_reward_choice(player_id, reward_cards)：显示任务点奖励面板，把 3 张候选牌渲染到按钮上。
 # - hide_reward_choice()：隐藏任务点奖励面板并清空当前候选牌。
+# - _play_reward_show_animation()/_play_reward_hide_animation()：播放奖励面板动画，动画不受世界时停影响。
+# - _kill_reward_choice_tween()：切换奖励面板状态前停止旧动画，避免重复 Tween 抢同一属性。
 # - _on_reward_button_pressed(index)：处理玩家点击第 index 个奖励按钮，发出 card_reward_selected 信号。
 # - _format_reward_button_text(index, card_data)：把卡牌字典格式化成按钮上可读的三行文本。
 
@@ -78,12 +86,15 @@ const REBIND_ACTIONS := [
 @onready var health_label: Label = $Root/TopStrip/HealthLabel
 @onready var health_bar: ProgressBar = $Root/TopStrip/HealthBar
 @onready var link_status_label: Label = $Root/TopStrip/LinkStatusLabel
+@onready var death_countdown_panel: Control = $Root/DeathCountdownPanel
+@onready var death_countdown_label: Label = $Root/DeathCountdownPanel/DeathCountdownLabel
 @onready var player_one_card_label: Label = $Root/PlayerOnePanel/CardLabel
 @onready var player_two_card_label: Label = $Root/PlayerTwoPanel/CardLabel
 @onready var player_one_count_label: Label = $Root/PlayerOnePanel/CountLabel
 @onready var player_two_count_label: Label = $Root/PlayerTwoPanel/CountLabel
 @onready var message_label: Label = $Root/MessageLabel
 @onready var reward_choice_overlay: Control = $Root/RewardChoiceOverlay
+@onready var reward_choice_panel: Panel = $Root/RewardChoiceOverlay/Panel
 @onready var reward_title_label: Label = $Root/RewardChoiceOverlay/Panel/TitleLabel
 @onready var reward_hint_label: Label = $Root/RewardChoiceOverlay/Panel/HintLabel
 @onready var reward_choice_buttons: Array[Button] = [
@@ -109,6 +120,7 @@ const REBIND_ACTIONS := [
 
 var active_reward_player_id := 0
 var active_reward_cards: Array = []
+var reward_choice_tween: Tween
 var source_world_camera: Camera2D
 var waiting_rebind_action := StringName()
 var rebind_buttons_by_action := {}
@@ -118,8 +130,10 @@ var audio_sliders_connected := false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_set_pause_independent_ui_tree(self)
 	set_message("")
-	hide_reward_choice()
+	death_countdown_panel.visible = false
+	hide_reward_choice(false)
 	_hide_pause_menu_without_unpausing()
 	for index in reward_choice_buttons.size():
 		reward_choice_buttons[index].pressed.connect(_on_reward_button_pressed.bind(index))
@@ -188,6 +202,18 @@ func _sync_subviewport_camera() -> void:
 	sub_viewport_camera.limit_right = source_world_camera.limit_right
 	sub_viewport_camera.limit_bottom = source_world_camera.limit_bottom
 	sub_viewport_camera.enabled = true
+
+
+func _set_pause_independent_ui_tree(node: Node) -> void:
+	node.process_mode = Node.PROCESS_MODE_ALWAYS
+	for child in node.get_children():
+		_set_pause_independent_ui_tree(child)
+
+
+func create_pause_independent_tween() -> Tween:
+	var tween := create_tween()
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	return tween
 
 
 func _handle_escape_pressed() -> void:
@@ -497,8 +523,12 @@ func set_health(current_health: float, max_health: float) -> void:
 func set_link_state(is_active: bool, seconds_left: float) -> void:
 	if is_active:
 		link_status_label.text = "连线稳定"
+		death_countdown_panel.visible = false
 	else:
-		link_status_label.text = "断线 %.1fs" % seconds_left
+		var clamped_seconds: float = maxf(0.0, seconds_left)
+		link_status_label.text = "断线 %.1fs" % clamped_seconds
+		death_countdown_label.text = "死亡倒计时 %.1f" % clamped_seconds
+		death_countdown_panel.visible = true
 
 
 func set_player_deck_status(player_id: int, card_name: String, card_count: int, cooldown_remaining: float) -> void:
@@ -521,6 +551,7 @@ func set_message(message: String) -> void:
 func set_game_result(message: String) -> void:
 	link_status_label.text = message
 	message_label.text = message
+	death_countdown_panel.visible = false
 
 
 func show_reward_choice(player_id: int, reward_cards: Array) -> void:
@@ -535,12 +566,55 @@ func show_reward_choice(player_id: int, reward_cards: Array) -> void:
 		if has_card:
 			reward_choice_buttons[index].text = _format_reward_button_text(index, active_reward_cards[index])
 	reward_choice_overlay.visible = true
+	_play_reward_show_animation()
+	if not reward_choice_buttons.is_empty() and reward_choice_buttons[0].visible:
+		reward_choice_buttons[0].grab_focus()
 
 
-func hide_reward_choice() -> void:
-	reward_choice_overlay.visible = false
+func hide_reward_choice(animate := true) -> void:
+	var was_visible := reward_choice_overlay.visible
 	active_reward_player_id = 0
 	active_reward_cards.clear()
+	if not animate or not was_visible:
+		_kill_reward_choice_tween()
+		reward_choice_overlay.visible = false
+		reward_choice_overlay.modulate.a = 1.0
+		reward_choice_panel.scale = Vector2.ONE
+		return
+
+	_play_reward_hide_animation()
+
+
+func _play_reward_show_animation() -> void:
+	_kill_reward_choice_tween()
+	reward_choice_overlay.modulate.a = 0.0
+	reward_choice_panel.scale = Vector2(0.96, 0.96)
+	reward_choice_panel.pivot_offset = reward_choice_panel.size * 0.5
+	reward_choice_tween = create_pause_independent_tween()
+	reward_choice_tween.set_parallel(true)
+	reward_choice_tween.tween_property(reward_choice_overlay, "modulate:a", 1.0, 0.12)
+	reward_choice_tween.tween_property(reward_choice_panel, "scale", Vector2.ONE, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _play_reward_hide_animation() -> void:
+	_kill_reward_choice_tween()
+	reward_choice_panel.pivot_offset = reward_choice_panel.size * 0.5
+	reward_choice_tween = create_pause_independent_tween()
+	reward_choice_tween.set_parallel(true)
+	reward_choice_tween.tween_property(reward_choice_overlay, "modulate:a", 0.0, 0.10)
+	reward_choice_tween.tween_property(reward_choice_panel, "scale", Vector2(0.98, 0.98), 0.10)
+	reward_choice_tween.finished.connect(func() -> void:
+		reward_choice_overlay.visible = false
+		reward_choice_overlay.modulate.a = 1.0
+		reward_choice_panel.scale = Vector2.ONE
+		reward_choice_tween = null
+	)
+
+
+func _kill_reward_choice_tween() -> void:
+	if reward_choice_tween != null and reward_choice_tween.is_valid():
+		reward_choice_tween.kill()
+	reward_choice_tween = null
 
 
 func _on_reward_button_pressed(index: int) -> void:

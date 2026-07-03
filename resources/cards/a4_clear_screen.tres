@@ -1,0 +1,16 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/card/CardDefinition.gd" id="1_card_definition"]
+
+[resource]
+script = ExtResource("1_card_definition")
+id = "a4_clear_screen"
+card_name = "清场"
+owner_player_id = 1
+card_type = "other"
+tags = PackedStringArray("consumable")
+description = "消耗。屏幕上所有怪物往左推 320 像素。"
+effect_id = "clear_screen"
+base_cooldown = 2.0
+push_distance = 320.0
+

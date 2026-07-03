@@ -1,18 +1,18 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://c5laq35g7a0nu"]
 
-[ext_resource type="Script" path="res://scripts/enemies/EnemySpawnPoint.gd" id="1_spawn_script"]
+[ext_resource type="Script" uid="uid://cy1b6ls1vmx8r" path="res://scripts/enemies/EnemySpawnPoint.gd" id="1_spawn_script"]
 
-[node name="EnemySpawnPoint" type="Node2D"]
+[node name="EnemySpawnPoint" type="Node2D" unique_id=1518060247]
 script = ExtResource("1_spawn_script")
 
-[node name="Marker" type="Polygon2D" parent="."]
+[node name="Marker" type="Polygon2D" parent="." unique_id=955784743]
 color = Color(1, 0.72, 0.25, 0.42)
 polygon = PackedVector2Array(0, -24, 21, -12, 21, 12, 0, 24, -21, 12, -21, -12)
 
-[node name="Label" type="Label" parent="."]
+[node name="Label" type="Label" parent="." unique_id=2128561327]
 offset_left = -74.0
 offset_top = 30.0
 offset_right = 74.0
 offset_bottom = 78.0
-horizontal_alignment = 1
 text = "敌人生成点"
+horizontal_alignment = 1

@@ -15,7 +15,7 @@ var can_shoot = true
 func _ready() -> void:
 	super._ready()
 	start_behavior_loop()
-	
+
 func start_behavior_loop():
 	var core = EnemyUtils.get_body_core()
 	while true:
@@ -27,7 +27,7 @@ func start_behavior_loop():
 			move_direction = Vector2.ZERO
 			if can_shoot:
 				shoot(dir)
-	
+
 func shoot(dir: Vector2):
 	assert(can_shoot)
 	can_shoot = false
@@ -41,7 +41,7 @@ func shoot(dir: Vector2):
 		spawn_bullet(pos, dir)
 	await get_tree().create_timer(shoot_interval).timeout
 	can_shoot = true
-	
+
 func spawn_bullet(pos: Vector2, dir: Vector2):
 	var obj = bullet.instantiate() as Bullet
 	obj.global_position = pos

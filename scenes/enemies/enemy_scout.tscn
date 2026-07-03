@@ -1,0 +1,43 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/enemy.gd" id="1"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_scout"]
+albedo_color = Color(0.95, 0.62, 0.18, 1)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_scout"]
+radius = 0.38
+height = 1.1
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_scout"]
+radius = 0.38
+height = 1.1
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_attack"]
+radius = 1.0
+
+[node name="EnemyScout" type="CharacterBody3D"]
+collision_layer = 16
+collision_mask = 1
+script = ExtResource("1")
+enemy_kind = 0
+max_health = 30.0
+contact_damage = 8.0
+placeholder_patrol_speed = 2.8
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+position = Vector3(0, 0.55, 0)
+shape = SubResource("CapsuleShape3D_scout")
+
+[node name="Visual" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.55, 0)
+mesh = SubResource("CapsuleMesh_scout")
+surface_material_override/0 = SubResource("StandardMaterial3D_scout")
+
+[node name="AttackArea" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="AttackArea"]
+position = Vector3(0, 0.55, 0)
+shape = SubResource("SphereShape3D_attack")

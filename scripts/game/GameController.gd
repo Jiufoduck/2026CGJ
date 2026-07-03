@@ -14,8 +14,10 @@ class_name GameController
 # - hud_path：HUD 节点 NodePath。UI 结构放在 HUD.tscn，脚本只更新文本和进度条。
 # - camera_path：持续向右移动的 Camera2D 节点路径。
 # - link_line_path：显示两名玩家与肉体连接关系的 Line2D 节点路径。
-# - level_length：主场景长条矩形的总长度。抵达最右边时游戏胜利结束。
+# - finish_line_path：视觉终点线节点路径。胜利结算读取这个节点的真实世界 x，而不是写死在脚本里。
+# - level_length：主场景长条矩形的总长度。启动时会至少扩到右墙和 FinishLine 之后，用于摄像机和玩家边界。
 # - level_height：主场景上下宽度。它比玩家最大连线长度更大，给上下任务点留出空间。
+# - finish_line_margin：两个玩家都超过终点线右侧这个距离后，才判定抵达终点。
 # - camera_scroll_speed：摄像机每秒向右推进的最低速度，满足“场景摄像机会一直往右移动”。
 # - camera_follow_ahead：摄像机跟随两个玩家中心时向右预留的前视距离，避免玩家推进时贴在画面右侧。
 # - camera_follow_lerp_speed：摄像机追向目标位置的插值速度。数值越大，自动跟随越紧。
@@ -31,6 +33,9 @@ class_name GameController
 # - body_drag_resistance_start：肉体落后玩家连线中心超过这个距离后，玩家远离肉体的移动开始变重。
 # - body_drag_resistance_full：肉体落后距离达到这个值时，远离肉体方向的阻力达到最大。
 # - body_drag_min_away_speed_scale：阻力最大时，玩家远离肉体方向速度保留的最低比例。
+# - body_drag_max_player_distance：任一玩家离肉体的最大允许距离，用来防止 net 或普通障碍卡肉体时玩家把距离拉到卡关。
+# - body_drag_recoil_start：玩家离肉体超过这个距离，且没有继续远离肉体时，会开始被弹回。
+# - body_drag_recoil_strength：玩家停止移动或往回走时，朝肉体回弹的强度。
 # - player_one/player_two/body_core/hud/camera/link_line：运行时缓存的主节点引用，全部来自 tscn，不由脚本创建。
 # - decks_by_player：两个玩家的独立牌堆字典。键为玩家编号，值为 CardDeck。
 # - game_has_ended：游戏是否已经胜利或失败。结束后禁用玩家输入和卡牌输入。
@@ -41,6 +46,8 @@ class_name GameController
 # - _register_key_action(action_name, physical_keycode)：把某个按键加入输入动作，避免 ProjectSettings 缺失时无输入。
 # - _build_initial_decks()：创建两个玩家各自 6 张、内容不同的初始牌堆。
 # - _connect_task_points()：连接主场景中所有任务点的领取信号。
+# - _sync_level_length_from_scene()：从 RightWall 和 FinishLine 推导关卡右边界，避免场景拉长后相机仍停在旧长度。
+# - _get_finish_x()：读取 FinishLine 的多边形顶点，换算出世界坐标下的结算 x。
 # - _handle_card_input()：处理玩家打牌和暂时不打牌。
 # - _play_card_for_player(player_id)：应用攻击牌循环、其他牌消耗和恢复连线牌效果。
 # - _pass_card_for_player(player_id)：记录玩家选择不打出当前牌，把它放到牌堆底部，并等待冷却后查看下一张。
@@ -50,6 +57,8 @@ class_name GameController
 # - _calculate_linked_velocities(input_one, input_two)：按参考牵引控制器的软距离/张力思路计算速度；反向移动可继续拉开，只有达到最大长度才挡住继续拉远。
 # - _get_body_drag_ratio()：肉体被 net 卡住并落后时，计算玩家远离肉体方向应承受的额外阻力比例。
 # - _apply_body_drag_resistance(velocity, player_position, drag_ratio)：只削弱玩家远离肉体方向的速度，允许玩家正常回头靠近肉体。
+# - _apply_body_drag_distance_constraint(delta, input_one, input_two)：限制玩家离肉体的最大距离，并在玩家不再外拉时把他们明显弹回。
+# - _apply_single_player_body_drag_constraint(player, input_vector, delta)：对单个玩家执行肉体距离硬限制和停止回弹。
 # - _apply_max_link_constraint()：超过最大连线长度时，迭代地把两名玩家投影回最大长度内；若一端被墙挡住，剩余修正会交给另一端。
 # - _apply_link_spring_recoil(delta, input_one, input_two)：连线处于拉紧状态且玩家没有继续拉远时，把两端向舒适长度弹回一点。
 # - _move_player_by_tether(player, motion)：对某个玩家施加连线修正位移，优先调用玩家脚本中的碰撞修正方法。
@@ -85,24 +94,29 @@ const CardDeckScript = preload("res://scripts/card/CardDeck.gd")
 @export var hud_path: NodePath = ^"HUD"
 @export var camera_path: NodePath = ^"Camera2D"
 @export var link_line_path: NodePath = ^"ElasticLink"
+@export var finish_line_path: NodePath = ^"Level/FinishLine"
 
 @export var level_length := 4300.0
 @export var level_height := 900.0
+@export var finish_line_margin := 0.0
 @export var camera_scroll_speed := 70.0
 @export var camera_follow_ahead := 220.0
 @export var camera_follow_lerp_speed := 8.0
 @export var camera_view_size := Vector2(1280.0, 720.0)
 @export var camera_player_margin := 58.0
 @export var comfortable_link_length := 360.0
-@export var maximum_link_length := 520.0
+@export var maximum_link_length := 420.0
 @export var taut_solo_mover_scale := 0.42
 @export var taut_solo_follower_speed_share := 0.82
 @export var outward_velocity_damping := 1.0
 @export var spring_return_strength := 7.5
 @export var max_constraint_push_share := 0.5
 @export var body_drag_resistance_start := 140.0
-@export var body_drag_resistance_full := 520.0
-@export var body_drag_min_away_speed_scale := 0.18
+@export var body_drag_resistance_full := 330.0
+@export var body_drag_min_away_speed_scale := 0.05
+@export var body_drag_max_player_distance := 340.0
+@export var body_drag_recoil_start := 190.0
+@export var body_drag_recoil_strength := 18.0
 
 @onready var player_one = get_node(player_one_path)
 @onready var player_two = get_node(player_two_path)
@@ -110,6 +124,7 @@ const CardDeckScript = preload("res://scripts/card/CardDeck.gd")
 @onready var hud = get_node(hud_path)
 @onready var camera = get_node(camera_path)
 @onready var link_line = get_node(link_line_path)
+@onready var finish_line = get_node_or_null(finish_line_path)
 
 var decks_by_player := {}
 var game_has_ended := false
@@ -121,6 +136,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_ensure_default_input_actions()
 	hud.initialize(camera)
+	_sync_level_length_from_scene()
 	_build_initial_decks()
 	_connect_task_points()
 	hud.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -214,6 +230,41 @@ func _connect_task_points() -> void:
 			task_point.task_point_claimed.connect(_on_task_point_claimed)
 
 
+func _sync_level_length_from_scene() -> void:
+	var inferred_length := level_length
+	var right_wall := get_node_or_null(^"Level/RightWall")
+	if right_wall is Node2D:
+		inferred_length = maxf(inferred_length, right_wall.global_position.x)
+
+	var finish_x := _get_finish_x()
+	if is_finite(finish_x):
+		inferred_length = maxf(inferred_length, finish_x + camera_player_margin)
+
+	level_length = inferred_length
+	camera.limit_right = roundi(level_length)
+
+
+func _get_finish_x() -> float:
+	if not is_instance_valid(finish_line):
+		return level_length
+
+	if finish_line is Polygon2D:
+		var finish_polygon: PackedVector2Array = finish_line.polygon
+		if finish_polygon.is_empty():
+			return finish_line.global_position.x
+
+		var maximum_x := -INF
+		for point in finish_polygon:
+			var world_point: Vector2 = finish_line.to_global(point)
+			maximum_x = maxf(maximum_x, world_point.x)
+		return maximum_x + finish_line_margin
+
+	if finish_line is Node2D:
+		return finish_line.global_position.x + finish_line_margin
+
+	return level_length
+
+
 func _handle_card_input() -> void:
 	if Input.is_action_just_pressed(ACTION_P1_PLAY_CARD):
 		_play_card_for_player(1)
@@ -289,6 +340,7 @@ func _move_players(delta: float) -> void:
 		player_two.move_with_velocity(linked_velocities[1])
 		_apply_max_link_constraint()
 		_apply_link_spring_recoil(delta, input_one, input_two)
+		_apply_body_drag_distance_constraint(delta, input_one, input_two)
 	else:
 		player_one.move_with_velocity(input_one * float(player_one.move_speed))
 		player_two.move_with_velocity(input_two * float(player_two.move_speed))
@@ -374,6 +426,38 @@ func _apply_body_drag_resistance(velocity: Vector2, player_position: Vector2, dr
 
 	var resisted_away_speed: float = away_speed * lerpf(1.0, body_drag_min_away_speed_scale, drag_ratio)
 	return velocity - away_direction * (away_speed - resisted_away_speed)
+
+
+func _apply_body_drag_distance_constraint(delta: float, input_one: Vector2, input_two: Vector2) -> void:
+	if not body_core.is_link_active():
+		return
+
+	_apply_single_player_body_drag_constraint(player_one, input_one, delta)
+	_apply_single_player_body_drag_constraint(player_two, input_two, delta)
+
+
+func _apply_single_player_body_drag_constraint(player: Node, input_vector: Vector2, delta: float) -> void:
+	var body_to_player: Vector2 = player.global_position - body_core.global_position
+	var distance: float = body_to_player.length()
+	if distance <= 0.001:
+		return
+
+	var away_direction: Vector2 = body_to_player / distance
+	if distance > body_drag_max_player_distance:
+		var hard_correction: Vector2 = -away_direction * (distance - body_drag_max_player_distance)
+		_move_player_by_tether(player, hard_correction)
+		distance = body_drag_max_player_distance
+
+	if delta <= 0.0 or distance <= body_drag_recoil_start:
+		return
+
+	var still_pulling_away: bool = input_vector.length() > 0.0 and input_vector.dot(away_direction) > 0.15
+	if still_pulling_away:
+		return
+
+	var recoil_distance: float = distance - body_drag_recoil_start
+	var recoil_amount: float = minf(recoil_distance, recoil_distance * body_drag_recoil_strength * delta)
+	_move_player_by_tether(player, -away_direction * recoil_amount)
 
 
 func _apply_max_link_constraint() -> void:
@@ -531,7 +615,7 @@ func _update_hud() -> void:
 
 
 func _check_finish_condition() -> void:
-	var finish_x: float = level_length - 180.0
+	var finish_x: float = _get_finish_x()
 	if minf(player_one.global_position.x, player_two.global_position.x) >= finish_x:
 		_end_game("抵达终点")
 

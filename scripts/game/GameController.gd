@@ -86,7 +86,7 @@ const CardDeckScript = preload("res://scripts/card/CardDeck.gd")
 @export var camera_path: NodePath = ^"Camera2D"
 @export var link_line_path: NodePath = ^"ElasticLink"
 
-@export var level_length := 4300.0
+@export var level_length := 11261.0
 @export var level_height := 900.0
 @export var camera_scroll_speed := 70.0
 @export var camera_follow_ahead := 220.0

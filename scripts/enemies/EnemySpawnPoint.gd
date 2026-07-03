@@ -14,10 +14,10 @@ class_name EnemySpawnPoint
 # - _refresh_label()：根据 spawn_label 和 enemy_scene 更新生成点显示文字。
 
 @export var enemy_scene: PackedScene
-@export var spawn_on_ready := true
 @export var spawn_label := "敌人生成点"
 
 var spawned_enemy: Node2D
+const SPAWN_DISTANCE = 1500
 
 @onready var marker_visual: Polygon2D = $Marker
 @onready var label_node: Label = $Label
@@ -26,13 +26,24 @@ var spawned_enemy: Node2D
 func _ready() -> void:
 	add_to_group("enemy_spawn_points")
 	_refresh_label()
-	if spawn_on_ready:
-		spawn_enemy()
-
+	start_spawn_loop()
+        
+func start_spawn_loop():
+	var core = EnemyUtils.get_body_core()
+	while true:
+		await get_tree().create_timer(1.0).timeout
+		var dis = (core.global_position - global_position).length()
+		if dis < SPAWN_DISTANCE:
+			spawn_enemy()
+			return
 
 func spawn_enemy() -> Node2D:
-	if spawned_enemy != null or enemy_scene == null:
+	if enemy_scene == null:
+		push_error('enemy_scene not set!')
 		return spawned_enemy
+	if spawned_enemy != null:
+		return spawned_enemy
+	print('enemy spawned: %s' % self.name)
 
 	var instance := enemy_scene.instantiate()
 	if not instance is Node2D:

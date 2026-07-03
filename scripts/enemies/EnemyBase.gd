@@ -36,63 +36,63 @@ var contact_damage_timer := 0.0
 
 
 func _ready() -> void:
-	current_health = max_health
-	contact_damage_timer = 0.0
-	if damage_area != null:
-		damage_area.monitoring = true
-	_refresh_visual_style()
+    current_health = max_health
+    contact_damage_timer = 0.0
+    if damage_area != null:
+        damage_area.monitoring = true
+    _refresh_visual_style()
 
 
 func _physics_process(delta: float) -> void:
-	contact_damage_timer = maxf(0.0, contact_damage_timer - delta)
-	if can_move and move_direction.length() > 0.0:
-		velocity = move_direction.normalized() * move_speed
-		move_and_slide()
-		if get_slide_collision_count() > 0:
-			var collision := get_slide_collision(0)
-			move_direction = move_direction.bounce(collision.get_normal()).normalized()
-	else:
-		velocity = Vector2.ZERO
+    contact_damage_timer = maxf(0.0, contact_damage_timer - delta)
+    if can_move and move_direction.length() > 0.0:
+        velocity = move_direction.normalized() * move_speed
+        move_and_slide()
+        if get_slide_collision_count() > 0:
+            var collision := get_slide_collision(0)
+            move_direction = move_direction.bounce(collision.get_normal()).normalized()
+    else:
+        velocity = Vector2.ZERO
 
-	_try_damage_body()
+    _try_damage_body()
 
 
 func take_damage(amount: float) -> void:
-	if amount <= 0.0 or current_health <= 0.0:
-		return
+    if amount <= 0.0 or current_health <= 0.0:
+        return
 
-	current_health = maxf(0.0, current_health - amount)
-	if current_health <= 0.0:
-		_disable_enemy()
+    current_health = maxf(0.0, current_health - amount)
+    if current_health <= 0.0:
+        _disable_enemy()
 
 
 func _try_damage_body() -> void:
-	if contact_damage_timer > 0.0 or damage_area == null:
-		return
+    if contact_damage_timer > 0.0 or damage_area == null:
+        return
 
-	for body in damage_area.get_overlapping_bodies():
-		if body.has_method("take_hit"):
-			body.take_hit(contact_damage)
-			contact_damage_timer = contact_damage_cooldown
-			return
+    for body in damage_area.get_overlapping_bodies():
+        if body.has_method("take_hit"):
+            body.take_hit(contact_damage)
+            contact_damage_timer = contact_damage_cooldown
+            return
 
 
 func _refresh_visual_style() -> void:
-	if visual_polygon == null:
-		return
+    if visual_polygon == null:
+        return
 
-	if enemy_type_id == 1:
-		visual_polygon.color = Color(0.95, 0.25, 0.25, 1.0)
-	elif enemy_type_id == 2:
-		visual_polygon.color = Color(0.75, 0.35, 1.0, 1.0)
-	else:
-		visual_polygon.color = Color(0.25, 0.95, 0.65, 1.0)
+    if enemy_type_id == 1:
+        visual_polygon.color = Color(0.95, 0.25, 0.25, 1.0)
+    elif enemy_type_id == 2:
+        visual_polygon.color = Color(0.75, 0.35, 1.0, 1.0)
+    else:
+        visual_polygon.color = Color(0.25, 0.95, 0.65, 1.0)
 
 
 func _disable_enemy() -> void:
-	hide()
-	set_physics_process(false)
-	set_collision_layer_value(4, false)
-	set_collision_mask_value(3, false)
-	if damage_area != null:
-		damage_area.monitoring = false
+    hide()
+    set_physics_process(false)
+    set_collision_layer_value(4, false)
+    set_collision_mask_value(3, false)
+    if damage_area != null:
+        damage_area.monitoring = false

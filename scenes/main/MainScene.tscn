@@ -70,7 +70,7 @@ polygon = PackedVector2Array(-30, -450, 30, -450, 30, 450, -30, 450)
 shape = SubResource("RectangleShape2D_wall_vertical")
 
 [node name="RightWall" type="StaticBody2D" parent="Level" unique_id=1635120269]
-position = Vector2(11534, 0)
+position = Vector2(20567, 0)
 collision_layer = 4
 collision_mask = 0
 
@@ -82,7 +82,7 @@ polygon = PackedVector2Array(-30, -450, 30, -450, 30, 450, -30, 450)
 shape = SubResource("RectangleShape2D_wall_vertical")
 
 [node name="FinishLine" type="Polygon2D" parent="Level" unique_id=2097621890]
-position = Vector2(7141, 0)
+position = Vector2(16268, 0)
 color = Color(0.92, 0.82, 0.25, 0.75)
 polygon = PackedVector2Array(4100, -450, 4140, -450, 4140, 450, 4100, 450)
 
@@ -169,6 +169,10 @@ scale = Vector2(0.17886199, 2.1648731)
 
 [node name="RectangleObstacle19" parent="Obstacles" unique_id=1291856100 instance=ExtResource("6_obstacle_scene")]
 position = Vector2(8671, -7.9999924)
+scale = Vector2(0.17886199, 2.1648731)
+
+[node name="RectangleObstacle22" parent="Obstacles" unique_id=632805344 instance=ExtResource("6_obstacle_scene")]
+position = Vector2(10278, -7.9999924)
 scale = Vector2(0.17886199, 2.1648731)
 
 [node name="RectangleObstacle20" parent="Obstacles" unique_id=1405983180 instance=ExtResource("6_obstacle_scene")]

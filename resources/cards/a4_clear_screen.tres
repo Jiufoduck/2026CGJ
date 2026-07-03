@@ -1,16 +1,12 @@
-[gd_resource type="Resource" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="CardA4ClearScreenDefinition" format=3 uid="uid://7kd71cf14fx1"]
 
-[ext_resource type="Script" path="res://scripts/card/definitions/CardA4ClearScreenDefinition.gd" id="1_card_definition"]
+[ext_resource type="Script" uid="uid://lstl8xhs0nvi" path="res://scripts/card/definitions/CardA4ClearScreenDefinition.gd" id="1_card_definition"]
 
 [resource]
 script = ExtResource("1_card_definition")
 id = "a4_clear_screen"
 card_name = "清场"
 owner_player_id = 1
-card_type = "other"
 tags = PackedStringArray("consumable")
-description = "消耗。屏幕上所有怪物往左推 320 像素。"
+description = "消耗：使用后这张牌会被移除。屏幕上所有怪物往左推 320 像素。"
 effect_id = "clear_screen"
-base_cooldown = 2.0
-push_distance = 320.0
-overwhelm_decay = 0.72

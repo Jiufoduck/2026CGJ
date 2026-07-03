@@ -16,6 +16,7 @@ class_name BodyCore
 # - current_health：肉体当前血量。受击减少，恢复连线时回满。
 # - link_broken：当前连线是否已经断开。断开后 Line2D 隐藏，倒计时开始。
 # - broken_seconds_left：断线后剩余倒计时秒数。它只在 link_broken 为 true 时递减。
+# - game_over_requested_sent：断线倒计时归零后只允许发出一次 Gameover 请求，避免每帧重复触发。
 # - last_motion_blocker：肉体尝试回到连线中心时，最近一次挡住它的物体；主控制器用它识别 net。
 # - snapback_active：肉体是否正在从 net 中高速回弹到连线中心。
 # - snapback_speed：当前回弹速度。启动时较高，接近中心时逐渐降低。
@@ -30,6 +31,7 @@ class_name BodyCore
 # - take_hit(amount, source_enemy)：处理受击扣血；血量归零时断开连线并启动 10 秒倒计时。
 # - force_break_link()：卡牌直接断线入口。它把肉体血量归零并启动断线倒计时。
 # - restore_link()：恢复连线并回满血量，用于恢复连线卡。
+# - reset_state()：Try again 时恢复肉体血量、连线、倒计时和 Gameover 请求锁。
 # - is_link_active()：返回连线是否仍然存在，主控制器据此决定是否施加弹性牵引。
 # - _break_link()：内部断线流程，集中设置状态和发信号。
 # - _refresh_visual_state()：根据当前血量与断线状态更新肉体颜色。
@@ -50,6 +52,7 @@ signal damaged_by_enemy(amount: float, source_enemy: Node)
 var current_health := 100.0
 var link_broken := false
 var broken_seconds_left := 0.0
+var game_over_requested_sent := false
 var last_motion_blocker: Node
 var snapback_active := false
 var snapback_speed := 0.0
@@ -61,6 +64,7 @@ func _ready() -> void:
 	current_health = max_health
 	link_broken = false
 	broken_seconds_left = 0.0
+	game_over_requested_sent = false
 	health_changed.emit(current_health, max_health)
 	_refresh_visual_state()
 
@@ -71,7 +75,8 @@ func _physics_process(delta: float) -> void:
 
 	broken_seconds_left = maxf(0.0, broken_seconds_left - delta)
 	link_broken_started.emit(broken_seconds_left)
-	if broken_seconds_left <= 0.0:
+	if broken_seconds_left <= 0.0 and not game_over_requested_sent:
+		game_over_requested_sent = true
 		game_over_requested.emit()
 
 
@@ -165,8 +170,21 @@ func restore_link() -> void:
 	current_health = max_health
 	link_broken = false
 	broken_seconds_left = 0.0
+	game_over_requested_sent = false
 	health_changed.emit(current_health, max_health)
 	link_restored.emit()
+	_refresh_visual_state()
+
+
+func reset_state() -> void:
+	current_health = max_health
+	link_broken = false
+	broken_seconds_left = 0.0
+	game_over_requested_sent = false
+	last_motion_blocker = null
+	snapback_active = false
+	snapback_speed = 0.0
+	health_changed.emit(current_health, max_health)
 	_refresh_visual_state()
 
 
@@ -175,8 +193,12 @@ func is_link_active() -> bool:
 
 
 func _break_link() -> void:
+	if link_broken:
+		return
+
 	link_broken = true
 	broken_seconds_left = broken_game_over_seconds
+	game_over_requested_sent = false
 	link_broken_started.emit(broken_seconds_left)
 	_refresh_visual_state()
 

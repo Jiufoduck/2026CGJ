@@ -1,6 +1,6 @@
-[gd_resource type="Resource" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="CardA2CollisionChargeDefinition" format=3 uid="uid://diapmd8echlvq"]
 
-[ext_resource type="Script" path="res://scripts/card/definitions/CardA2CollisionChargeDefinition.gd" id="1_card_definition"]
+[ext_resource type="Script" uid="uid://dbk51u8txag53" path="res://scripts/card/definitions/CardA2CollisionChargeDefinition.gd" id="1_card_definition"]
 
 [resource]
 script = ExtResource("1_card_definition")
@@ -9,9 +9,5 @@ card_name = "撞击怪物"
 owner_player_id = 1
 card_type = "attack"
 tags = PackedStringArray()
-description = "你的移速减少到 65%，直到任一玩家成功打出下一张牌。期间靠近怪物时，对其造成 4 点伤害。"
+description = "你的移速减少到 65%，直到任一玩家成功打出下一张牌。期间撞到怪物时，对其造成 4 点伤害；同一怪物可反复被撞击。"
 effect_id = "collision_charge"
-base_cooldown = 2.0
-enemy_damage_amount = 4.0
-move_speed_scale = 0.65
-hit_radius = 48.0

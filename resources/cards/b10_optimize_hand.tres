@@ -1,15 +1,12 @@
-[gd_resource type="Resource" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="CardB10OptimizeHandDefinition" format=3 uid="uid://y36pkoqiij8"]
 
-[ext_resource type="Script" path="res://scripts/card/definitions/CardB10OptimizeHandDefinition.gd" id="1_card_definition"]
+[ext_resource type="Script" uid="uid://d0pncsre8dg2d" path="res://scripts/card/definitions/CardB10OptimizeHandDefinition.gd" id="1_card_definition"]
 
 [resource]
 script = ExtResource("1_card_definition")
 id = "b10_optimize_hand"
 card_name = "优化手牌"
 owner_player_id = 2
-card_type = "other"
 tags = PackedStringArray("consumable", "restore_generation")
-description = "消耗。向自己的牌堆加入 1 张恢复连线，并随机让一张消耗牌失去消耗。"
+description = "消耗：使用后这张牌会被移除。向自己的牌堆加入 1 张恢复连线，并随机让一张消耗牌失去消耗。"
 effect_id = "optimize_hand"
-base_cooldown = 2.0
-restore_cards_to_add = 1

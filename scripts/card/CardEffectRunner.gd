@@ -6,12 +6,15 @@ class_name CardEffectRunner
 # - CardCatalogScript：卡牌目录预加载，用于恢复生成效果创建恢复牌。
 # - CounterProjectileScene：A3 反杀怪物的短暂弹道反馈场景。
 # - CardFeedbackEffectScript：白模卡牌反馈脚本，用于环形、扫光、标记和连线反馈。
+# - CardBurnDissolveEffectScript：消耗牌打出后使用的高分辨率随机烧洞溶解反馈。
+# - CardProjectileLineScript：A3 弹道反馈脚本，用于 Try again 时清理残留弹道。
 # - controller：主控制器引用。效果执行器通过它访问玩家、肉体、相机、HUD 和牌堆。
 # - rng：卡牌随机数发生器。奖励池以外的随机效果，例如 B10 优化手牌，会使用它。
 # - collision_charge_player_id：A2 当前拥有撞击怪物状态的玩家编号。0 表示没有该状态。
 # - collision_charge_damage：A2 撞击怪物时造成的基础伤害。
 # - collision_charge_radius：A2 判定撞到怪物的距离半径。
-# - collision_charge_hit_ids：A2 当前持续期间已经被撞击伤害过的敌人实例 ID 集合。
+# - collision_charge_hit_cooldown：A2 同一敌人两次受撞击伤害之间的最短间隔。
+# - collision_charge_hit_cooldowns：A2 当前持续期间每个敌人的剩余命中冷却。冷却归零后可再次受伤。
 # - collision_charge_feedback：A2 持续期间跟随玩家的白模反馈节点。
 # - counterattack_active：A3 反杀怪物是否正在等待下一只攻击肉体的怪物。
 # - counterattack_lifetime：A3 弹道反馈存在时间。
@@ -34,12 +37,15 @@ class_name CardEffectRunner
 # - on_card_passed(player_id, card_data)：某张牌被跳过时，处理 B11 的跳过 CD 规则。
 # - apply_card(player_id, card_data)：根据 effect_id 分发并执行具体卡牌效果。
 # - apply_player_damage_multiplier(player_id, amount)：给某名玩家造成的下一次数值伤害应用并消耗 B12 倍率。
+# - reset_all_effects()：Try again 时清理所有持续卡牌状态和残留反馈。
 # - _physics_process(delta)：每帧处理 A2 撞击检测，并维持 B9 对新生成敌人的冻结。
 # - _apply_*：每个具体卡牌效果的实现。
 # - _on_body_damaged_by_enemy(amount, source_enemy)：A3 监听肉体受击来源并反杀敌人。
 # - _on_link_broken_started(seconds_left)：断线发生时结束 B11 集中火力。
 # - _on_link_restored()：恢复连线时清理 A6 穿墙和 B9 冻结。
 # - _spawn_*：创建白模反馈节点。
+# - _spawn_consumable_dissolve(player_id, card_data)：为成功打出的消耗牌生成烧洞溶解卡片反馈。
+# - _clear_transient_effect_nodes()：清掉 CardEffectRunner 创建在主控制器下的临时视觉节点。
 # - _overwhelm_enemy(enemy, direction, distance, decay)：优先调用 EnemyBase._on_overwhelmed 执行击退。
 # - _get_*：查找玩家、牌堆、敌人、相机视野等通用辅助方法。
 
@@ -47,13 +53,16 @@ const CardDeckScript = preload("res://scripts/card/CardDeck.gd")
 const CardCatalogScript = preload("res://scripts/card/CardCatalog.gd")
 const CounterProjectileScene = preload("res://scenes/effects/CardProjectileLine.tscn")
 const CardFeedbackEffectScript = preload("res://scripts/effects/CardFeedbackEffect.gd")
+const CardBurnDissolveEffectScript = preload("res://scripts/effects/CardBurnDissolveEffect.gd")
+const CardProjectileLineScript = preload("res://scripts/effects/CardProjectileLine.gd")
 
 var controller
 var rng := RandomNumberGenerator.new()
 var collision_charge_player_id := 0
 var collision_charge_damage := 0.0
 var collision_charge_radius := 48.0
-var collision_charge_hit_ids := {}
+var collision_charge_hit_cooldown := 0.35
+var collision_charge_hit_cooldowns := {}
 var collision_charge_feedback
 var counterattack_active := false
 var counterattack_lifetime := 0.35
@@ -122,6 +131,8 @@ func on_card_passed(_player_id: int, _card_data: Dictionary) -> void:
 
 func apply_card(player_id: int, card_data: Dictionary) -> void:
 	var effect_id := str(card_data.get("effect_id", ""))
+	if CardDeckScript.card_is_consumable(card_data):
+		_spawn_consumable_dissolve(player_id, card_data)
 	match effect_id:
 		"range_damage":
 			_apply_range_damage(player_id, card_data)
@@ -163,9 +174,36 @@ func apply_player_damage_multiplier(player_id: int, amount: float) -> float:
 	return amount * multiplier
 
 
-func _physics_process(_delta: float) -> void:
+func reset_all_effects() -> void:
+	if controller == null or not is_instance_valid(controller):
+		return
+
+	_end_collision_charge()
+	_end_counterattack()
+	if phase_walk_active:
+		for player in [controller.player_one, controller.player_two]:
+			if player.has_method("set_wall_phase_enabled"):
+				player.set_wall_phase_enabled(false)
+	phase_walk_active = false
+	_clear_feedback_array(phase_walk_feedbacks)
+
+	if group_freeze_active:
+		_set_all_enemies_frozen(false)
+	group_freeze_active = false
+	_free_feedback(group_freeze_feedback)
+	group_freeze_feedback = null
+
+	_end_focused_fire()
+	next_damage_multiplier_by_player = {
+		1: 1.0,
+		2: 1.0,
+	}
+	_clear_transient_effect_nodes()
+
+
+func _physics_process(delta: float) -> void:
 	if collision_charge_player_id != 0:
-		_apply_collision_charge_hits()
+		_apply_collision_charge_hits(delta)
 	if group_freeze_active:
 		_set_all_enemies_frozen(true)
 
@@ -188,7 +226,8 @@ func _apply_collision_charge(player_id: int, card_data: Dictionary) -> void:
 	collision_charge_player_id = player_id
 	collision_charge_damage = float(card_data.get("enemy_damage_amount", 0.0))
 	collision_charge_radius = float(card_data.get("hit_radius", 48.0))
-	collision_charge_hit_ids.clear()
+	collision_charge_hit_cooldown = maxf(0.0, float(card_data.get("hit_cooldown", 0.35)))
+	collision_charge_hit_cooldowns.clear()
 	var player := _get_player(player_id)
 	if player != null and player.has_method("set_move_speed_multiplier"):
 		player.set_move_speed_multiplier(float(card_data.get("move_speed_scale", 1.0)))
@@ -328,23 +367,36 @@ func _apply_restore_link() -> void:
 	controller.body_core.restore_link()
 
 
-func _apply_collision_charge_hits() -> void:
+func _apply_collision_charge_hits(delta: float) -> void:
 	var player := _get_player(collision_charge_player_id)
 	if player == null:
 		_end_collision_charge()
 		return
 
+	_tick_collision_charge_hit_cooldowns(delta)
 	for enemy in _get_alive_enemies(false):
 		var enemy_id: int = enemy.get_instance_id()
-		if collision_charge_hit_ids.has(enemy_id):
+		if float(collision_charge_hit_cooldowns.get(enemy_id, 0.0)) > 0.0:
 			continue
 		if player.global_position.distance_to(enemy.global_position) <= collision_charge_radius:
-			collision_charge_hit_ids[enemy_id] = true
+			collision_charge_hit_cooldowns[enemy_id] = collision_charge_hit_cooldown
 			var damage := apply_player_damage_multiplier(collision_charge_player_id, collision_charge_damage)
 			if enemy.has_method("take_damage"):
 				enemy.take_damage(damage)
 				_spawn_marker(enemy.global_position, 30.0, Color(1.0, 0.82, 0.12, 1.0), "-%s" % _format_amount(damage), 0.4)
 				_spawn_line(player.global_position, enemy.global_position, Color(1.0, 0.82, 0.12, 1.0), "", 0.22)
+
+
+func _tick_collision_charge_hit_cooldowns(delta: float) -> void:
+	if collision_charge_hit_cooldowns.is_empty():
+		return
+
+	for enemy_id in collision_charge_hit_cooldowns.keys():
+		var remaining := maxf(0.0, float(collision_charge_hit_cooldowns[enemy_id]) - delta)
+		if remaining <= 0.0:
+			collision_charge_hit_cooldowns.erase(enemy_id)
+		else:
+			collision_charge_hit_cooldowns[enemy_id] = remaining
 
 
 func _add_restore_cards(player_id: int, amount: int) -> void:
@@ -394,7 +446,8 @@ func _end_collision_charge() -> void:
 	collision_charge_player_id = 0
 	collision_charge_damage = 0.0
 	collision_charge_radius = 48.0
-	collision_charge_hit_ids.clear()
+	collision_charge_hit_cooldown = 0.35
+	collision_charge_hit_cooldowns.clear()
 	_free_feedback(collision_charge_feedback)
 	collision_charge_feedback = null
 
@@ -468,6 +521,25 @@ func _make_feedback():
 	return feedback
 
 
+func _spawn_consumable_dissolve(player_id: int, card_data: Dictionary) -> void:
+	if controller == null or not is_instance_valid(controller):
+		return
+
+	var player := _get_player(player_id)
+	var origin: Vector2 = controller.body_core.global_position
+	if player != null:
+		origin = player.global_position
+
+	var dissolve_effect = CardBurnDissolveEffectScript.new()
+	dissolve_effect.z_index = 2300
+	controller.add_child(dissolve_effect)
+	dissolve_effect.play(
+		card_data,
+		origin + Vector2(0.0, -96.0),
+		rng.randf_range(1.0, 100000.0)
+	)
+
+
 func _free_feedback(feedback) -> void:
 	if feedback != null and is_instance_valid(feedback):
 		feedback.queue_free()
@@ -477,6 +549,22 @@ func _clear_feedback_array(feedbacks: Array) -> void:
 	for feedback in feedbacks:
 		_free_feedback(feedback)
 	feedbacks.clear()
+
+
+func _clear_transient_effect_nodes() -> void:
+	if controller == null or not is_instance_valid(controller):
+		return
+
+	for child in controller.get_children():
+		if not is_instance_valid(child) or child.is_queued_for_deletion():
+			continue
+		var child_script = child.get_script()
+		if (
+			child_script == CardFeedbackEffectScript
+			or child_script == CardBurnDissolveEffectScript
+			or child_script == CardProjectileLineScript
+		):
+			child.queue_free()
 
 
 func _overwhelm_enemy(enemy: Node, direction: Vector2, distance: float, decay: float) -> void:

@@ -1,15 +1,12 @@
-[gd_resource type="Resource" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="CardB12DamageBoostDefinition" format=3 uid="uid://b1esf6ur7fjo7"]
 
-[ext_resource type="Script" path="res://scripts/card/definitions/CardB12DamageBoostDefinition.gd" id="1_card_definition"]
+[ext_resource type="Script" uid="uid://bypiao00l6pao" path="res://scripts/card/definitions/CardB12DamageBoostDefinition.gd" id="1_card_definition"]
 
 [resource]
 script = ExtResource("1_card_definition")
 id = "b12_damage_boost"
 card_name = "增伤"
 owner_player_id = 2
-card_type = "other"
 tags = PackedStringArray("break", "consumable")
-description = "断裂，消耗。你每有一张手牌，另一位玩家造成的下一次数值伤害翻一倍。"
+description = "断裂。消耗：使用后这张牌会被移除。你每有一张手牌，另一位玩家造成的下一次数值伤害翻一倍。"
 effect_id = "damage_boost"
-base_cooldown = 2.0
-damage_multiplier_base = 2.0

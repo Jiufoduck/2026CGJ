@@ -2,7 +2,7 @@ extends Resource
 class_name CardDefinition
 
 # 脚本说明：
-# - TAG_CONSUMABLE：消耗牌词条。带这个标签的牌成功打出后不会回到牌堆底部。
+# - TAG_CONSUMABLE：消耗牌词条。带这个标签的牌成功打出后会被移除。
 # - TAG_BREAK_LINK：断裂牌词条。带这个标签的牌成功打出后会使连线断裂，并且断线期间不能打出。
 # - TAG_RESTORE：恢复牌词条。带这个标签的牌只能在断线期间打出，并且恢复牌不是消耗牌。
 # - id：卡牌唯一 ID。牌堆、奖励池和效果执行器都通过它识别具体卡牌。

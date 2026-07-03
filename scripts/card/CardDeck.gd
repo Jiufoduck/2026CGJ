@@ -5,7 +5,7 @@ class_name CardDeck
 # - CARD_TYPE_ATTACK：HUD 显示用攻击牌类型标识。具体是否消耗不再由类型决定，而由 tags 决定。
 # - CARD_TYPE_OTHER：HUD 显示用其他牌类型标识。具体是否消耗不再由类型决定，而由 tags 决定。
 # - CARD_RESTORE_LINK_ID：恢复连线卡的唯一 ID。恢复生成、非法出牌判断和旧接口都复用它。
-# - TAG_CONSUMABLE：消耗词条。带它的牌成功打出后会离开当前战斗牌堆。
+# - TAG_CONSUMABLE：消耗词条。带它的牌成功打出后会被移除。
 # - TAG_BREAK_LINK：断裂词条。带它的牌成功打出后会断线，断线期间不能打出。
 # - TAG_RESTORE：恢复词条。带它的牌只能在断线期间打出，并且恢复牌不是消耗牌。
 # - PLAY_COOLDOWN_SECONDS：没有资源冷却字段时使用的默认出牌 CD。
@@ -156,7 +156,7 @@ func make_random_consumable_card_free(rng: RandomNumberGenerator) -> Dictionary:
 	var card_tags: Array = Array(chosen_card.get("tags", []))
 	card_tags.erase(TAG_CONSUMABLE)
 	chosen_card["tags"] = card_tags
-	chosen_card["description"] = "%s\n已优化：这张牌打出后不再消耗。" % str(chosen_card.get("description", ""))
+	chosen_card["description"] = "%s\n已优化：这张牌打出后不再被移除。" % str(chosen_card.get("description", ""))
 	cards[chosen_index] = chosen_card
 	return chosen_card.duplicate(true)
 

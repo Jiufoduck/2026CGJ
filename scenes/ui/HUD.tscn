@@ -110,6 +110,13 @@ offset_right = 316.0
 offset_bottom = 76.0
 text = "牌堆 6"
 
+[node name="ColorRect" type="ColorRect" parent="Root/PlayerOnePanel" unique_id=991886633]
+layout_mode = 0
+offset_left = 294.0
+offset_right = 334.0
+offset_bottom = 80.0
+color = Color(0, 0.5294118, 1, 1)
+
 [node name="PlayerTwoPanel" type="Panel" parent="Root" unique_id=1255065686]
 layout_mode = 1
 anchors_preset = -1
@@ -136,6 +143,13 @@ offset_right = 316.0
 offset_bottom = 76.0
 text = "牌堆 6"
 
+[node name="ColorRect" type="ColorRect" parent="Root/PlayerTwoPanel" unique_id=721846424]
+layout_mode = 0
+offset_left = 294.0
+offset_right = 334.0
+offset_bottom = 80.0
+color = Color(1, 0, 0, 1)
+
 [node name="MessageLabel" type="Label" parent="Root" unique_id=579635133]
 layout_mode = 1
 anchors_preset = -1
@@ -147,7 +161,7 @@ offset_right = 240.0
 offset_bottom = 132.0
 horizontal_alignment = 1
 
-[node name="DeathCountdownPanel" type="ColorRect" parent="Root"]
+[node name="DeathCountdownPanel" type="ColorRect" parent="Root" unique_id=831538602]
 visible = false
 layout_mode = 1
 anchors_preset = 5
@@ -161,7 +175,7 @@ grow_horizontal = 2
 mouse_filter = 2
 color = Color(0.55, 0.02, 0.02, 0.76)
 
-[node name="DeathCountdownLabel" type="Label" parent="Root/DeathCountdownPanel"]
+[node name="DeathCountdownLabel" type="Label" parent="Root/DeathCountdownPanel" unique_id=60818319]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -249,18 +263,16 @@ text = "3. 恢复连线
 说明"
 autowrap_mode = 2
 
-[node name="PauseMenuOverlay" type="ColorRect" parent="Root"]
-visible = false
+[node name="PauseMenuOverlay" type="ColorRect" parent="Root" unique_id=1191306827]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
 color = Color(0.015, 0.018, 0.022, 0.82)
 
-[node name="MainPanel" type="Panel" parent="Root/PauseMenuOverlay"]
+[node name="MainPanel" type="Panel" parent="Root/PauseMenuOverlay" unique_id=415581125]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -274,7 +286,7 @@ offset_bottom = 174.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="TitleLabel" type="Label" parent="Root/PauseMenuOverlay/MainPanel"]
+[node name="TitleLabel" type="Label" parent="Root/PauseMenuOverlay/MainPanel" unique_id=1143268951]
 layout_mode = 1
 offset_left = 24.0
 offset_top = 24.0
@@ -284,7 +296,7 @@ text = "暂停菜单"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="ContinueButton" type="Button" parent="Root/PauseMenuOverlay/MainPanel"]
+[node name="ContinueButton" type="Button" parent="Root/PauseMenuOverlay/MainPanel" unique_id=174651473]
 layout_mode = 1
 offset_left = 52.0
 offset_top = 88.0
@@ -292,7 +304,7 @@ offset_right = 308.0
 offset_bottom = 134.0
 text = "继续游戏"
 
-[node name="SettingsButton" type="Button" parent="Root/PauseMenuOverlay/MainPanel"]
+[node name="SettingsButton" type="Button" parent="Root/PauseMenuOverlay/MainPanel" unique_id=1507519302]
 layout_mode = 1
 offset_left = 52.0
 offset_top = 154.0
@@ -300,7 +312,7 @@ offset_right = 308.0
 offset_bottom = 200.0
 text = "设置"
 
-[node name="QuitButton" type="Button" parent="Root/PauseMenuOverlay/MainPanel"]
+[node name="QuitButton" type="Button" parent="Root/PauseMenuOverlay/MainPanel" unique_id=1135445295]
 layout_mode = 1
 offset_left = 52.0
 offset_top = 220.0
@@ -308,7 +320,7 @@ offset_right = 308.0
 offset_bottom = 266.0
 text = "退出游戏"
 
-[node name="SettingsPanel" type="Panel" parent="Root/PauseMenuOverlay"]
+[node name="SettingsPanel" type="Panel" parent="Root/PauseMenuOverlay" unique_id=1492006984]
 visible = false
 layout_mode = 1
 anchors_preset = 8
@@ -323,7 +335,7 @@ offset_bottom = 300.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="TitleLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel"]
+[node name="TitleLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel" unique_id=320190312]
 layout_mode = 1
 offset_left = 24.0
 offset_top = 18.0
@@ -333,7 +345,7 @@ text = "设置"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="RebindHintLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel"]
+[node name="RebindHintLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel" unique_id=176663567]
 layout_mode = 1
 offset_left = 24.0
 offset_top = 52.0
@@ -342,7 +354,7 @@ offset_bottom = 78.0
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="SettingsScroll" type="ScrollContainer" parent="Root/PauseMenuOverlay/SettingsPanel"]
+[node name="SettingsScroll" type="ScrollContainer" parent="Root/PauseMenuOverlay/SettingsPanel" unique_id=1813071173]
 layout_mode = 1
 offset_left = 30.0
 offset_top = 88.0
@@ -350,130 +362,121 @@ offset_right = 890.0
 offset_bottom = 528.0
 horizontal_scroll_mode = 0
 
-[node name="SettingsContent" type="VBoxContainer" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll"]
+[node name="SettingsContent" type="VBoxContainer" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll" unique_id=2106795211]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 18
 
-[node name="KeyMappingSection" type="VBoxContainer" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent"]
+[node name="KeyMappingSection" type="VBoxContainer" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent" unique_id=110176813]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="SectionTitleLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/KeyMappingSection"]
+[node name="SectionTitleLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/KeyMappingSection" unique_id=2080849216]
 layout_mode = 2
 text = "按键映射"
 
-[node name="InputPresetRow" type="HBoxContainer" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/KeyMappingSection"]
+[node name="InputPresetRow" type="HBoxContainer" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/KeyMappingSection" unique_id=536846296]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 12
 
-[node name="InputPresetLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/KeyMappingSection/InputPresetRow"]
+[node name="InputPresetLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/KeyMappingSection/InputPresetRow" unique_id=1823521936]
 custom_minimum_size = Vector2(190, 34)
 layout_mode = 2
 text = "输入预设"
 vertical_alignment = 1
 
-[node name="InputPresetToggleButton" type="Button" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/KeyMappingSection/InputPresetRow"]
+[node name="InputPresetToggleButton" type="Button" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/KeyMappingSection/InputPresetRow" unique_id=185704547]
 custom_minimum_size = Vector2(330, 34)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "当前：手柄 Xbox / Nintendo    切换到：键盘"
 
-[node name="KeyBindRows" type="VBoxContainer" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/KeyMappingSection"]
+[node name="KeyBindRows" type="VBoxContainer" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/KeyMappingSection" unique_id=1869771630]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="AudioSection" type="VBoxContainer" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent"]
+[node name="AudioSection" type="VBoxContainer" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent" unique_id=968515132]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 10
 
-[node name="SectionTitleLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection"]
+[node name="SectionTitleLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection" unique_id=1063364346]
 layout_mode = 2
 text = "音量"
 
-[node name="MasterVolumeRow" type="HBoxContainer" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection"]
+[node name="MasterVolumeRow" type="HBoxContainer" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection" unique_id=866240888]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 12
 
-[node name="MasterVolumeLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/MasterVolumeRow"]
+[node name="MasterVolumeLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/MasterVolumeRow" unique_id=2028270544]
 custom_minimum_size = Vector2(110, 30)
 layout_mode = 2
 text = "总音量"
 vertical_alignment = 1
 
-[node name="MasterVolumeSlider" type="HSlider" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/MasterVolumeRow"]
+[node name="MasterVolumeSlider" type="HSlider" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/MasterVolumeRow" unique_id=2094633140]
 layout_mode = 2
 size_flags_horizontal = 3
-min_value = 0.0
-max_value = 100.0
-step = 1.0
 value = 100.0
 
-[node name="MasterVolumeValueLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/MasterVolumeRow"]
+[node name="MasterVolumeValueLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/MasterVolumeRow" unique_id=1497291522]
 custom_minimum_size = Vector2(54, 30)
 layout_mode = 2
 text = "100%"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="MusicVolumeRow" type="HBoxContainer" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection"]
+[node name="MusicVolumeRow" type="HBoxContainer" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection" unique_id=86641747]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 12
 
-[node name="MusicVolumeLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/MusicVolumeRow"]
+[node name="MusicVolumeLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/MusicVolumeRow" unique_id=1672912114]
 custom_minimum_size = Vector2(110, 30)
 layout_mode = 2
 text = "音乐音量"
 vertical_alignment = 1
 
-[node name="MusicVolumeSlider" type="HSlider" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/MusicVolumeRow"]
+[node name="MusicVolumeSlider" type="HSlider" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/MusicVolumeRow" unique_id=920724296]
 layout_mode = 2
 size_flags_horizontal = 3
-min_value = 0.0
-max_value = 100.0
-step = 1.0
 value = 100.0
 
-[node name="MusicVolumeValueLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/MusicVolumeRow"]
+[node name="MusicVolumeValueLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/MusicVolumeRow" unique_id=413613255]
 custom_minimum_size = Vector2(54, 30)
 layout_mode = 2
 text = "100%"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="SfxVolumeRow" type="HBoxContainer" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection"]
+[node name="SfxVolumeRow" type="HBoxContainer" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection" unique_id=1231737409]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 12
 
-[node name="SfxVolumeLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/SfxVolumeRow"]
+[node name="SfxVolumeLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/SfxVolumeRow" unique_id=1714184469]
 custom_minimum_size = Vector2(110, 30)
 layout_mode = 2
 text = "音效音量"
 vertical_alignment = 1
 
-[node name="SfxVolumeSlider" type="HSlider" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/SfxVolumeRow"]
+[node name="SfxVolumeSlider" type="HSlider" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/SfxVolumeRow" unique_id=1249001087]
 layout_mode = 2
 size_flags_horizontal = 3
-min_value = 0.0
-max_value = 100.0
-step = 1.0
 value = 100.0
 
-[node name="SfxVolumeValueLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/SfxVolumeRow"]
+[node name="SfxVolumeValueLabel" type="Label" parent="Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/SfxVolumeRow" unique_id=1032551420]
 custom_minimum_size = Vector2(54, 30)
 layout_mode = 2
 text = "100%"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="BackButton" type="Button" parent="Root/PauseMenuOverlay/SettingsPanel"]
+[node name="BackButton" type="Button" parent="Root/PauseMenuOverlay/SettingsPanel" unique_id=1400291379]
 layout_mode = 1
 offset_left = 348.0
 offset_top = 542.0

@@ -38,10 +38,16 @@ class_name GameController
 # - body_drag_max_player_distance：任一玩家离肉体的最大允许距离，用来防止 net 或普通障碍卡肉体时玩家把距离拉到卡关。
 # - body_drag_recoil_start：玩家离肉体超过这个距离，且没有继续远离肉体时，会开始被弹回。
 # - body_drag_recoil_strength：玩家停止移动或往回走时，朝肉体回弹的强度。
+# - game_over_fade_seconds：Gameover 黑幕淡入和 Try again 淡出时长。需求指定每段 3 秒。
 # - player_one/player_two/body_core/hud/camera/link_line：运行时缓存的主节点引用，全部来自 tscn，不由脚本创建。
 # - decks_by_player：两个玩家的独立牌堆字典。键为玩家编号，值为 CardDeck。
 # - game_has_ended：游戏是否已经胜利或失败。结束后禁用玩家输入和卡牌输入。
 # - reward_choice_active：当前是否正在等待玩家选择任务点奖励。为 true 时暂停游戏流程，只允许 HUD 奖励按钮响应。
+# - game_over_sequence_active：死亡流程是否已经接管控制，避免 BodyCore 重复请求导致多次弹 UI。
+# - restart_in_progress：Try again 是否正在黑幕淡出过程中，防止重复重置。
+# - game_over_reason：当前失败原因文本，死亡动画结束后交给 HUD 显示。
+# - pending_death_animation_players：仍未发出 death_animation_finished 的玩家集合。
+# - restart_state：主场景初始位置快照。Try again 用它恢复玩家、肉体和相机起点。
 # - card_effect_runner：运行时创建的卡牌效果执行器。它只负责逻辑，不承担场景结构；世界暂停时也要暂停效果检测。
 # - _ready()：读取节点、注册输入、建立牌堆、连接任务点/肉体信号，把主世界相机同步给 HUD 的 SubViewport，并初始化 HUD。
 # - _physics_process(delta)：每帧推进摄像机、移动、连线、卡牌冷却、任务终点和 HUD。
@@ -76,8 +82,18 @@ class_name GameController
 # - _update_hud()：集中刷新血量、连线状态、当前牌和牌堆数量。
 # - _check_finish_condition()：两个玩家都抵达最右侧后结束游戏。
 # - _end_game(message)：统一处理胜利或失败，关闭控制并显示结果。
+# - _begin_game_over_sequence(reason)：死亡倒计时归零后的失败流程入口。
+# - _play_player_death_animations()：触发两个玩家死亡动画，并等待动画结束信号。
+# - _show_game_over_after_death_animations()：玩家死亡动画结束后暂停世界，通知 HUD 淡入黑幕。
+# - _reset_game_state_for_restart()：Try again 时在黑幕遮挡下恢复关卡、牌堆、敌人、任务点和机关状态。
+# - _restore_start_positions()：把两个玩家、肉体和相机放回主场景起点。
+# - _reset_dynamic_world_state()：清理敌人、子弹、卡牌反馈，并重启生成点。
+# - _reset_interactable_world_state()：恢复任务点和 net 障碍等关卡交互物。
 # - _start_reward_choice(player_id, reward_cards)：打开任务点三选一奖励面板，暂停游戏并等待该玩家选择一张牌。
 # - _finish_reward_choice(player_id, selected_card)：收到 HUD 选择结果后，把选中的卡加入对应玩家牌堆并恢复游戏。
+# - _on_player_death_animation_finished(player_id)：收到玩家动画结束信号；两人都结束后才显示 Gameover。
+# - _on_try_again_requested()：HUD Try again 按钮回调，先重置世界，再开始 3 秒黑幕淡出。
+# - _on_restart_fade_finished()：黑幕淡出结束后恢复玩家控制和世界暂停状态。
 # - _on_body_health_changed(current_health, max_health)：肉体血量变化时刷新 HUD。
 # - _on_link_broken_started(seconds_left)：断线倒计时时刷新 HUD。
 # - _on_link_restored()：恢复连线后刷新 HUD 和消息。
@@ -123,6 +139,7 @@ const CardEffectRunnerScript = preload("res://scripts/card/CardEffectRunner.gd")
 @export var body_drag_max_player_distance := 340.0
 @export var body_drag_recoil_start := 190.0
 @export var body_drag_recoil_strength := 18.0
+@export var game_over_fade_seconds := 3.0
 
 @onready var player_one = get_node(player_one_path)
 @onready var player_two = get_node(player_two_path)
@@ -135,6 +152,11 @@ const CardEffectRunnerScript = preload("res://scripts/card/CardEffectRunner.gd")
 var decks_by_player := {}
 var game_has_ended := false
 var reward_choice_active := false
+var game_over_sequence_active := false
+var restart_in_progress := false
+var game_over_reason := ""
+var pending_death_animation_players := {}
+var restart_state := {}
 var card_effect_runner
 
 
@@ -144,6 +166,7 @@ func _ready() -> void:
 	_ensure_default_input_actions()
 	hud.initialize(camera)
 	_sync_level_length_from_scene()
+	_capture_restart_state()
 	card_effect_runner = CardEffectRunnerScript.new()
 	card_effect_runner.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(card_effect_runner)
@@ -152,10 +175,16 @@ func _ready() -> void:
 	_connect_task_points()
 	hud.process_mode = Node.PROCESS_MODE_ALWAYS
 	hud.card_reward_selected.connect(_finish_reward_choice)
+	hud.try_again_requested.connect(_on_try_again_requested)
+	hud.restart_fade_finished.connect(_on_restart_fade_finished)
 	body_core.health_changed.connect(_on_body_health_changed)
 	body_core.link_broken_started.connect(_on_link_broken_started)
 	body_core.link_restored.connect(_on_link_restored)
 	body_core.game_over_requested.connect(_on_game_over_requested)
+	if player_one.has_signal("death_animation_finished"):
+		player_one.death_animation_finished.connect(_on_player_death_animation_finished)
+	if player_two.has_signal("death_animation_finished"):
+		player_two.death_animation_finished.connect(_on_player_death_animation_finished)
 	_update_body_and_line(0.0, false, true)
 	_advance_camera(0.0, true)
 	_update_hud()
@@ -230,6 +259,15 @@ func _connect_task_points() -> void:
 			task_point.task_point_claimed.connect(_on_task_point_claimed)
 
 
+func _capture_restart_state() -> void:
+	restart_state = {
+		"player_one_position": player_one.global_position,
+		"player_two_position": player_two.global_position,
+		"body_core_position": body_core.global_position,
+		"camera_position": camera.global_position,
+	}
+
+
 func _sync_level_length_from_scene() -> void:
 	var inferred_length := level_length
 	var right_wall := get_node_or_null(^"Level/RightWall")
@@ -266,14 +304,21 @@ func _get_finish_x() -> float:
 
 
 func _handle_card_input() -> void:
-	if Input.is_action_just_pressed(ACTION_P1_PLAY_CARD):
+	if _is_player_action_just_pressed(1, ACTION_P1_PLAY_CARD):
 		_play_card_for_player(1)
-	if Input.is_action_just_pressed(ACTION_P1_PASS_CARD):
+	if _is_player_action_just_pressed(1, ACTION_P1_PASS_CARD):
 		_pass_card_for_player(1)
-	if Input.is_action_just_pressed(ACTION_P2_PLAY_CARD):
+	if _is_player_action_just_pressed(2, ACTION_P2_PLAY_CARD):
 		_play_card_for_player(2)
-	if Input.is_action_just_pressed(ACTION_P2_PASS_CARD):
+	if _is_player_action_just_pressed(2, ACTION_P2_PASS_CARD):
 		_pass_card_for_player(2)
+
+
+func _is_player_action_just_pressed(player_id: int, action_name: StringName) -> bool:
+	var input_router := get_node_or_null("/root/InputRouter")
+	if input_router != null and input_router.has_method("is_player_action_just_pressed"):
+		return input_router.is_player_action_just_pressed(player_id, action_name)
+	return Input.is_action_just_pressed(action_name)
 
 
 func _play_card_for_player(player_id: int) -> void:
@@ -629,7 +674,6 @@ func _apply_net_strain(blocker: Node, body_target: Vector2, delta: float) -> voi
 	var released_now: bool = blocker.apply_tether_strain(lag_distance, delta)
 	if released_now:
 		body_core.start_snapback()
-		hud.set_message("肉体挣脱网，回弹到连线中心")
 
 
 func _update_hud() -> void:
@@ -655,6 +699,121 @@ func _end_game(message: String) -> void:
 	player_one.set_control_enabled(false)
 	player_two.set_control_enabled(false)
 	hud.set_game_result(message)
+
+
+func _begin_game_over_sequence(reason: String) -> void:
+	if game_over_sequence_active or restart_in_progress:
+		return
+
+	game_over_sequence_active = true
+	game_has_ended = true
+	game_over_reason = reason
+	reward_choice_active = false
+	get_tree().paused = false
+	hud.hide_reward_choice(false)
+	player_one.set_control_enabled(false)
+	player_two.set_control_enabled(false)
+	_play_player_death_animations()
+
+
+func _play_player_death_animations() -> void:
+	pending_death_animation_players.clear()
+	for player in [player_one, player_two]:
+		if player == null or not is_instance_valid(player):
+			continue
+		var player_id := 0
+		if player.has_method("get_player_id"):
+			player_id = int(player.get_player_id())
+		if player_id <= 0:
+			continue
+
+		if player.has_signal("death_animation_finished") and player.has_method("play_death_animation"):
+			pending_death_animation_players[player_id] = true
+			player.play_death_animation()
+		elif player.has_method("set_control_enabled"):
+			player.set_control_enabled(false)
+
+	if pending_death_animation_players.is_empty():
+		_show_game_over_after_death_animations.call_deferred()
+
+
+func _show_game_over_after_death_animations() -> void:
+	if not game_over_sequence_active or restart_in_progress:
+		return
+
+	get_tree().paused = true
+	hud.show_game_over(game_over_reason, game_over_fade_seconds)
+
+
+func _reset_game_state_for_restart() -> void:
+	get_tree().paused = true
+	reward_choice_active = false
+	game_has_ended = true
+	pending_death_animation_players.clear()
+	player_one.set_control_enabled(false)
+	player_two.set_control_enabled(false)
+
+	hud.reset_runtime_ui_for_restart()
+	if card_effect_runner != null and card_effect_runner.has_method("reset_all_effects"):
+		card_effect_runner.reset_all_effects()
+
+	_reset_dynamic_world_state()
+	_reset_interactable_world_state()
+	_build_initial_decks()
+	_restore_start_positions()
+
+	for player in [player_one, player_two]:
+		if player.has_method("reset_card_motion_state"):
+			player.reset_card_motion_state()
+		if player.has_method("reset_death_animation_state"):
+			player.reset_death_animation_state()
+		player.set_control_enabled(false)
+
+	if body_core.has_method("reset_state"):
+		body_core.reset_state()
+	else:
+		body_core.restore_link()
+	_update_body_and_line(0.0, false, true)
+	_advance_camera(0.0, true)
+	_update_hud()
+
+
+func _restore_start_positions() -> void:
+	player_one.global_position = restart_state.get("player_one_position", player_one.global_position)
+	player_two.global_position = restart_state.get("player_two_position", player_two.global_position)
+	body_core.global_position = restart_state.get("body_core_position", body_core.global_position)
+	camera.global_position = restart_state.get("camera_position", camera.global_position)
+	player_one.velocity = Vector2.ZERO
+	player_two.velocity = Vector2.ZERO
+	camera.make_current()
+
+
+func _reset_dynamic_world_state() -> void:
+	_queue_free_nodes_in_group("enemy_projectiles")
+	_queue_free_nodes_in_group("enemies")
+	for spawn_point in get_tree().get_nodes_in_group("enemy_spawn_points"):
+		if not is_instance_valid(spawn_point):
+			continue
+		if spawn_point.has_method("reset_spawn_point"):
+			spawn_point.reset_spawn_point()
+		elif spawn_point.has_method("clear_spawned_enemy"):
+			spawn_point.clear_spawned_enemy()
+
+
+func _reset_interactable_world_state() -> void:
+	for task_point in get_tree().get_nodes_in_group("task_points"):
+		if is_instance_valid(task_point) and task_point.has_method("reset_task_point"):
+			task_point.reset_task_point()
+
+	for net in get_tree().get_nodes_in_group("net_obstacles"):
+		if is_instance_valid(net) and net.has_method("reset_state"):
+			net.reset_state()
+
+
+func _queue_free_nodes_in_group(group_name: StringName) -> void:
+	for node in get_tree().get_nodes_in_group(group_name):
+		if is_instance_valid(node) and not node.is_queued_for_deletion():
+			node.queue_free()
 
 
 func _start_reward_choice(player_id: int, reward_cards: Array) -> void:
@@ -697,8 +856,42 @@ func _on_link_restored() -> void:
 	hud.set_message("连线已恢复")
 
 
+func _on_player_death_animation_finished(player_id: int) -> void:
+	if not pending_death_animation_players.has(player_id):
+		return
+
+	pending_death_animation_players.erase(player_id)
+	if pending_death_animation_players.is_empty():
+		_show_game_over_after_death_animations()
+
+
+func _on_try_again_requested() -> void:
+	if not game_over_sequence_active or restart_in_progress:
+		return
+
+	restart_in_progress = true
+	_reset_game_state_for_restart()
+	hud.fade_out_game_over_after_restart(game_over_fade_seconds)
+
+
+func _on_restart_fade_finished() -> void:
+	if not restart_in_progress:
+		return
+
+	restart_in_progress = false
+	game_over_sequence_active = false
+	game_has_ended = false
+	game_over_reason = ""
+	reward_choice_active = false
+	get_tree().paused = false
+	player_one.set_control_enabled(true)
+	player_two.set_control_enabled(true)
+	hud.set_message("")
+	_update_hud()
+
+
 func _on_game_over_requested() -> void:
-	_end_game("断线结束")
+	_begin_game_over_sequence("断线结束")
 
 
 func _on_task_point_claimed(_point: Node, player_id: int, reward_cards: Array) -> void:

@@ -20,8 +20,13 @@ class_name GameHUD
 # - sub_viewport：UI 内承载主世界画面的 SubViewport。它共享主场景 World2D，但必须使用自己的 Camera2D。
 # - sub_viewport_camera：SubViewport 专属的镜像相机。它不参与主场景逻辑，只复制主 Camera2D 的视角。
 # - source_world_camera：主场景真正用于跟随和边界计算的 Camera2D。
-# - pause_menu_overlay：ESC 暂停菜单遮罩，包含继续游戏、设置、退出游戏。
+# - pause_menu_overlay：暂停菜单遮罩，包含继续游戏、设置、退出游戏。
 # - pause_main_panel/settings_panel：暂停菜单的一级菜单和设置二级菜单。
+# - game_over_overlay：死亡动画结束后出现的全屏黑幕，盖住 SubViewport 和所有运行时 UI。
+# - game_over_title_label/game_over_reason_label：Gameover 标题和失败原因文本。
+# - game_over_try_again_button：Try again 按钮。按下后发出 try_again_requested，由 GameController 重置世界状态。
+# - game_over_tween：Gameover 黑幕淡入/淡出动画，使用暂停无关模式，每段默认 3 秒。
+# - settings_scroll：设置二级菜单里的滚动区域，手柄右摇杆上下会直接滚动它。
 # - input_preset_toggle_button：按键映射里的预设切换按钮，在手柄和键盘两套映射之间切换。
 # - key_bind_rows：按键映射设置的动态行容器。每行由动作说明和当前按键按钮组成。
 # - master/music/sfx_volume_slider：通过 SoundManager 写入 AudioServer 音频总线的音量滑杆。
@@ -32,14 +37,22 @@ class_name GameHUD
 # - active_reward_cards：当前显示的 3 张候选牌数据。选择按钮按索引从这里取出被选择的牌。
 # - reward_choice_tween：奖励面板显示/隐藏动画的 Tween。它使用暂停无关模式，保证世界时停期间 UI 动画继续播放。
 # - card_reward_selected(player_id, card_data)：玩家点选某张奖励牌时发出，主控制器收到后把牌加入对应玩家牌堆。
+# - try_again_requested()：玩家在 Gameover 黑幕上按下 Try again 时发出，主控制器负责重置游戏状态。
+# - game_over_cover_shown()：黑幕淡入完成且 Try again 可用时发出，便于测试和后续音效/动画衔接。
+# - restart_fade_finished()：Try again 后黑幕淡出完成时发出，主控制器收到后重新开放玩家控制。
 # - _ready()：缓存 tscn 中已经布好的 UI 节点，并设置初始提示为空。
-# - _input(event)：处理 ESC 打开/关闭暂停菜单，并在改键模式下捕获下一次按键。
-# - _process(delta)：每帧同步 SubViewport 的镜像相机，避免 UI 视口和主相机脱节。
+# - _input(event)：处理菜单/暂停输入打开或关闭暂停菜单，并在改键模式下捕获下一次按键。
+# - _process(delta)：每帧同步 SubViewport 的镜像相机，并在设置面板打开时读取右摇杆滚动 SettingsScroll。
 # - initialize(world_camera)：接收主相机，把主场景 World2D 交给 SubViewport，并立即同步一次视角。
 # - _sync_subviewport_camera()：复制主相机的位置、缩放和边界到 SubViewport 专属相机。
 # - _set_pause_independent_ui_tree(node)：把 HUD 下的 UI 节点设为 Always，确保世界暂停时按钮和 UI 逻辑仍能响应。
 # - create_pause_independent_tween()：创建不受 get_tree().paused 影响的 UI Tween，后续 HUD 动画统一走这个入口。
-# - _open_pause_menu()/_resume_game()：打开暂停菜单和继续游戏。
+# - _handle_pause_menu_pressed()/_open_pause_menu()/_resume_game()：打开暂停菜单和继续游戏。
+# - _build_game_over_overlay()：运行时创建 Gameover 黑幕，避免修改 MainScene。
+# - show_game_over(reason, fade_seconds)：死亡动画结束后播放 3 秒黑幕淡入，并显示 Gameover 和 Try again。
+# - fade_out_game_over_after_restart(fade_seconds)：主控制器重置完世界后播放 3 秒黑幕淡出。
+# - reset_runtime_ui_for_restart()：Try again 时清理奖励、暂停、倒计时和消息，不触碰设置。
+# - _update_settings_scroll_gamepad(delta)：设置面板打开时，读取任意手柄右摇杆上下滚动 SettingsScroll。
 # - _show_settings_panel()/_show_pause_main_panel()：在一级菜单和设置二级菜单之间切换。
 # - _toggle_input_preset()：切换键盘/手柄输入预设，立即应用并保存当前预设类型。
 # - _build_key_mapping_rows()：根据 REBIND_ACTIONS 创建按键映射 UI。
@@ -63,17 +76,25 @@ class_name GameHUD
 # - _format_reward_button_text(index, card_data)：把卡牌字典格式化成按钮上可读的三行文本。
 
 signal card_reward_selected(player_id: int, card_data: Dictionary)
+signal try_again_requested
+signal game_over_cover_shown
+signal restart_fade_finished
 
 const SETTINGS_PATH := "user://settings.cfg"
+const DEFAULT_GAME_OVER_FADE_SECONDS := 3.0
 const INPUT_PRESET_KEYBOARD := "keyboard"
 const INPUT_PRESET_GAMEPAD := "gamepad"
 const DEFAULT_INPUT_PRESET := INPUT_PRESET_GAMEPAD
+const ACTION_PAUSE_MENU := "pause_menu"
+const SETTINGS_SCROLL_RIGHT_STICK_DEADZONE := 0.25
+const SETTINGS_SCROLL_RIGHT_STICK_SPEED := 900.0
 const AUDIO_BUS_NAMES := {
 	"master": "Master",
 	"music": "Music",
 	"sfx": "SFX",
 }
 const REBIND_ACTIONS := [
+	{"action": ACTION_PAUSE_MENU, "label": "菜单 / 暂停"},
 	{"action": "p1_move_left", "label": "P1 左移"},
 	{"action": "p1_move_right", "label": "P1 右移"},
 	{"action": "p1_move_up", "label": "P1 上移"},
@@ -97,6 +118,7 @@ const INPUT_PRESET_BINDING_SECTIONS := {
 }
 const DEFAULT_INPUT_PRESET_BINDINGS := {
 	"keyboard": {
+		"pause_menu": [{"type": "key", "keycode": KEY_ESCAPE}],
 		"p1_move_left": [{"type": "key", "keycode": KEY_A}],
 		"p1_move_right": [{"type": "key", "keycode": KEY_D}],
 		"p1_move_up": [{"type": "key", "keycode": KEY_W}],
@@ -111,6 +133,7 @@ const DEFAULT_INPUT_PRESET_BINDINGS := {
 		"p2_pass_card": [{"type": "key", "keycode": KEY_L}],
 	},
 	"gamepad": {
+		"pause_menu": [{"type": "joy_button", "button": JOY_BUTTON_START}],
 		"p1_move_left": [
 			{"type": "joy_axis", "axis": JOY_AXIS_LEFT_X, "value": -1.0},
 			{"type": "joy_button", "button": JOY_BUTTON_DPAD_LEFT},
@@ -129,15 +152,28 @@ const DEFAULT_INPUT_PRESET_BINDINGS := {
 		],
 		"p1_play_card": [{"type": "joy_button", "button": JOY_BUTTON_LEFT_SHOULDER}],
 		"p1_pass_card": [{"type": "joy_button", "button": JOY_BUTTON_RIGHT_SHOULDER}],
-		"p2_move_left": [{"type": "joy_axis", "axis": JOY_AXIS_RIGHT_X, "value": -1.0}],
-		"p2_move_right": [{"type": "joy_axis", "axis": JOY_AXIS_RIGHT_X, "value": 1.0}],
-		"p2_move_up": [{"type": "joy_axis", "axis": JOY_AXIS_RIGHT_Y, "value": -1.0}],
-		"p2_move_down": [{"type": "joy_axis", "axis": JOY_AXIS_RIGHT_Y, "value": 1.0}],
-		"p2_play_card": [{"type": "joy_button", "button": JOY_BUTTON_X}],
-		"p2_pass_card": [{"type": "joy_button", "button": JOY_BUTTON_Y}],
+		"p2_move_left": [
+			{"type": "joy_axis", "axis": JOY_AXIS_LEFT_X, "value": -1.0},
+			{"type": "joy_button", "button": JOY_BUTTON_DPAD_LEFT},
+		],
+		"p2_move_right": [
+			{"type": "joy_axis", "axis": JOY_AXIS_LEFT_X, "value": 1.0},
+			{"type": "joy_button", "button": JOY_BUTTON_DPAD_RIGHT},
+		],
+		"p2_move_up": [
+			{"type": "joy_axis", "axis": JOY_AXIS_LEFT_Y, "value": -1.0},
+			{"type": "joy_button", "button": JOY_BUTTON_DPAD_UP},
+		],
+		"p2_move_down": [
+			{"type": "joy_axis", "axis": JOY_AXIS_LEFT_Y, "value": 1.0},
+			{"type": "joy_button", "button": JOY_BUTTON_DPAD_DOWN},
+		],
+		"p2_play_card": [{"type": "joy_button", "button": JOY_BUTTON_LEFT_SHOULDER}],
+		"p2_pass_card": [{"type": "joy_button", "button": JOY_BUTTON_RIGHT_SHOULDER}],
 	},
 }
 
+@onready var root: Control = $Root
 @onready var sub_viewport: SubViewport = $Root/SubViewportContainer/SubViewport
 @onready var sub_viewport_camera: Camera2D = $Root/SubViewportContainer/SubViewport/ViewportCamera2D
 @onready var health_label: Label = $Root/TopStrip/HealthLabel
@@ -166,6 +202,7 @@ const DEFAULT_INPUT_PRESET_BINDINGS := {
 @onready var settings_button: Button = $Root/PauseMenuOverlay/MainPanel/SettingsButton
 @onready var quit_button: Button = $Root/PauseMenuOverlay/MainPanel/QuitButton
 @onready var settings_back_button: Button = $Root/PauseMenuOverlay/SettingsPanel/BackButton
+@onready var settings_scroll: ScrollContainer = $Root/PauseMenuOverlay/SettingsPanel/SettingsScroll
 @onready var input_preset_toggle_button: Button = $Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/KeyMappingSection/InputPresetRow/InputPresetToggleButton
 @onready var key_bind_rows: VBoxContainer = $Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/KeyMappingSection/KeyBindRows
 @onready var master_volume_slider: HSlider = $Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/MasterVolumeRow/MasterVolumeSlider
@@ -179,6 +216,11 @@ const DEFAULT_INPUT_PRESET_BINDINGS := {
 var active_reward_player_id := 0
 var active_reward_cards: Array = []
 var reward_choice_tween: Tween
+var game_over_overlay: ColorRect
+var game_over_title_label: Label
+var game_over_reason_label: Label
+var game_over_try_again_button: Button
+var game_over_tween: Tween
 var source_world_camera: Camera2D
 var active_input_preset := DEFAULT_INPUT_PRESET
 var waiting_rebind_action := StringName()
@@ -190,10 +232,13 @@ var audio_sliders_connected := false
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_set_pause_independent_ui_tree(self)
+	_ensure_pause_menu_action_defaults()
+	_build_game_over_overlay()
 	set_message("")
 	death_countdown_panel.visible = false
 	hide_reward_choice(false)
 	_hide_pause_menu_without_unpausing()
+	_hide_game_over_overlay_without_signal()
 	for index in reward_choice_buttons.size():
 		reward_choice_buttons[index].pressed.connect(_on_reward_button_pressed.bind(index))
 	continue_button.pressed.connect(_resume_game)
@@ -201,6 +246,7 @@ func _ready() -> void:
 	quit_button.pressed.connect(_quit_game)
 	settings_back_button.pressed.connect(_show_pause_main_panel)
 	input_preset_toggle_button.pressed.connect(_toggle_input_preset)
+	game_over_try_again_button.pressed.connect(_on_try_again_button_pressed)
 	_setup_audio_buses()
 	_build_key_mapping_rows()
 	_setup_audio_sliders()
@@ -210,7 +256,7 @@ func _ready() -> void:
 
 func _input(event: InputEvent) -> void:
 	if waiting_rebind_action != StringName():
-		if event is InputEventKey and _get_keycode_from_event(event as InputEventKey) == KEY_ESCAPE:
+		if _is_pause_menu_event(event):
 			_cancel_rebinding()
 		else:
 			var descriptor := _make_descriptor_from_rebind_event(event)
@@ -222,22 +268,17 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
-	if not event is InputEventKey:
+	if game_over_overlay != null and game_over_overlay.visible:
 		return
 
-	var key_event := event as InputEventKey
-	if not key_event.pressed or key_event.echo:
-		return
-
-	var physical_keycode := _get_keycode_from_event(key_event)
-
-	if physical_keycode == KEY_ESCAPE:
-		_handle_escape_pressed()
+	if _is_pause_menu_event(event):
+		_handle_pause_menu_pressed()
 		get_viewport().set_input_as_handled()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_sync_subviewport_camera()
+	_update_settings_scroll_gamepad(delta)
 
 
 func initialize(world_camera: Camera2D) -> void:
@@ -277,7 +318,9 @@ func create_pause_independent_tween() -> Tween:
 	return tween
 
 
-func _handle_escape_pressed() -> void:
+func _handle_pause_menu_pressed() -> void:
+	if game_over_overlay != null and game_over_overlay.visible:
+		return
 	if reward_choice_overlay.visible:
 		return
 
@@ -288,6 +331,240 @@ func _handle_escape_pressed() -> void:
 			_resume_game()
 	else:
 		_open_pause_menu()
+
+
+func _build_game_over_overlay() -> void:
+	if game_over_overlay != null:
+		return
+
+	game_over_overlay = ColorRect.new()
+	game_over_overlay.name = "GameOverOverlay"
+	game_over_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	game_over_overlay.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	game_over_overlay.grow_vertical = Control.GROW_DIRECTION_BOTH
+	game_over_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	game_over_overlay.color = Color.BLACK
+	game_over_overlay.visible = false
+	root.add_child(game_over_overlay)
+
+	var content := VBoxContainer.new()
+	content.name = "GameOverContent"
+	content.set_anchors_preset(Control.PRESET_CENTER)
+	content.offset_left = -270.0
+	content.offset_top = -126.0
+	content.offset_right = 270.0
+	content.offset_bottom = 170.0
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
+	content.add_theme_constant_override("separation", 22)
+	game_over_overlay.add_child(content)
+
+	game_over_title_label = Label.new()
+	game_over_title_label.name = "GameOverTitleLabel"
+	game_over_title_label.text = "Gameover"
+	game_over_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	game_over_title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	game_over_title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	game_over_title_label.custom_minimum_size = Vector2(540.0, 82.0)
+	game_over_title_label.add_theme_font_size_override("font_size", 72)
+	game_over_title_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
+	game_over_title_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.9))
+	game_over_title_label.add_theme_constant_override("shadow_offset_x", 4)
+	game_over_title_label.add_theme_constant_override("shadow_offset_y", 4)
+	content.add_child(game_over_title_label)
+
+	game_over_reason_label = Label.new()
+	game_over_reason_label.name = "GameOverReasonLabel"
+	game_over_reason_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	game_over_reason_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	game_over_reason_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	game_over_reason_label.custom_minimum_size = Vector2(540.0, 34.0)
+	game_over_reason_label.add_theme_font_size_override("font_size", 24)
+	game_over_reason_label.add_theme_color_override("font_color", Color(0.82, 0.84, 0.88, 1.0))
+	content.add_child(game_over_reason_label)
+
+	game_over_try_again_button = Button.new()
+	game_over_try_again_button.name = "TryAgainButton"
+	game_over_try_again_button.text = "Try again"
+	game_over_try_again_button.custom_minimum_size = Vector2(230.0, 54.0)
+	game_over_try_again_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	content.add_child(game_over_try_again_button)
+
+
+func show_game_over(reason := "断线结束", fade_seconds := DEFAULT_GAME_OVER_FADE_SECONDS) -> void:
+	_build_game_over_overlay()
+	hide_reward_choice(false)
+	_hide_pause_menu_without_unpausing()
+	_kill_game_over_tween()
+
+	game_over_title_label.text = "Gameover"
+	game_over_reason_label.text = reason
+	game_over_overlay.visible = true
+	game_over_overlay.modulate.a = 0.0
+	game_over_title_label.modulate.a = 0.0
+	game_over_reason_label.modulate.a = 0.0
+	game_over_try_again_button.modulate.a = 0.0
+	game_over_try_again_button.disabled = true
+	death_countdown_panel.visible = false
+	link_status_label.text = "Gameover"
+	message_label.text = reason
+
+	var fade_duration := maxf(0.01, fade_seconds)
+	game_over_tween = create_pause_independent_tween()
+	game_over_tween.set_parallel(true)
+	game_over_tween.tween_property(game_over_overlay, "modulate:a", 1.0, fade_duration)
+	game_over_tween.tween_property(
+		game_over_title_label,
+		"modulate:a",
+		1.0,
+		maxf(0.01, fade_duration * 0.32)
+	).set_delay(fade_duration * 0.18)
+	game_over_tween.tween_property(
+		game_over_reason_label,
+		"modulate:a",
+		1.0,
+		maxf(0.01, fade_duration * 0.28)
+	).set_delay(fade_duration * 0.34)
+	game_over_tween.tween_property(
+		game_over_try_again_button,
+		"modulate:a",
+		1.0,
+		maxf(0.01, fade_duration * 0.34)
+	).set_delay(fade_duration * 0.56)
+	game_over_tween.finished.connect(func() -> void:
+		game_over_try_again_button.disabled = false
+		game_over_try_again_button.grab_focus()
+		game_over_tween = null
+		game_over_cover_shown.emit()
+	)
+
+
+func fade_out_game_over_after_restart(fade_seconds := DEFAULT_GAME_OVER_FADE_SECONDS) -> void:
+	_build_game_over_overlay()
+	_kill_game_over_tween()
+	game_over_overlay.visible = true
+	game_over_overlay.modulate.a = 1.0
+	game_over_try_again_button.disabled = true
+
+	var fade_duration := maxf(0.01, fade_seconds)
+	game_over_tween = create_pause_independent_tween()
+	game_over_tween.tween_property(game_over_overlay, "modulate:a", 0.0, fade_duration)
+	game_over_tween.finished.connect(func() -> void:
+		_hide_game_over_overlay_without_signal()
+		game_over_tween = null
+		restart_fade_finished.emit()
+	)
+
+
+func reset_runtime_ui_for_restart() -> void:
+	hide_reward_choice(false)
+	_hide_pause_menu_without_unpausing()
+	set_message("")
+	link_status_label.text = "连线稳定"
+	death_countdown_panel.visible = false
+	waiting_rebind_action = StringName()
+	_refresh_rebind_buttons()
+
+
+func _on_try_again_button_pressed() -> void:
+	if game_over_try_again_button.disabled:
+		return
+
+	game_over_try_again_button.disabled = true
+	_play_ui_sound(&"menu_next")
+	try_again_requested.emit()
+
+
+func _hide_game_over_overlay_without_signal() -> void:
+	_kill_game_over_tween()
+	if game_over_overlay == null:
+		return
+	game_over_overlay.visible = false
+	game_over_overlay.modulate.a = 1.0
+	if game_over_title_label != null:
+		game_over_title_label.modulate.a = 1.0
+	if game_over_reason_label != null:
+		game_over_reason_label.modulate.a = 1.0
+	if game_over_try_again_button != null:
+		game_over_try_again_button.modulate.a = 1.0
+		game_over_try_again_button.disabled = true
+
+
+func _kill_game_over_tween() -> void:
+	if game_over_tween != null and game_over_tween.is_valid():
+		game_over_tween.kill()
+	game_over_tween = null
+
+
+func _is_pause_menu_event(event: InputEvent) -> bool:
+	if event.is_action_pressed(ACTION_PAUSE_MENU):
+		return true
+
+	if event is InputEventKey:
+		var key_event := event as InputEventKey
+		if key_event.pressed and not key_event.echo and _get_keycode_from_event(key_event) == KEY_ESCAPE:
+			return true
+
+	return false
+
+
+func _ensure_pause_menu_action_defaults() -> void:
+	if not InputMap.has_action(ACTION_PAUSE_MENU):
+		InputMap.add_action(ACTION_PAUSE_MENU, 0.2)
+
+	_ensure_action_key(ACTION_PAUSE_MENU, KEY_ESCAPE)
+	_ensure_action_joy_button(ACTION_PAUSE_MENU, JOY_BUTTON_START)
+
+
+func _ensure_action_key(action_name: StringName, physical_keycode: int) -> void:
+	for input_event in InputMap.action_get_events(action_name):
+		if input_event is InputEventKey and _get_keycode_from_event(input_event as InputEventKey) == physical_keycode:
+			return
+
+	var key_event := InputEventKey.new()
+	key_event.physical_keycode = physical_keycode
+	InputMap.action_add_event(action_name, key_event)
+
+
+func _ensure_action_joy_button(action_name: StringName, button_index: int) -> void:
+	for input_event in InputMap.action_get_events(action_name):
+		if input_event is InputEventJoypadButton and (input_event as InputEventJoypadButton).button_index == button_index:
+			return
+
+	var button_event := InputEventJoypadButton.new()
+	button_event.button_index = button_index
+	InputMap.action_add_event(action_name, button_event)
+
+
+func _update_settings_scroll_gamepad(delta: float) -> void:
+	if not is_instance_valid(settings_scroll):
+		return
+	if not pause_menu_overlay.visible or not settings_panel.visible:
+		return
+	if waiting_rebind_action != StringName():
+		return
+
+	var raw_axis := _get_strongest_joy_axis(JOY_AXIS_RIGHT_Y)
+	var absolute_axis := absf(raw_axis)
+	if absolute_axis <= SETTINGS_SCROLL_RIGHT_STICK_DEADZONE:
+		return
+
+	var scroll_strength := signf(raw_axis) * inverse_lerp(SETTINGS_SCROLL_RIGHT_STICK_DEADZONE, 1.0, absolute_axis)
+	var scroll_delta := int(round(scroll_strength * SETTINGS_SCROLL_RIGHT_STICK_SPEED * delta))
+	if scroll_delta == 0:
+		scroll_delta = int(signf(scroll_strength))
+
+	var scroll_bar := settings_scroll.get_v_scroll_bar()
+	var max_scroll := int(scroll_bar.max_value)
+	settings_scroll.scroll_vertical = clampi(settings_scroll.scroll_vertical + scroll_delta, 0, max_scroll)
+
+
+func _get_strongest_joy_axis(axis: int) -> float:
+	var strongest := 0.0
+	for device_id in Input.get_connected_joypads():
+		var axis_value := Input.get_joy_axis(int(device_id), axis)
+		if absf(axis_value) > absf(strongest):
+			strongest = axis_value
+	return strongest
 
 
 func _open_pause_menu() -> void:
@@ -417,7 +694,23 @@ func _update_input_preset_button() -> void:
 	var next_label := "键盘"
 	if active_input_preset == INPUT_PRESET_KEYBOARD:
 		next_label = "手柄 Xbox / Nintendo"
-	input_preset_toggle_button.text = "当前：%s    切换到：%s" % [current_label, next_label]
+	var assignment_text := ""
+	if active_input_preset == INPUT_PRESET_GAMEPAD:
+		assignment_text = "    %s" % _get_gamepad_assignment_text()
+	input_preset_toggle_button.text = "当前：%s    切换到：%s%s" % [current_label, next_label, assignment_text]
+
+
+func _get_gamepad_assignment_text() -> String:
+	var input_router := get_node_or_null("/root/InputRouter")
+	if input_router == null:
+		return "P1/P2 未分配"
+
+	var player_one_name := "未分配"
+	var player_two_name := "未分配"
+	if input_router.has_method("get_player_device_name"):
+		player_one_name = String(input_router.get_player_device_name(1))
+		player_two_name = String(input_router.get_player_device_name(2))
+	return "P1:%s  P2:%s" % [player_one_name, player_two_name]
 
 
 func _get_action_key_text(action_name: StringName) -> String:
@@ -504,8 +797,15 @@ func _apply_input_preset(preset_name: String, should_save: bool) -> void:
 		settings_config.set_value("input", "active_preset", active_input_preset)
 		_save_settings()
 
+	_notify_input_router()
 	_update_input_preset_button()
 	_refresh_rebind_buttons()
+
+
+func _notify_input_router() -> void:
+	var input_router := get_node_or_null("/root/InputRouter")
+	if input_router != null and input_router.has_method("set_active_input_preset"):
+		input_router.set_active_input_preset(active_input_preset)
 
 
 func _erase_action_events(action_name: StringName) -> void:
@@ -618,6 +918,10 @@ func _get_joy_button_text(button_index: int) -> String:
 		return "LB / L"
 	if button_index == JOY_BUTTON_RIGHT_SHOULDER:
 		return "RB / R"
+	if button_index == JOY_BUTTON_START:
+		return "Menu / Start / +"
+	if button_index == JOY_BUTTON_BACK:
+		return "View / Back / -"
 	if button_index == JOY_BUTTON_DPAD_LEFT:
 		return "十字左"
 	if button_index == JOY_BUTTON_DPAD_RIGHT:

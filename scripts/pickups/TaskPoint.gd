@@ -12,11 +12,13 @@ class_name TaskPoint
 # - reward_label：显示在任务点上的短标签。节点放在 TaskPoint.tscn 中，便于后续改 UI 样式。
 # - deactivate_after_pickup：拾取后是否关闭任务点。默认关闭，避免同一个任务点重复发牌。
 # - claimed：任务点是否已经被拾取。它防止重复触发。
+# - initial_visual_color：记录未领取时的视觉颜色，Try again 后恢复。
 # - visual_polygon：任务点视觉节点引用。颜色变化用于显示已领取状态。
 # - label_node：任务点文字节点引用。用于显示指定玩家和奖励信息。
 # - _ready()：把任务点加入 task_points 组，连接碰撞信号，并刷新外观。
 # - _on_body_entered(body)：玩家进入任务点时尝试领取；非玩家或错误玩家不会触发奖励。
 # - try_claim(body)：集中处理领取规则、发信号和关闭任务点。
+# - reset_task_point()：Try again 时恢复未领取状态、碰撞监控和标签。
 # - get_reward_cards()：把 tscn 中编辑的候选牌字段组装成标准卡牌字典数组；未配置时返回空数组。
 # - _get_reward_value(values, index, fallback)：安全读取某个手动候选牌字段；字段缺失时使用 fallback。
 # - _body_is_allowed_player(body)：判断碰到任务点的物体是否是允许拾取的玩家。
@@ -36,6 +38,7 @@ signal task_point_claimed(point: Node, player_id: int, reward_cards: Array)
 @export var deactivate_after_pickup := true
 
 var claimed := false
+var initial_visual_color := Color.WHITE
 
 @onready var visual_polygon: Polygon2D = $Visual
 @onready var label_node: Label = $Label
@@ -43,6 +46,8 @@ var claimed := false
 
 func _ready() -> void:
 	add_to_group("task_points")
+	if visual_polygon != null:
+		initial_visual_color = visual_polygon.color
 	body_entered.connect(_on_body_entered)
 	_refresh_label()
 
@@ -60,6 +65,15 @@ func try_claim(body: Node) -> void:
 	if deactivate_after_pickup:
 		claimed = true
 		_set_claimed_visual()
+
+
+func reset_task_point() -> void:
+	claimed = false
+	monitoring = true
+	monitorable = true
+	if visual_polygon != null:
+		visual_polygon.color = initial_visual_color
+	_refresh_label()
 
 
 func get_reward_cards() -> Array:

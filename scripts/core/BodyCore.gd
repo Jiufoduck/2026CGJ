@@ -8,13 +8,24 @@ class_name BodyCore
 # - game_over_requested()：断线超过允许时间后发出。主控制器收到后结束游戏。
 # - max_health：肉体最大血量。恢复连线时会恢复到这个数值。
 # - broken_game_over_seconds：断线后距离游戏结束的秒数。文档明确要求断开 10 秒游戏结束。
+# - snapback_initial_speed：肉体挣脱 net 后回弹到连线中心的初始高速。
+# - snapback_finish_speed：肉体接近连线中心时保留的低速，避免最后一段瞬移。
+# - snapback_slow_distance：肉体距离连线中心小于这个距离后开始明显减速。
+# - snapback_arrive_distance：肉体距离连线中心小于这个值时认为回弹完成。
 # - current_health：肉体当前血量。受击减少，恢复连线时回满。
 # - link_broken：当前连线是否已经断开。断开后 Line2D 隐藏，倒计时开始。
 # - broken_seconds_left：断线后剩余倒计时秒数。它只在 link_broken 为 true 时递减。
+# - last_motion_blocker：肉体尝试回到连线中心时，最近一次挡住它的物体；主控制器用它识别 net。
+# - snapback_active：肉体是否正在从 net 中高速回弹到连线中心。
+# - snapback_speed：当前回弹速度。启动时较高，接近中心时逐渐降低。
 # - visual_polygon：肉体视觉节点引用。节点在 BodyCore.tscn 中编辑，脚本只更新颜色状态。
 # - _ready()：初始化血量、信号和视觉状态。
 # - _physics_process(delta)：断线状态下推进 10 秒倒计时，到 0 后请求游戏结束。
 # - place_between(player_one_position, player_two_position)：把肉体放到两个玩家中点，满足“连线中心是受击点：肉体”的设定。
+# - move_toward_position(target_position)：让肉体尝试回到目标点；如果被 net 挡住，就停在碰撞点并记录阻挡物。
+# - start_snapback()：net 被挣脱时调用，启动初始高速、随后减速的回弹运动。
+# - advance_snapback_to_position(target_position, delta)：按当前回弹速度朝连线中心移动一小段。
+# - is_snapback_active()：返回肉体是否仍处于回弹状态。
 # - take_hit(amount)：处理受击扣血；血量归零时断开连线并启动 10 秒倒计时。
 # - restore_link()：恢复连线并回满血量，用于恢复连线卡。
 # - is_link_active()：返回连线是否仍然存在，主控制器据此决定是否施加弹性牵引。
@@ -28,10 +39,17 @@ signal game_over_requested
 
 @export var max_health := 100.0
 @export var broken_game_over_seconds := 10.0
+@export var snapback_initial_speed := 1900.0
+@export var snapback_finish_speed := 120.0
+@export var snapback_slow_distance := 520.0
+@export var snapback_arrive_distance := 6.0
 
 var current_health := 100.0
 var link_broken := false
 var broken_seconds_left := 0.0
+var last_motion_blocker: Node
+var snapback_active := false
+var snapback_speed := 0.0
 
 @onready var visual_polygon: Polygon2D = $Visual
 
@@ -55,7 +73,67 @@ func _physics_process(delta: float) -> void:
 
 
 func place_between(player_one_position: Vector2, player_two_position: Vector2) -> void:
+	last_motion_blocker = null
+	snapback_active = false
+	snapback_speed = 0.0
 	global_position = (player_one_position + player_two_position) * 0.5
+
+
+func move_toward_position(target_position: Vector2) -> Node:
+	last_motion_blocker = null
+	var motion: Vector2 = target_position - global_position
+	if motion.length() <= 0.001:
+		global_position = target_position
+		return null
+
+	var collision := move_and_collide(motion)
+	if collision != null:
+		last_motion_blocker = collision.get_collider()
+	return last_motion_blocker
+
+
+func start_snapback() -> void:
+	last_motion_blocker = null
+	snapback_active = true
+	snapback_speed = snapback_initial_speed
+
+
+func advance_snapback_to_position(target_position: Vector2, delta: float) -> Node:
+	last_motion_blocker = null
+	if not snapback_active:
+		return move_toward_position(target_position)
+
+	var to_target: Vector2 = target_position - global_position
+	var distance: float = to_target.length()
+	if distance <= snapback_arrive_distance:
+		global_position = target_position
+		snapback_active = false
+		snapback_speed = 0.0
+		return null
+	if delta <= 0.0:
+		return null
+
+	var slow_ratio: float = clampf(distance / snapback_slow_distance, 0.0, 1.0)
+	var target_speed: float = lerpf(snapback_finish_speed, snapback_initial_speed, slow_ratio)
+	snapback_speed = lerpf(snapback_speed, target_speed, clampf(delta * 8.0, 0.0, 1.0))
+
+	var motion: Vector2 = to_target.normalized() * minf(distance, snapback_speed * delta)
+	var collision := move_and_collide(motion)
+	if collision != null:
+		last_motion_blocker = collision.get_collider()
+		snapback_active = false
+		snapback_speed = 0.0
+		return last_motion_blocker
+
+	if motion.length() >= distance - snapback_arrive_distance:
+		global_position = target_position
+		snapback_active = false
+		snapback_speed = 0.0
+	return null
+
+
+func is_snapback_active() -> bool:
+	return snapback_active
 
 
 func take_hit(amount: float) -> void:

@@ -17,13 +17,29 @@ class_name GameHUD
 # - sub_viewport：UI 内承载主世界画面的 SubViewport。它共享主场景 World2D，但必须使用自己的 Camera2D。
 # - sub_viewport_camera：SubViewport 专属的镜像相机。它不参与主场景逻辑，只复制主 Camera2D 的视角。
 # - source_world_camera：主场景真正用于跟随和边界计算的 Camera2D。
+# - pause_menu_overlay：ESC 暂停菜单遮罩，包含继续游戏、设置、退出游戏。
+# - pause_main_panel/settings_panel：暂停菜单的一级菜单和设置二级菜单。
+# - key_bind_rows：按键映射设置的动态行容器。每行由动作说明和当前按键按钮组成。
+# - master/music/sfx_volume_slider：通过 SoundManager 写入 AudioServer 音频总线的音量滑杆。
+# - waiting_rebind_action：当前正在等待改键的动作名。为空时表示没有改键捕获。
+# - settings_config：把按键和音量保存到 user://settings.cfg，避免下次启动丢失。
 # - active_reward_player_id：当前正在选择奖励的玩家编号。选择按钮发信号时会把这个编号传给主控制器。
 # - active_reward_cards：当前显示的 3 张候选牌数据。选择按钮按索引从这里取出被选择的牌。
 # - card_reward_selected(player_id, card_data)：玩家点选某张奖励牌时发出，主控制器收到后把牌加入对应玩家牌堆。
 # - _ready()：缓存 tscn 中已经布好的 UI 节点，并设置初始提示为空。
+# - _input(event)：处理 ESC 打开/关闭暂停菜单，并在改键模式下捕获下一次按键。
 # - _process(delta)：每帧同步 SubViewport 的镜像相机，避免 UI 视口和主相机脱节。
 # - initialize(world_camera)：接收主相机，把主场景 World2D 交给 SubViewport，并立即同步一次视角。
 # - _sync_subviewport_camera()：复制主相机的位置、缩放和边界到 SubViewport 专属相机。
+# - _open_pause_menu()/_resume_game()：打开暂停菜单和继续游戏。
+# - _show_settings_panel()/_show_pause_main_panel()：在一级菜单和设置二级菜单之间切换。
+# - _build_key_mapping_rows()：根据 REBIND_ACTIONS 创建按键映射 UI。
+# - _start_rebinding(action_name)：进入某个动作的改键等待状态。
+# - _apply_keycode_binding(action_name, keycode, should_save)：把新按键写入 InputMap，并按需保存。
+# - _setup_audio_buses()：优先让 SoundManager 确保 Master/Music/SFX 三个音频总线存在。
+# - _apply_audio_percent(bus_key, percent, should_save)：把滑杆百分比交给 SoundManager 写入实际音频总线。
+# - _get_sound_manager()/_play_ui_sound(sound_name)：访问全局 SoundManager，并播放菜单反馈音。
+# - _load_saved_settings()/_save_settings()：读取和保存玩家设置。
 # - set_health(current_health, max_health)：更新醒目的血量条和血量文字。
 # - set_link_state(is_active, seconds_left)：更新连线稳定或断线倒计时文字。
 # - set_player_deck_status(player_id, card_name, card_count, cooldown_remaining)：更新指定玩家的当前牌、牌数和冷却状态。
@@ -35,6 +51,27 @@ class_name GameHUD
 # - _format_reward_button_text(index, card_data)：把卡牌字典格式化成按钮上可读的三行文本。
 
 signal card_reward_selected(player_id: int, card_data: Dictionary)
+
+const SETTINGS_PATH := "user://settings.cfg"
+const AUDIO_BUS_NAMES := {
+	"master": "Master",
+	"music": "Music",
+	"sfx": "SFX",
+}
+const REBIND_ACTIONS := [
+	{"action": "p1_move_left", "label": "P1 左移"},
+	{"action": "p1_move_right", "label": "P1 右移"},
+	{"action": "p1_move_up", "label": "P1 上移"},
+	{"action": "p1_move_down", "label": "P1 下移"},
+	{"action": "p1_play_card", "label": "P1 打出卡牌"},
+	{"action": "p1_pass_card", "label": "P1 跳过卡牌"},
+	{"action": "p2_move_left", "label": "P2 左移"},
+	{"action": "p2_move_right", "label": "P2 右移"},
+	{"action": "p2_move_up", "label": "P2 上移"},
+	{"action": "p2_move_down", "label": "P2 下移"},
+	{"action": "p2_play_card", "label": "P2 打出卡牌"},
+	{"action": "p2_pass_card", "label": "P2 跳过卡牌"},
+]
 
 @onready var sub_viewport: SubViewport = $Root/SubViewportContainer/SubViewport
 @onready var sub_viewport_camera: Camera2D = $Root/SubViewportContainer/SubViewport/ViewportCamera2D
@@ -54,17 +91,74 @@ signal card_reward_selected(player_id: int, card_data: Dictionary)
 	$Root/RewardChoiceOverlay/Panel/ChoiceTwoButton,
 	$Root/RewardChoiceOverlay/Panel/ChoiceThreeButton,
 ]
+@onready var pause_menu_overlay: ColorRect = $Root/PauseMenuOverlay
+@onready var pause_main_panel: Panel = $Root/PauseMenuOverlay/MainPanel
+@onready var settings_panel: Panel = $Root/PauseMenuOverlay/SettingsPanel
+@onready var continue_button: Button = $Root/PauseMenuOverlay/MainPanel/ContinueButton
+@onready var settings_button: Button = $Root/PauseMenuOverlay/MainPanel/SettingsButton
+@onready var quit_button: Button = $Root/PauseMenuOverlay/MainPanel/QuitButton
+@onready var settings_back_button: Button = $Root/PauseMenuOverlay/SettingsPanel/BackButton
+@onready var key_bind_rows: VBoxContainer = $Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/KeyMappingSection/KeyBindRows
+@onready var master_volume_slider: HSlider = $Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/MasterVolumeRow/MasterVolumeSlider
+@onready var music_volume_slider: HSlider = $Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/MusicVolumeRow/MusicVolumeSlider
+@onready var sfx_volume_slider: HSlider = $Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/SfxVolumeRow/SfxVolumeSlider
+@onready var master_volume_value_label: Label = $Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/MasterVolumeRow/MasterVolumeValueLabel
+@onready var music_volume_value_label: Label = $Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/MusicVolumeRow/MusicVolumeValueLabel
+@onready var sfx_volume_value_label: Label = $Root/PauseMenuOverlay/SettingsPanel/SettingsScroll/SettingsContent/AudioSection/SfxVolumeRow/SfxVolumeValueLabel
+@onready var rebind_hint_label: Label = $Root/PauseMenuOverlay/SettingsPanel/RebindHintLabel
 
 var active_reward_player_id := 0
 var active_reward_cards: Array = []
 var source_world_camera: Camera2D
+var waiting_rebind_action := StringName()
+var rebind_buttons_by_action := {}
+var settings_config := ConfigFile.new()
+var audio_sliders_connected := false
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_message("")
 	hide_reward_choice()
+	_hide_pause_menu_without_unpausing()
 	for index in reward_choice_buttons.size():
 		reward_choice_buttons[index].pressed.connect(_on_reward_button_pressed.bind(index))
+	continue_button.pressed.connect(_resume_game)
+	settings_button.pressed.connect(_show_settings_panel)
+	quit_button.pressed.connect(_quit_game)
+	settings_back_button.pressed.connect(_show_pause_main_panel)
+	_setup_audio_buses()
+	_build_key_mapping_rows()
+	_setup_audio_sliders()
+	_refresh_rebind_buttons()
+
+
+func _input(event: InputEvent) -> void:
+	if not event is InputEventKey:
+		return
+
+	var key_event := event as InputEventKey
+	if not key_event.pressed or key_event.echo:
+		return
+
+	var physical_keycode := key_event.physical_keycode
+	if physical_keycode == KEY_NONE:
+		physical_keycode = key_event.keycode
+
+	if waiting_rebind_action != StringName():
+		if physical_keycode == KEY_ESCAPE:
+			_cancel_rebinding()
+		else:
+			_apply_keycode_binding(waiting_rebind_action, physical_keycode, true)
+			waiting_rebind_action = StringName()
+			rebind_hint_label.text = "按键已更新"
+			_refresh_rebind_buttons()
+		get_viewport().set_input_as_handled()
+		return
+
+	if physical_keycode == KEY_ESCAPE:
+		_handle_escape_pressed()
+		get_viewport().set_input_as_handled()
 
 
 func _process(_delta: float) -> void:
@@ -76,6 +170,9 @@ func initialize(world_camera: Camera2D) -> void:
 	sub_viewport.world_2d = source_world_camera.get_viewport().world_2d
 	sub_viewport_camera.make_current()
 	_sync_subviewport_camera()
+	_load_saved_settings()
+	_connect_audio_sliders()
+	_refresh_rebind_buttons()
 
 
 func _sync_subviewport_camera() -> void:
@@ -91,6 +188,304 @@ func _sync_subviewport_camera() -> void:
 	sub_viewport_camera.limit_right = source_world_camera.limit_right
 	sub_viewport_camera.limit_bottom = source_world_camera.limit_bottom
 	sub_viewport_camera.enabled = true
+
+
+func _handle_escape_pressed() -> void:
+	if reward_choice_overlay.visible:
+		return
+
+	if pause_menu_overlay.visible:
+		if settings_panel.visible:
+			_show_pause_main_panel()
+		else:
+			_resume_game()
+	else:
+		_open_pause_menu()
+
+
+func _open_pause_menu() -> void:
+	waiting_rebind_action = StringName()
+	rebind_hint_label.text = ""
+	pause_menu_overlay.visible = true
+	_show_pause_main_panel(false)
+	get_tree().paused = true
+	continue_button.grab_focus()
+	_play_ui_sound(&"pause_start")
+
+
+func _resume_game() -> void:
+	_hide_pause_menu_without_unpausing()
+	get_tree().paused = false
+	_play_ui_sound(&"pause_end")
+
+
+func _hide_pause_menu_without_unpausing() -> void:
+	waiting_rebind_action = StringName()
+	pause_menu_overlay.visible = false
+	pause_main_panel.visible = true
+	settings_panel.visible = false
+	if is_instance_valid(rebind_hint_label):
+		rebind_hint_label.text = ""
+
+
+func _show_pause_main_panel(play_sound := true) -> void:
+	waiting_rebind_action = StringName()
+	rebind_hint_label.text = ""
+	pause_main_panel.visible = true
+	settings_panel.visible = false
+	continue_button.grab_focus()
+	_refresh_rebind_buttons()
+	if play_sound and pause_menu_overlay.visible:
+		_play_ui_sound(&"menu_previous")
+
+
+func _show_settings_panel() -> void:
+	pause_main_panel.visible = false
+	settings_panel.visible = true
+	settings_back_button.grab_focus()
+	_refresh_rebind_buttons()
+	_play_ui_sound(&"menu_next")
+
+
+func _quit_game() -> void:
+	_play_ui_sound(&"menu_unload")
+	get_tree().quit()
+
+
+func _build_key_mapping_rows() -> void:
+	rebind_buttons_by_action.clear()
+	for action_info in REBIND_ACTIONS:
+		var action_name := StringName(action_info["action"])
+		var row := HBoxContainer.new()
+		row.custom_minimum_size = Vector2(0.0, 34.0)
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_theme_constant_override("separation", 14)
+
+		var action_label := Label.new()
+		action_label.text = action_info["label"]
+		action_label.custom_minimum_size = Vector2(190.0, 30.0)
+		action_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		row.add_child(action_label)
+
+		var key_button := Button.new()
+		key_button.custom_minimum_size = Vector2(170.0, 30.0)
+		key_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		key_button.pressed.connect(_start_rebinding.bind(action_name))
+		row.add_child(key_button)
+
+		key_bind_rows.add_child(row)
+		rebind_buttons_by_action[action_name] = key_button
+
+
+func _start_rebinding(action_name: StringName) -> void:
+	waiting_rebind_action = action_name
+	rebind_hint_label.text = "按下新按键，ESC 取消"
+	_refresh_rebind_buttons()
+	_play_ui_sound(&"menu_equip")
+
+
+func _cancel_rebinding() -> void:
+	waiting_rebind_action = StringName()
+	rebind_hint_label.text = "已取消改键"
+	_refresh_rebind_buttons()
+	_play_ui_sound(&"menu_unload")
+
+
+func _refresh_rebind_buttons() -> void:
+	for action_info in REBIND_ACTIONS:
+		var action_name := StringName(action_info["action"])
+		if not rebind_buttons_by_action.has(action_name):
+			continue
+
+		var key_button: Button = rebind_buttons_by_action[action_name]
+		if waiting_rebind_action == action_name:
+			key_button.text = "等待按键..."
+		else:
+			key_button.text = _get_action_key_text(action_name)
+
+
+func _get_action_key_text(action_name: StringName) -> String:
+	if not InputMap.has_action(action_name):
+		return "未设置"
+
+	for input_event in InputMap.action_get_events(action_name):
+		if input_event is InputEventKey:
+			var key_event := input_event as InputEventKey
+			var keycode := key_event.physical_keycode
+			if keycode == KEY_NONE:
+				keycode = key_event.keycode
+			var key_text := OS.get_keycode_string(keycode)
+			if key_text.is_empty():
+				key_text = key_event.as_text()
+			return key_text
+	return "未设置"
+
+
+func _apply_keycode_binding(action_name: StringName, keycode: int, should_save: bool) -> void:
+	if keycode == KEY_NONE:
+		return
+	if not InputMap.has_action(action_name):
+		InputMap.add_action(action_name, 0.2)
+
+	var existing_events := InputMap.action_get_events(action_name)
+	for input_event in existing_events:
+		if input_event is InputEventKey:
+			InputMap.action_erase_event(action_name, input_event)
+
+	var new_key_event := InputEventKey.new()
+	new_key_event.physical_keycode = keycode
+	InputMap.action_add_event(action_name, new_key_event)
+
+	if should_save:
+		settings_config.set_value("input", String(action_name), keycode)
+		_save_settings()
+		_play_ui_sound(&"upgrade_ui_selected")
+
+
+func _setup_audio_buses() -> void:
+	var sound_manager := _get_sound_manager()
+	if sound_manager != null and sound_manager.has_method("setup_audio_buses"):
+		sound_manager.call("setup_audio_buses")
+		return
+
+	_ensure_audio_bus("Master")
+	_ensure_audio_bus("Music")
+	_ensure_audio_bus("SFX")
+
+
+func _ensure_audio_bus(bus_name: String) -> void:
+	if AudioServer.get_bus_index(bus_name) != -1:
+		return
+
+	var bus_index := AudioServer.bus_count
+	AudioServer.add_bus(bus_index)
+	AudioServer.set_bus_name(bus_index, bus_name)
+	AudioServer.set_bus_send(bus_index, "Master")
+
+
+func _setup_audio_sliders() -> void:
+	for slider in [master_volume_slider, music_volume_slider, sfx_volume_slider]:
+		slider.min_value = 0.0
+		slider.max_value = 100.0
+		slider.step = 1.0
+		slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	master_volume_slider.value = _get_audio_percent("master")
+	music_volume_slider.value = _get_audio_percent("music")
+	sfx_volume_slider.value = _get_audio_percent("sfx")
+	_update_audio_value_label("master", master_volume_slider.value)
+	_update_audio_value_label("music", music_volume_slider.value)
+	_update_audio_value_label("sfx", sfx_volume_slider.value)
+
+
+func _connect_audio_sliders() -> void:
+	if audio_sliders_connected:
+		return
+
+	master_volume_slider.value_changed.connect(_on_master_volume_changed)
+	music_volume_slider.value_changed.connect(_on_music_volume_changed)
+	sfx_volume_slider.value_changed.connect(_on_sfx_volume_changed)
+	audio_sliders_connected = true
+
+
+func _on_master_volume_changed(value: float) -> void:
+	_apply_audio_percent("master", value, true)
+
+
+func _on_music_volume_changed(value: float) -> void:
+	_apply_audio_percent("music", value, true)
+
+
+func _on_sfx_volume_changed(value: float) -> void:
+	_apply_audio_percent("sfx", value, true)
+
+
+func _get_audio_percent(bus_key: String) -> float:
+	var sound_manager := _get_sound_manager()
+	if sound_manager != null and sound_manager.has_method("get_volume_percent"):
+		return float(sound_manager.call("get_volume_percent", StringName(bus_key)))
+
+	var bus_name: String = AUDIO_BUS_NAMES[bus_key]
+	var bus_index := AudioServer.get_bus_index(bus_name)
+	if bus_index == -1 or AudioServer.is_bus_mute(bus_index):
+		return 0.0
+	return clampf(db_to_linear(AudioServer.get_bus_volume_db(bus_index)) * 100.0, 0.0, 100.0)
+
+
+func _apply_audio_percent(bus_key: String, percent: float, should_save: bool) -> void:
+	var clamped_percent := clampf(percent, 0.0, 100.0)
+	var sound_manager := _get_sound_manager()
+	if sound_manager != null and sound_manager.has_method("set_volume_percent"):
+		sound_manager.call("set_volume_percent", StringName(bus_key), clamped_percent)
+	else:
+		var bus_name: String = AUDIO_BUS_NAMES[bus_key]
+		var bus_index := AudioServer.get_bus_index(bus_name)
+		if bus_index != -1:
+			if clamped_percent <= 0.0:
+				AudioServer.set_bus_mute(bus_index, true)
+				AudioServer.set_bus_volume_db(bus_index, -80.0)
+			else:
+				AudioServer.set_bus_mute(bus_index, false)
+				AudioServer.set_bus_volume_db(bus_index, linear_to_db(clamped_percent / 100.0))
+
+	_update_audio_value_label(bus_key, clamped_percent)
+	if should_save:
+		settings_config.set_value("audio", bus_key, clamped_percent)
+		_save_settings()
+
+
+func _get_sound_manager() -> Node:
+	return get_node_or_null("/root/SoundManager")
+
+
+func _play_ui_sound(sound_name: StringName) -> void:
+	var sound_manager := _get_sound_manager()
+	if sound_manager != null and sound_manager.has_method("has_sound") and not bool(sound_manager.call("has_sound", sound_name)):
+		return
+	if sound_manager != null and sound_manager.has_method("play"):
+		sound_manager.call("play", sound_name)
+
+
+func _update_audio_value_label(bus_key: String, percent: float) -> void:
+	var label := master_volume_value_label
+	if bus_key == "music":
+		label = music_volume_value_label
+	elif bus_key == "sfx":
+		label = sfx_volume_value_label
+	label.text = "%d%%" % roundi(percent)
+
+
+func _load_saved_settings() -> void:
+	var load_error := settings_config.load(SETTINGS_PATH)
+	if load_error != OK:
+		return
+
+	for action_info in REBIND_ACTIONS:
+		var action_name := StringName(action_info["action"])
+		if settings_config.has_section_key("input", String(action_name)):
+			var keycode := int(settings_config.get_value("input", String(action_name), KEY_NONE))
+			_apply_keycode_binding(action_name, keycode, false)
+
+	for bus_key in AUDIO_BUS_NAMES.keys():
+		if settings_config.has_section_key("audio", bus_key):
+			var percent := float(settings_config.get_value("audio", bus_key, _get_audio_percent(bus_key)))
+			_set_audio_slider_value(bus_key, percent)
+			_apply_audio_percent(bus_key, percent, false)
+
+
+func _set_audio_slider_value(bus_key: String, percent: float) -> void:
+	if bus_key == "master":
+		master_volume_slider.value = percent
+	elif bus_key == "music":
+		music_volume_slider.value = percent
+	elif bus_key == "sfx":
+		sfx_volume_slider.value = percent
+
+
+func _save_settings() -> void:
+	var save_error := settings_config.save(SETTINGS_PATH)
+	if save_error != OK:
+		set_message("设置保存失败")
 
 
 func set_health(current_health: float, max_health: float) -> void:

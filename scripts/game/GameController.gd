@@ -28,6 +28,9 @@ class_name GameController
 # - outward_velocity_damping：连线拉紧时削弱“继续拉远”相对速度的强度。
 # - spring_return_strength：玩家停止继续拉远后，连线把两人向舒适长度弹回的强度。
 # - max_constraint_push_share：超过最大连线长度时，两名玩家各承担多少超长修正。0.5 表示两端平均回拉。
+# - body_drag_resistance_start：肉体落后玩家连线中心超过这个距离后，玩家远离肉体的移动开始变重。
+# - body_drag_resistance_full：肉体落后距离达到这个值时，远离肉体方向的阻力达到最大。
+# - body_drag_min_away_speed_scale：阻力最大时，玩家远离肉体方向速度保留的最低比例。
 # - player_one/player_two/body_core/hud/camera/link_line：运行时缓存的主节点引用，全部来自 tscn，不由脚本创建。
 # - decks_by_player：两个玩家的独立牌堆字典。键为玩家编号，值为 CardDeck。
 # - game_has_ended：游戏是否已经胜利或失败。结束后禁用玩家输入和卡牌输入。
@@ -45,6 +48,8 @@ class_name GameController
 # - _get_camera_target_position(delta)：计算摄像机本帧应追向的位置，综合玩家中心、前视距离、最低滚动速度和场景边界。
 # - _move_players(delta)：读取两个玩家输入，并根据连线是否断开选择弹性连线移动或独立移动。
 # - _calculate_linked_velocities(input_one, input_two)：按参考牵引控制器的软距离/张力思路计算速度；反向移动可继续拉开，只有达到最大长度才挡住继续拉远。
+# - _get_body_drag_ratio()：肉体被 net 卡住并落后时，计算玩家远离肉体方向应承受的额外阻力比例。
+# - _apply_body_drag_resistance(velocity, player_position, drag_ratio)：只削弱玩家远离肉体方向的速度，允许玩家正常回头靠近肉体。
 # - _apply_max_link_constraint()：超过最大连线长度时，迭代地把两名玩家投影回最大长度内；若一端被墙挡住，剩余修正会交给另一端。
 # - _apply_link_spring_recoil(delta, input_one, input_two)：连线处于拉紧状态且玩家没有继续拉远时，把两端向舒适长度弹回一点。
 # - _move_player_by_tether(player, motion)：对某个玩家施加连线修正位移，优先调用玩家脚本中的碰撞修正方法。
@@ -53,7 +58,8 @@ class_name GameController
 # - _inputs_are_shared_direction(input_one, input_two)：判断两个玩家是否正在共同移动。
 # - _clamp_players_to_camera()：把玩家限制在摄像机视野和场景矩形内，模拟玩家专属碰撞体积。
 # - _separate_players_from_body()：额外防止两个玩家、玩家和肉体重叠，补足碰撞边界极端情况。
-# - _update_body_and_line()：把肉体放在两名玩家中点，并更新 Line2D。
+# - _update_body_and_line(delta, apply_net_strain, snap_to_center)：让肉体尝试回到两名玩家中点；如果被 net 挡住则停下，挣脱后用减速回弹运动回到中心。
+# - _apply_net_strain(blocker, body_target, delta)：肉体被 net 挡住时，把拉扯距离传给 net；挣脱后给 HUD 一条反馈。
 # - _update_hud()：集中刷新血量、连线状态、当前牌和牌堆数量。
 # - _check_finish_condition()：两个玩家都抵达最右侧后结束游戏。
 # - _end_game(message)：统一处理胜利或失败，关闭控制并显示结果。
@@ -94,6 +100,9 @@ const CardDeckScript = preload("res://scripts/card/CardDeck.gd")
 @export var outward_velocity_damping := 1.0
 @export var spring_return_strength := 7.5
 @export var max_constraint_push_share := 0.5
+@export var body_drag_resistance_start := 140.0
+@export var body_drag_resistance_full := 520.0
+@export var body_drag_min_away_speed_scale := 0.18
 
 @onready var player_one = get_node(player_one_path)
 @onready var player_two = get_node(player_two_path)
@@ -109,9 +118,9 @@ var reward_choice_active := false
 
 func _ready() -> void:
 	camera.make_current()
-	hud.initialize(camera)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_ensure_default_input_actions()
+	hud.initialize(camera)
 	_build_initial_decks()
 	_connect_task_points()
 	hud.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -120,7 +129,7 @@ func _ready() -> void:
 	body_core.link_broken_started.connect(_on_link_broken_started)
 	body_core.link_restored.connect(_on_link_restored)
 	body_core.game_over_requested.connect(_on_game_over_requested)
-	_update_body_and_line()
+	_update_body_and_line(0.0, false, true)
 	_advance_camera(0.0, true)
 	_update_hud()
 
@@ -139,9 +148,9 @@ func _physics_process(delta: float) -> void:
 	_move_players(delta)
 	_advance_camera(delta)
 	_clamp_players_to_camera()
-	_update_body_and_line()
+	_update_body_and_line(delta)
 	_separate_players_from_body()
-	_update_body_and_line()
+	_update_body_and_line(0.0, false)
 	_check_finish_condition()
 	_update_hud()
 
@@ -272,7 +281,10 @@ func _move_players(delta: float) -> void:
 	var input_two: Vector2 = player_two.read_input_vector()
 
 	if body_core.is_link_active():
+		var body_drag_ratio: float = _get_body_drag_ratio()
 		var linked_velocities: Array = _calculate_linked_velocities(input_one, input_two)
+		linked_velocities[0] = _apply_body_drag_resistance(linked_velocities[0], player_one.global_position, body_drag_ratio)
+		linked_velocities[1] = _apply_body_drag_resistance(linked_velocities[1], player_two.global_position, body_drag_ratio)
 		player_one.move_with_velocity(linked_velocities[0])
 		player_two.move_with_velocity(linked_velocities[1])
 		_apply_max_link_constraint()
@@ -322,6 +334,46 @@ func _calculate_linked_velocities(input_one: Vector2, input_two: Vector2) -> Arr
 		velocity_one += direction * pull_speed
 		velocity_two *= lerpf(1.0, taut_solo_mover_scale, tension_ratio)
 	return [velocity_one, velocity_two]
+
+
+func _get_body_drag_ratio() -> float:
+	if not body_core.is_link_active():
+		return 0.0
+
+	var body_drag_distance: float = _get_body_drag_distance()
+	return clampf(
+		inverse_lerp(body_drag_resistance_start, body_drag_resistance_full, body_drag_distance),
+		0.0,
+		1.0
+	)
+
+
+func _get_body_drag_distance() -> float:
+	var link_center: Vector2 = (player_one.global_position + player_two.global_position) * 0.5
+	var body_position: Vector2 = body_core.global_position
+	var center_lag: float = body_position.distance_to(link_center)
+	var average_player_distance: float = (
+		body_position.distance_to(player_one.global_position)
+		+ body_position.distance_to(player_two.global_position)
+	) * 0.5
+	return maxf(center_lag, average_player_distance - comfortable_link_length * 0.25)
+
+
+func _apply_body_drag_resistance(velocity: Vector2, player_position: Vector2, drag_ratio: float) -> Vector2:
+	if drag_ratio <= 0.0 or velocity.length() <= 0.001:
+		return velocity
+
+	var away_from_body: Vector2 = player_position - body_core.global_position
+	if away_from_body.length() <= 0.001:
+		return velocity
+
+	var away_direction: Vector2 = away_from_body.normalized()
+	var away_speed: float = velocity.dot(away_direction)
+	if away_speed <= 0.0:
+		return velocity
+
+	var resisted_away_speed: float = away_speed * lerpf(1.0, body_drag_min_away_speed_scale, drag_ratio)
+	return velocity - away_direction * (away_speed - resisted_away_speed)
 
 
 func _apply_max_link_constraint() -> void:
@@ -435,8 +487,18 @@ func _separate_players_from_body() -> void:
 			player.global_position += body_offset.normalized() * (body_minimum_distance - body_offset.length())
 
 
-func _update_body_and_line() -> void:
-	body_core.place_between(player_one.global_position, player_two.global_position)
+func _update_body_and_line(delta := 0.0, apply_net_strain := true, snap_to_center := false) -> void:
+	var body_target: Vector2 = (player_one.global_position + player_two.global_position) * 0.5
+	if snap_to_center or not body_core.is_link_active():
+		body_core.place_between(player_one.global_position, player_two.global_position)
+	elif body_core.is_snapback_active():
+		var blocker = body_core.advance_snapback_to_position(body_target, delta)
+		if apply_net_strain:
+			_apply_net_strain(blocker, body_target, delta)
+	else:
+		var blocker = body_core.move_toward_position(body_target)
+		if apply_net_strain:
+			_apply_net_strain(blocker, body_target, delta)
 
 	if body_core.is_link_active():
 		link_line.visible = true
@@ -447,6 +509,17 @@ func _update_body_and_line() -> void:
 		])
 	else:
 		link_line.visible = false
+
+
+func _apply_net_strain(blocker: Node, body_target: Vector2, delta: float) -> void:
+	if blocker == null or delta <= 0.0 or not blocker.has_method("apply_tether_strain"):
+		return
+
+	var lag_distance: float = body_core.global_position.distance_to(body_target)
+	var released_now: bool = blocker.apply_tether_strain(lag_distance, delta)
+	if released_now:
+		body_core.start_snapback()
+		hud.set_message("肉体挣脱网，回弹到连线中心")
 
 
 func _update_hud() -> void:

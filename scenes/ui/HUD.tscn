@@ -1,0 +1,221 @@
+[gd_scene format=3 uid="uid://5rlcx22ksidf"]
+
+[ext_resource type="Script" uid="uid://ce0c0ntpbegwv" path="res://scripts/ui/HUD.gd" id="1_hud_script"]
+
+[node name="HUD" type="CanvasLayer" unique_id=1619752691]
+script = ExtResource("1_hud_script")
+
+[node name="Root" type="Control" parent="." unique_id=1832017169]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ColorRect" type="ColorRect" parent="Root" unique_id=1548857215]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="Root" unique_id=1509238378]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -640.0
+offset_top = -360.0
+offset_right = 640.0
+offset_bottom = 360.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.7, 0.7)
+pivot_offset = Vector2(640, 360)
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="SubViewport" type="SubViewport" parent="Root/SubViewportContainer" unique_id=946135605]
+handle_input_locally = false
+size = Vector2i(1280, 720)
+render_target_update_mode = 4
+
+[node name="ViewportCamera2D" type="Camera2D" parent="Root/SubViewportContainer/SubViewport"]
+position = Vector2(640, 0)
+limit_left = 0
+limit_top = -450
+limit_right = 4300
+limit_bottom = 450
+
+[node name="TopStrip" type="ColorRect" parent="Root" unique_id=501169612]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+offset_bottom = 86.0
+color = Color(0.04, 0.05, 0.06, 0.78)
+
+[node name="HealthLabel" type="Label" parent="Root/TopStrip" unique_id=190315560]
+layout_mode = 1
+offset_left = 24.0
+offset_top = 16.0
+offset_right = 210.0
+offset_bottom = 42.0
+text = "HP 100 / 100"
+
+[node name="HealthBar" type="ProgressBar" parent="Root/TopStrip" unique_id=1159177671]
+layout_mode = 1
+offset_left = 24.0
+offset_top = 46.0
+offset_right = 360.0
+offset_bottom = 70.0
+value = 100.0
+show_percentage = false
+
+[node name="LinkStatusLabel" type="Label" parent="Root/TopStrip" unique_id=492810356]
+layout_mode = 1
+offset_left = 396.0
+offset_top = 28.0
+offset_right = 590.0
+offset_bottom = 56.0
+text = "连线稳定"
+
+[node name="PlayerOnePanel" type="Panel" parent="Root" unique_id=1472266852]
+layout_mode = 1
+anchors_preset = -1
+offset_left = 24.0
+offset_top = 606.0
+offset_right = 358.0
+offset_bottom = 696.0
+
+[node name="CardLabel" type="Label" parent="Root/PlayerOnePanel" unique_id=1508434162]
+layout_mode = 1
+offset_left = 16.0
+offset_top = 14.0
+offset_right = 316.0
+offset_bottom = 42.0
+text = "P1  轻击"
+
+[node name="CountLabel" type="Label" parent="Root/PlayerOnePanel" unique_id=1582232655]
+layout_mode = 1
+offset_left = 16.0
+offset_top = 48.0
+offset_right = 316.0
+offset_bottom = 76.0
+text = "牌堆 6"
+
+[node name="PlayerTwoPanel" type="Panel" parent="Root" unique_id=1255065686]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -358.0
+offset_top = 606.0
+offset_right = -24.0
+offset_bottom = 696.0
+
+[node name="CardLabel" type="Label" parent="Root/PlayerTwoPanel" unique_id=621861783]
+layout_mode = 1
+offset_left = 16.0
+offset_top = 14.0
+offset_right = 316.0
+offset_bottom = 42.0
+text = "P2  重击"
+
+[node name="CountLabel" type="Label" parent="Root/PlayerTwoPanel" unique_id=1445857268]
+layout_mode = 1
+offset_left = 16.0
+offset_top = 48.0
+offset_right = 316.0
+offset_bottom = 76.0
+text = "牌堆 6"
+
+[node name="MessageLabel" type="Label" parent="Root" unique_id=579635133]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -240.0
+offset_top = 100.0
+offset_right = 240.0
+offset_bottom = 132.0
+horizontal_alignment = 1
+
+[node name="RewardChoiceOverlay" type="ColorRect" parent="Root" unique_id=1071400036]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.025, 0.03, 0.74)
+
+[node name="Panel" type="Panel" parent="Root/RewardChoiceOverlay" unique_id=1803761761]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -360.0
+offset_top = -190.0
+offset_right = 360.0
+offset_bottom = 190.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TitleLabel" type="Label" parent="Root/RewardChoiceOverlay/Panel" unique_id=1705491015]
+layout_mode = 1
+offset_left = 24.0
+offset_top = 20.0
+offset_right = 696.0
+offset_bottom = 48.0
+text = "P1 任务点奖励"
+horizontal_alignment = 1
+
+[node name="HintLabel" type="Label" parent="Root/RewardChoiceOverlay/Panel" unique_id=939582198]
+layout_mode = 1
+offset_left = 24.0
+offset_top = 54.0
+offset_right = 696.0
+offset_bottom = 80.0
+text = "选择 1 张牌加入牌堆"
+horizontal_alignment = 1
+
+[node name="ChoiceOneButton" type="Button" parent="Root/RewardChoiceOverlay/Panel" unique_id=988537333]
+layout_mode = 1
+offset_left = 24.0
+offset_top = 106.0
+offset_right = 232.0
+offset_bottom = 338.0
+text = "1. 奖励攻击牌
+攻击牌
+说明"
+autowrap_mode = 2
+
+[node name="ChoiceTwoButton" type="Button" parent="Root/RewardChoiceOverlay/Panel" unique_id=1501081623]
+layout_mode = 1
+offset_left = 256.0
+offset_top = 106.0
+offset_right = 464.0
+offset_bottom = 338.0
+text = "2. 奖励支援牌
+其他牌
+说明"
+autowrap_mode = 2
+
+[node name="ChoiceThreeButton" type="Button" parent="Root/RewardChoiceOverlay/Panel" unique_id=650347707]
+layout_mode = 1
+offset_left = 488.0
+offset_top = 106.0
+offset_right = 696.0
+offset_bottom = 338.0
+text = "3. 恢复连线
+其他牌
+说明"
+autowrap_mode = 2

@@ -1,0 +1,219 @@
+[gd_scene format=3 uid="uid://cgryumw8k8y7b"]
+
+[ext_resource type="Script" uid="uid://rhrx5sxw0wnp" path="res://scripts/game/GameController.gd" id="1_game_script"]
+[ext_resource type="PackedScene" uid="uid://borc38mwxop4l" path="res://scenes/characters/Player.tscn" id="2_player_scene"]
+[ext_resource type="PackedScene" path="res://scenes/core/BodyCore.tscn" id="3_body_scene"]
+[ext_resource type="PackedScene" uid="uid://5rlcx22ksidf" path="res://scenes/ui/HUD.tscn" id="4_hud_scene"]
+[ext_resource type="PackedScene" path="res://scenes/pickups/TaskPoint.tscn" id="5_task_scene"]
+[ext_resource type="PackedScene" path="res://scenes/obstacles/RectangleObstacle.tscn" id="6_obstacle_scene"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/EnemyType1.tscn" id="7_enemy_one_scene"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/EnemyType2.tscn" id="8_enemy_two_scene"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/EnemyType3.tscn" id="9_enemy_three_scene"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/EnemySpawnPoint.tscn" id="10_enemy_spawn_scene"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_horizontal"]
+size = Vector2(4300, 60)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_vertical"]
+size = Vector2(60, 900)
+
+[node name="MainScene" type="Node2D" unique_id=927441366]
+script = ExtResource("1_game_script")
+
+[node name="Level" type="Node2D" parent="." unique_id=1049102450]
+
+[node name="Floor" type="Polygon2D" parent="Level" unique_id=1878032493]
+color = Color(0.12, 0.15, 0.17, 1)
+polygon = PackedVector2Array(0, -450, 4300, -450, 4300, 450, 0, 450)
+
+[node name="TopWall" type="StaticBody2D" parent="Level" unique_id=783944713]
+position = Vector2(2150, -480)
+collision_layer = 4
+collision_mask = 0
+
+[node name="Visual" type="Polygon2D" parent="Level/TopWall" unique_id=1770999093]
+color = Color(0.5, 0.52, 0.54, 1)
+polygon = PackedVector2Array(-2150, -30, 2150, -30, 2150, 30, -2150, 30)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Level/TopWall" unique_id=280593231]
+shape = SubResource("RectangleShape2D_wall_horizontal")
+
+[node name="BottomWall" type="StaticBody2D" parent="Level" unique_id=743372559]
+position = Vector2(2150, 480)
+collision_layer = 4
+collision_mask = 0
+
+[node name="Visual" type="Polygon2D" parent="Level/BottomWall" unique_id=992807157]
+color = Color(0.5, 0.52, 0.54, 1)
+polygon = PackedVector2Array(-2150, -30, 2150, -30, 2150, 30, -2150, 30)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Level/BottomWall" unique_id=1183250237]
+shape = SubResource("RectangleShape2D_wall_horizontal")
+
+[node name="LeftWall" type="StaticBody2D" parent="Level" unique_id=1598895613]
+position = Vector2(-30, 0)
+collision_layer = 4
+collision_mask = 0
+
+[node name="Visual" type="Polygon2D" parent="Level/LeftWall" unique_id=588268000]
+color = Color(0.5, 0.52, 0.54, 1)
+polygon = PackedVector2Array(-30, -450, 30, -450, 30, 450, -30, 450)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Level/LeftWall" unique_id=1994602729]
+shape = SubResource("RectangleShape2D_wall_vertical")
+
+[node name="RightWall" type="StaticBody2D" parent="Level" unique_id=1635120269]
+position = Vector2(4330, 0)
+collision_layer = 4
+collision_mask = 0
+
+[node name="Visual" type="Polygon2D" parent="Level/RightWall" unique_id=864311954]
+color = Color(0.5, 0.52, 0.54, 1)
+polygon = PackedVector2Array(-30, -450, 30, -450, 30, 450, -30, 450)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Level/RightWall" unique_id=1121792501]
+shape = SubResource("RectangleShape2D_wall_vertical")
+
+[node name="FinishLine" type="Polygon2D" parent="Level" unique_id=2097621890]
+color = Color(0.92, 0.82, 0.25, 0.75)
+polygon = PackedVector2Array(4100, -450, 4140, -450, 4140, 450, 4100, 450)
+
+[node name="PhaseMarkers" type="Node2D" parent="Level" unique_id=154099570]
+
+[node name="TaskCoordinateA" type="Line2D" parent="Level/PhaseMarkers" unique_id=1175331730]
+points = PackedVector2Array(1075, -450, 1075, 450)
+width = 3.0
+default_color = Color(0.2, 0.9, 0.75, 0.38)
+
+[node name="TaskCoordinateB" type="Line2D" parent="Level/PhaseMarkers" unique_id=838801257]
+points = PackedVector2Array(2150, -450, 2150, 450)
+width = 3.0
+default_color = Color(0.2, 0.9, 0.75, 0.38)
+
+[node name="TaskCoordinateC" type="Line2D" parent="Level/PhaseMarkers" unique_id=446442549]
+points = PackedVector2Array(3225, -450, 3225, 450)
+width = 3.0
+default_color = Color(0.2, 0.9, 0.75, 0.38)
+
+[node name="OpeningLabel" type="Label" parent="Level/PhaseMarkers" unique_id=2069663930]
+offset_left = 380.0
+offset_top = -430.0
+offset_right = 700.0
+offset_bottom = -400.0
+text = "开头"
+
+[node name="PracticeLabel" type="Label" parent="Level/PhaseMarkers" unique_id=35363663]
+offset_left = 1460.0
+offset_top = -430.0
+offset_right = 1780.0
+offset_bottom = -400.0
+text = "试手"
+
+[node name="MiddleLabel" type="Label" parent="Level/PhaseMarkers" unique_id=1078500803]
+offset_left = 2540.0
+offset_top = -430.0
+offset_right = 2860.0
+offset_bottom = -400.0
+text = "中间"
+
+[node name="ClimaxLabel" type="Label" parent="Level/PhaseMarkers" unique_id=1354749872]
+offset_left = 3600.0
+offset_top = -430.0
+offset_right = 3920.0
+offset_bottom = -400.0
+text = "高潮"
+
+[node name="ElasticLink" type="Line2D" parent="." unique_id=2010590503]
+width = 8.0
+default_color = Color(1, 0.85, 0.28, 1)
+joint_mode = 2
+begin_cap_mode = 2
+end_cap_mode = 2
+
+[node name="Actors" type="Node2D" parent="." unique_id=2042502936]
+
+[node name="PlayerOne" parent="Actors" unique_id=2026057950 instance=ExtResource("2_player_scene")]
+position = Vector2(240, -96)
+player_color = Color(0.18, 0.62, 1, 1)
+
+[node name="PlayerTwo" parent="Actors" unique_id=671970584 instance=ExtResource("2_player_scene")]
+position = Vector2(240, 96)
+player_id = 2
+player_color = Color(1, 0.38, 0.38, 1)
+
+[node name="BodyCore" parent="Actors" unique_id=188310188 instance=ExtResource("3_body_scene")]
+position = Vector2(240, 0)
+
+[node name="TaskPoints" type="Node2D" parent="." unique_id=1089374011]
+
+[node name="TaskCoordinateA_Top" parent="TaskPoints" unique_id=1423366708 instance=ExtResource("5_task_scene")]
+position = Vector2(1075, -318)
+
+[node name="TaskCoordinateA_Bottom" parent="TaskPoints" unique_id=746792171 instance=ExtResource("5_task_scene")]
+position = Vector2(1075, 318)
+assigned_player_id = 2
+
+[node name="TaskCoordinateB_Top" parent="TaskPoints" unique_id=1875426733 instance=ExtResource("5_task_scene")]
+position = Vector2(2150, -318)
+
+[node name="TaskCoordinateB_Bottom" parent="TaskPoints" unique_id=1462128224 instance=ExtResource("5_task_scene")]
+position = Vector2(2150, 318)
+assigned_player_id = 2
+
+[node name="TaskCoordinateC_Top" parent="TaskPoints" unique_id=214977104 instance=ExtResource("5_task_scene")]
+position = Vector2(3225, -318)
+
+[node name="TaskCoordinateC_Bottom" parent="TaskPoints" unique_id=2144504814 instance=ExtResource("5_task_scene")]
+position = Vector2(3225, 318)
+assigned_player_id = 2
+
+[node name="Obstacles" type="Node2D" parent="." unique_id=1091223125]
+
+[node name="RectangleObstacleA" parent="Obstacles" unique_id=1202575147 instance=ExtResource("6_obstacle_scene")]
+position = Vector2(1540, -180)
+scale = Vector2(1.55, 1)
+
+[node name="RectangleObstacleB" parent="Obstacles" unique_id=1233025245 instance=ExtResource("6_obstacle_scene")]
+position = Vector2(2760, 160)
+scale = Vector2(1.15, 1.35)
+
+[node name="EnemySpawns" type="Node2D" parent="." unique_id=356443544]
+
+[node name="PracticeSpawn_EnemyType1" parent="EnemySpawns" unique_id=715051123 instance=ExtResource("10_enemy_spawn_scene")]
+position = Vector2(1360, 76)
+enemy_scene = ExtResource("7_enemy_one_scene")
+spawn_label = "试手"
+
+[node name="MiddleSpawn_EnemyType1" parent="EnemySpawns" unique_id=2114176790 instance=ExtResource("10_enemy_spawn_scene")]
+position = Vector2(2380, 118)
+enemy_scene = ExtResource("7_enemy_one_scene")
+spawn_label = "中间"
+
+[node name="MiddleSpawn_EnemyType2" parent="EnemySpawns" unique_id=106686415 instance=ExtResource("10_enemy_spawn_scene")]
+position = Vector2(2640, -148)
+enemy_scene = ExtResource("8_enemy_two_scene")
+spawn_label = "中间"
+
+[node name="ClimaxSpawn_EnemyType1" parent="EnemySpawns" unique_id=762384162 instance=ExtResource("10_enemy_spawn_scene")]
+position = Vector2(3400, 170)
+enemy_scene = ExtResource("7_enemy_one_scene")
+spawn_label = "高潮"
+
+[node name="ClimaxSpawn_EnemyType2" parent="EnemySpawns" unique_id=1255986521 instance=ExtResource("10_enemy_spawn_scene")]
+position = Vector2(3620, -170)
+enemy_scene = ExtResource("8_enemy_two_scene")
+spawn_label = "高潮"
+
+[node name="ClimaxSpawn_EnemyType3" parent="EnemySpawns" unique_id=289754080 instance=ExtResource("10_enemy_spawn_scene")]
+position = Vector2(3860, 34)
+enemy_scene = ExtResource("9_enemy_three_scene")
+spawn_label = "高潮"
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1843929157]
+position = Vector2(640, 0)
+limit_left = 0
+limit_top = -450
+limit_right = 4300
+limit_bottom = 450
+
+[node name="HUD" parent="." unique_id=1530108984 instance=ExtResource("4_hud_scene")]

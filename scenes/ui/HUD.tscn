@@ -2,7 +2,14 @@
 
 [ext_resource type="Script" uid="uid://ce0c0ntpbegwv" path="res://scripts/ui/HUD.gd" id="1_hud_script"]
 [ext_resource type="Texture2D" uid="uid://vb1qkudg8pwm" path="res://assets/ui/hp_bar_bkg.png" id="2_6ll6g"]
+[ext_resource type="Texture2D" uid="uid://cqqd0ntr0grtk" path="res://assets/art/panel.png" id="2_ig75s"]
 [ext_resource type="Texture2D" uid="uid://bpcen6tkrx7j0" path="res://assets/ui/hp_bar_fill.png" id="3_ig75s"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_4ed8p"]
+texture = ExtResource("2_ig75s")
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+region_rect = Rect2(197.70972, 210.6889, 1654.5156, 1625.2681)
 
 [node name="HUD" type="CanvasLayer" unique_id=1619752691]
 script = ExtResource("1_hud_script")
@@ -16,13 +23,15 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="ColorRect" type="ColorRect" parent="Root" unique_id=1548857215]
+[node name="Panel" type="Panel" parent="Root" unique_id=535262132]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 475.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxTexture_4ed8p")
 
 [node name="SubViewportContainer" type="SubViewportContainer" parent="Root" unique_id=1509238378]
 layout_mode = 1
@@ -53,42 +62,16 @@ limit_top = -450
 limit_right = 4300
 limit_bottom = 450
 
-[node name="TopStrip" type="ColorRect" parent="Root" unique_id=501169612]
+[node name="HealthBar" type="TextureProgressBar" parent="Root" unique_id=883981419]
 layout_mode = 1
-anchors_preset = -1
-anchor_right = 1.0
-offset_left = -3.0
-offset_top = 632.0
-offset_right = -3.0
-offset_bottom = 718.0
-color = Color(0.04, 0.05, 0.06, 0.78)
-
-[node name="HealthLabel" type="Label" parent="Root/TopStrip" unique_id=190315560]
-layout_mode = 1
-offset_left = 54.0
-offset_top = 14.0
-offset_right = 240.0
-offset_bottom = 40.0
-text = "HP 100 / 100"
-
-[node name="HealthBar" type="TextureProgressBar" parent="Root/TopStrip" unique_id=883981419]
-layout_mode = 1
-offset_left = 24.0
-offset_top = 12.0
-offset_right = 1250.0
-offset_bottom = 220.0
+offset_left = 439.0
+offset_top = 615.0
+offset_right = 1665.0
+offset_bottom = 823.0
 scale = Vector2(0.3, 0.3)
 value = 100.0
 texture_under = ExtResource("2_6ll6g")
 texture_progress = ExtResource("3_ig75s")
-
-[node name="LinkStatusLabel" type="Label" parent="Root/TopStrip" unique_id=492810356]
-layout_mode = 1
-offset_left = 419.0
-offset_top = 29.0
-offset_right = 613.0
-offset_bottom = 57.0
-text = "连线稳定"
 
 [node name="PlayerOnePanel" type="Panel" parent="Root" unique_id=1472266852]
 layout_mode = 1
@@ -268,6 +251,7 @@ text = "3. 恢复连线
 autowrap_mode = 2
 
 [node name="PauseMenuOverlay" type="ColorRect" parent="Root" unique_id=1191306827]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

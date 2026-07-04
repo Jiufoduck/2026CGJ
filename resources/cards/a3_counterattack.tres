@@ -5,9 +5,9 @@
 [resource]
 script = ExtResource("1_card_definition")
 id = "a3_counterattack"
-card_name = "反杀怪物"
+card_name = "反伤"
 owner_player_id = 1
 card_type = "attack"
-tags = PackedStringArray()
-description = "有玩家出牌前，攻击肉体的怪物被消灭。"
+tags = PackedStringArray("consumable")
+description = "断裂前，怪物攻击肉体后，对自身造成等量伤害"
 effect_id = "counterattack"

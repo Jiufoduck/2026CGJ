@@ -1,79 +1,40 @@
 extends Node
 
-const SOUND_CONFIG := {
-	&"attract_player": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-3/attract player.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"bull_dash": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-4/bull_dash.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"bull_hit_the_wall": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-4/bull_hit_the_wall.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"bull_move": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-4/bull_move.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"dash_line_running": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-2/dash_line_running.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"drumer_hit": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-2/drumer_hit.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"drumer_prehit": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-2/drumer_prehit.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"enemy_defeated": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-2/enemy_defeated.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"gameover": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/gameover.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"grapple_catched": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/grapple_catched.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"grapple_outbreak": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/grapple_outbreak.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"grapple_pause": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/grapple_pause.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"grapple_shooting": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/grapple_shooting.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"grapple_wall_contact": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/grapple_wall_contact.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"grapple_withdraw": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/grapple_withdraw.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"laser_hit_enemy": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-3/laser_hit_enemy.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"level_clear": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-2/level_clear.wav", "volume_db": -10.0, "pitch": 1.0},
-	&"maodou_dash": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/maodou_dash.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"maodou_dash_shooting": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/maodou_dash_shooting.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"maodou_shooting": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/maodou_shooting.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"maodou_spit_enemy": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/maodou_spit_enemy.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"menu_equip": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/menu_equip.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"menu_mouse_button": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-3/menu_mouse_button.wav", "volume_db": -10.0, "pitch": 1.0},
-	&"menu_next": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/menu_next.wav", "volume_db": 0, "pitch": 1.0},
-	&"menu_previous": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/menu_previous.wav", "volume_db": 0, "pitch": 1.0},
-	&"menu_unload": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/menu_unload.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"moudou_descend": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/moudou_descend.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"moudou_hp_filled": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/moudou_hp_filled.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"moudou_pre_descend": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/moudou_pre_descend.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"moudou_touched": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/moudou_touched.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"obstacle_applied": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/obstacle_applied.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"obstacle_withdrawed": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/obstacle_withdrawed.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"pause_end": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/pause_end.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"pause_start": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/pause_start.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"range_stopped": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-3/range_stopped.wav", "volume_db": -5.0, "pitch": 1.0},
-	&"ranged": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-3/ranged.wav", "volume_db": -5.0, "pitch": 1.0},
-	&"ranger_range_sapar": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-3/ranger_range_sapar.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"sapar_change": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-1/sapar_change.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"sapar_enemy_contact001": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/sapar_enemy_contact001.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"sapar_enemy_contact002": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/sapar_enemy_contact002.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"sapar_enemy_contact003": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/sapar_enemy_contact003.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"sapar_gold_contact01": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/sapar_gold_contact01.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"sapar_gold_contact02": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/sapar_gold_contact02.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"sapar_gold_contact03": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/sapar_gold_contact03.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"sapar_gold_contact1": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/sapar_gold_contact1.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"sapar_gold_contact2": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/sapar_gold_contact2.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"sapar_gold_contact3": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/sapar_gold_contact3.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"sapar_shop_packed": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-1/sapar_shop_packed.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"sapar_shop_unfold": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-1/sapar_shop_unfold.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"shoot_laser": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-3/shoot_laser.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"shooter_preshoot": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-2/shooter_preshoot.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"shooter_shoot": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-2/shooter_shoot.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"shop_purchase": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-3/shop_purchase.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"shop_recovery": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-3/shop_recovery.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"shop_refresh": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-4/shop_refresh.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"spawned": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-2/spawned.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"tar_revealed": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/tar_revealed.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"trumpet_bullet_shooted": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-2/trumpet_bullet_shooted.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"upgrade_ui_focusing": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-3/upgrade_ui_focusing.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"upgrade_ui_selected": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-3/upgrade_ui_selected.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"upgraded": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-3/upgraded.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"walker_recover": {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-2/walker_recover.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"collect_gold01": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/collect_gold01.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"collect_gold02": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/collect_gold02.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"collect_gold03": {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/collect_gold03.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"hurt_player" : {"path": "res://sound/独立游戏1231/(就佛）独立游戏-01/hurt_player.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"bull_hit_enemy" : {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-4/bull_hit_enemy.wav", "volume_db": 0.0, "pitch": 1.0},
-	&"attraction" : {"path": "res://sound/独立游戏1231/独立游戏-就佛-02/part-4/attraction.wav", "volume_db": 10, "pitch": 1.0},
-}
 const MASTER_BUS_NAME := "Master"
 const MUSIC_BUS_NAME := "Music"
 const SFX_BUS_NAME := "SFX"
 const BUS_NAME := SFX_BUS_NAME
+
+const SOUND_CONFIG := {
+	&"ui_click": {"path": "res://assets/sound/ui_click.wav", "volume_db": -7.0},
+	&"menu_next": {"path": "res://assets/sound/ui_click.wav", "volume_db": -7.0},
+	&"menu_previous": {"path": "res://assets/sound/ui_click.wav", "volume_db": -8.0, "pitch": 0.92},
+	&"menu_equip": {"path": "res://assets/sound/rebinded.mp3", "volume_db": -5.0},
+	&"menu_unload": {"path": "res://assets/sound/ui_click.wav", "volume_db": -9.0, "pitch": 0.78},
+	&"pause_start": {"path": "res://assets/sound/ui_click.wav", "volume_db": -6.0, "pitch": 0.86},
+	&"pause_end": {"path": "res://assets/sound/ui_click.wav", "volume_db": -6.0, "pitch": 1.08},
+	&"upgrade_ui_selected": {"path": "res://assets/sound/enhance.wav", "volume_db": -6.0},
+	&"rebinded": {"path": "res://assets/sound/rebinded.mp3", "volume_db": -5.0},
+
+	&"attack": {"path": "res://assets/sound/attack.wav", "volume_db": -3.0},
+	&"enhance": {"path": "res://assets/sound/enhance.wav", "volume_db": -4.0},
+	&"acquire_card": {"path": "res://assets/sound/acquire_card.mp3", "volume_db": -4.0},
+	&"checkpoint1": {"path": "res://assets/sound/checkpoint1.mp3", "volume_db": -4.0},
+	&"checkpoint2": {"path": "res://assets/sound/checkpoint2.wav", "volume_db": -4.0},
+	&"line_broken": {"path": "res://assets/sound/line_broken.mp3", "volume_db": -2.0},
+	&"net_break": {"path": "res://assets/sound/net_break.mp3", "volume_db": -2.0},
+
+	&"body_hurt1": {"path": "res://assets/sound/body_hurt1.mp3", "volume_db": -4.0},
+	&"body_hurt2": {"path": "res://assets/sound/body_hurt2.mp3", "volume_db": -4.0},
+	&"body_hurt3": {"path": "res://assets/sound/body_hurt3.mp3", "volume_db": -4.0},
+	&"enemy_hitted": {"path": "res://assets/sound/enemy_hitted.wav", "volume_db": -5.0},
+	&"enemy_death": {"path": "res://assets/sound/enemy_death.wav", "volume_db": -4.0},
+	&"game_over": {"path": "res://assets/sound/game_over.mp3", "volume_db": -1.0},
+
+	&"intro": {"path": "res://assets/sound/intro.mp3", "volume_db": -8.0, "bus": MUSIC_BUS_NAME},
+	&"battle": {"path": "res://assets/sound/battle.wav", "volume_db": -9.0, "bus": MUSIC_BUS_NAME},
+	&"egypt_victory": {"path": "res://assets/sound/Egypt Victory.mp3", "volume_db": -7.0, "bus": MUSIC_BUS_NAME},
+}
 const AUDIO_BUS_NAMES := {
 	&"master": MASTER_BUS_NAME,
 	&"music": MUSIC_BUS_NAME,
@@ -86,7 +47,7 @@ const SAME_SOUND_STEP_DB := 0.5
 const GLOBAL_STEP_DB := 0.5
 
 var _stream_paths: Dictionary = {}        # StringName -> path
-var _sound_settings: Dictionary = {}      # StringName -> {volume_db, pitch, delay}
+var _sound_settings: Dictionary = {}      # StringName -> {volume_db, pitch, delay, bus}
 var _streams: Dictionary = {}             # StringName -> AudioStream
 var _pending_loads: Array[StringName] = []
 var _players: Array[AudioStreamPlayer] = []
@@ -113,6 +74,7 @@ func _init_sound_config() -> void:
 			"volume_db": entry.get("volume_db", 0.0),
 			"pitch": entry.get("pitch", 1.0),
 			"delay": entry.get("delay", 0.0),
+			"bus": entry.get("bus", SFX_BUS_NAME),
 		}
 		var path = entry.get("path", "")
 		if path != "":
@@ -152,7 +114,8 @@ func play(sound_name: StringName, volume_db = null, pitch = null, delay = null) 
 	var final_volume = volume_db if volume_db != null else defaults.get("volume_db", 0.0)
 	var final_pitch = pitch if pitch != null else defaults.get("pitch", 1.0)
 	var final_delay = delay if delay != null else defaults.get("delay", 0.0)
-	_play_stream(stream, final_volume, final_pitch, sound_name, final_delay)
+	var final_bus = defaults.get("bus", SFX_BUS_NAME)
+	_play_stream(stream, final_volume, final_pitch, sound_name, final_delay, final_bus)
 
 func _warn_missing_sound(sound_name: StringName, path: String) -> void:
 	if _missing_sound_warnings.has(sound_name):
@@ -163,7 +126,7 @@ func _warn_missing_sound(sound_name: StringName, path: String) -> void:
 func play_SFX(stream: AudioStream, volume_db: float = 0.0, pitch: float = 1.0, delay: float = 0.0) -> void:
 	var name_guess := stream.resource_path.get_file().get_basename() if stream.resource_path != "" else ""
 	var sound_name := StringName(name_guess)
-	_play_stream(stream, volume_db, pitch, sound_name, delay)
+	_play_stream(stream, volume_db, pitch, sound_name, delay, SFX_BUS_NAME)
 
 func has_sound(sound_name: StringName) -> bool:
 	var path = _stream_paths.get(sound_name, "")
@@ -223,7 +186,7 @@ func _resolve_bus_name(bus_key: StringName) -> String:
 		return AUDIO_BUS_NAMES[bus_key]
 	return String(bus_key)
 
-func _play_stream(stream: AudioStream, volume_db: float, pitch: float, sound_name: StringName, delay: float = 0.0) -> void:
+func _play_stream(stream: AudioStream, volume_db: float, pitch: float, sound_name: StringName, delay: float = 0.0, bus_name := SFX_BUS_NAME) -> void:
 	if delay > 0.0:
 		await get_tree().create_timer(delay).timeout
 	var current_per_sound := _count_playing(sound_name)
@@ -235,6 +198,7 @@ func _play_stream(stream: AudioStream, volume_db: float, pitch: float, sound_nam
 		return
 	player.set_meta("sound_name", sound_name)
 	player.stream = stream
+	player.bus = bus_name
 	player.pitch_scale = pitch
 	var attenuation = float(current_per_sound) * SAME_SOUND_STEP_DB + max(current_total - 4, 0) * GLOBAL_STEP_DB
 	player.volume_db = clamp(volume_db - attenuation, MIN_VOLUME_DB, volume_db)

@@ -35,10 +35,10 @@ script = ExtResource("1_game_script")
 position = Vector2(-101, -3.9044194)
 scale = Vector2(1.7851977, 1.0002124)
 color = Color(0.12, 0.15, 0.17, 1)
-polygon = PackedVector2Array(0, -450, 14694.171, -446.00085, 14694.171, 453.80804, 0, 450)
+polygon = PackedVector2Array(-1265.9662, -446.00085, 14694.171, -446.00085, 14694.171, 453.80804, -1265.9662, 453.80804)
 
 [node name="TopWall" type="StaticBody2D" parent="Level" unique_id=783944713]
-position = Vector2(17598, -270)
+position = Vector2(12801, -270)
 scale = Vector2(8.719999, 1)
 collision_layer = 2052
 collision_mask = 0
@@ -51,7 +51,7 @@ polygon = PackedVector2Array(-2150, -30, 2150, -30, 2150, 30, -2150, 30)
 shape = SubResource("RectangleShape2D_wall_horizontal")
 
 [node name="BottomWall" type="StaticBody2D" parent="Level" unique_id=743372559]
-position = Vector2(17598, 270)
+position = Vector2(12801, 270)
 scale = Vector2(9.2, 1)
 collision_layer = 2052
 collision_mask = 0
@@ -64,7 +64,7 @@ polygon = PackedVector2Array(-2150, -30, 2150, -30, 2150, 30, -2150, 30)
 shape = SubResource("RectangleShape2D_wall_horizontal")
 
 [node name="LeftWall" type="StaticBody2D" parent="Level" unique_id=1598895613]
-position = Vector2(-30, 0)
+position = Vector2(-2391, 0)
 collision_layer = 2052
 collision_mask = 0
 
@@ -150,20 +150,20 @@ end_cap_mode = 2
 [node name="Actors" type="Node2D" parent="." unique_id=2042502936]
 
 [node name="PlayerOne" parent="Actors" unique_id=2026057950 instance=ExtResource("2_player_scene")]
-position = Vector2(62, -96)
+position = Vector2(-2231, -96)
 collision_mask = 2051
-move_speed = 100
+move_speed = 150
 player_color = Color(0.18, 0.62, 1, 1)
 
 [node name="PlayerTwo" parent="Actors" unique_id=671970584 instance=ExtResource("2_player_scene")]
-position = Vector2(61, 96)
+position = Vector2(-2232, 96)
 collision_mask = 2051
 player_id = 2
-move_speed = 100
+move_speed = 150
 player_color = Color(1, 0.38, 0.38, 1)
 
 [node name="BodyCore" parent="Actors" unique_id=188310188 instance=ExtResource("3_body_scene")]
-position = Vector2(61, 0)
+position = Vector2(-2232, 0)
 physics_material_override = SubResource("PhysicsMaterial_f6se4")
 
 [node name="TaskPoints" type="Node2D" parent="." unique_id=1089374011]
@@ -460,13 +460,37 @@ scale = Vector2(0.19376716, 3.3958795)
 position = Vector2(1849.0001, 11)
 scale = Vector2(0.19376716, 1.9492921)
 
-[node name="RectangleObstacle24" parent="Obstacles" unique_id=1848800512 instance=ExtResource("6_obstacle_scene")]
-position = Vector2(158, -96.00001)
-scale = Vector2(0.16822106, 0.99079865)
+[node name="RectangleObstacle60" parent="Obstacles" unique_id=1274814664 instance=ExtResource("6_obstacle_scene")]
+position = Vector2(-1716, -101.999985)
+scale = Vector2(0.14850852, 2.9627016)
 
-[node name="RectangleObstacle57" parent="Obstacles" unique_id=754722124 instance=ExtResource("6_obstacle_scene")]
-position = Vector2(158, 105.99998)
-scale = Vector2(0.16822106, 0.99079865)
+[node name="RectangleObstacle62" parent="Obstacles" unique_id=1101875837 instance=ExtResource("6_obstacle_scene")]
+position = Vector2(-663, -143)
+scale = Vector2(0.2209651, 0.9565608)
+
+[node name="RectangleObstacle63" parent="Obstacles" unique_id=70430231 instance=ExtResource("6_obstacle_scene")]
+position = Vector2(-663, 4.999998)
+scale = Vector2(0.2209651, 0.9565608)
+
+[node name="RectangleObstacle65" parent="Obstacles" unique_id=128152516 instance=ExtResource("6_obstacle_scene")]
+position = Vector2(-410.99997, 12.000001)
+scale = Vector2(0.2209651, 2.0901089)
+
+[node name="RectangleObstacle66" parent="Obstacles" unique_id=1909392392 instance=ExtResource("6_obstacle_scene")]
+position = Vector2(-339, -70)
+scale = Vector2(0.6823662, 0.30322427)
+
+[node name="RectangleObstacle67" parent="Obstacles" unique_id=1052290706 instance=ExtResource("6_obstacle_scene")]
+position = Vector2(-339, 94.00001)
+scale = Vector2(0.6823662, 0.30322427)
+
+[node name="RectangleObstacle64" parent="Obstacles" unique_id=1436584138 instance=ExtResource("6_obstacle_scene")]
+position = Vector2(-663, 151.00002)
+scale = Vector2(0.2209651, 0.9565608)
+
+[node name="RectangleObstacle61" parent="Obstacles" unique_id=1484482005 instance=ExtResource("6_obstacle_scene")]
+position = Vector2(-1637.0001, 106.00001)
+scale = Vector2(0.14197615, 2.9073992)
 
 [node name="RectangleObstacle7" parent="Obstacles" unique_id=740624849 instance=ExtResource("6_obstacle_scene")]
 position = Vector2(2123, -59.000004)
@@ -475,6 +499,30 @@ scale = Vector2(1.032782, 0.3517023)
 [node name="NetObstacle" parent="Obstacles" unique_id=1334573651 instance=ExtResource("6_f6se4")]
 position = Vector2(559.99976, 16)
 scale = Vector2(0.27965212, 0.6625165)
+
+[node name="NetObstacle9" parent="Obstacles" unique_id=1334627177 instance=ExtResource("6_f6se4")]
+position = Vector2(-2107.0002, -98.99999)
+scale = Vector2(0.2464305, 0.2752004)
+
+[node name="NetObstacle11" parent="Obstacles" unique_id=1559235092 instance=ExtResource("6_f6se4")]
+position = Vector2(-1989, 11)
+scale = Vector2(0.32052574, 1.1512499)
+
+[node name="NetObstacle12" parent="Obstacles" unique_id=1433421069 instance=ExtResource("6_f6se4")]
+position = Vector2(-1863, 13)
+scale = Vector2(0.34286985, 0.8132619)
+
+[node name="NetObstacle13" parent="Obstacles" unique_id=1162855580 instance=ExtResource("6_f6se4")]
+position = Vector2(-1127, 13)
+scale = Vector2(0.34286985, 0.8132619)
+
+[node name="NetObstacle14" parent="Obstacles" unique_id=1420900363 instance=ExtResource("6_f6se4")]
+position = Vector2(-927, 13)
+scale = Vector2(0.34286985, 0.8132619)
+
+[node name="NetObstacle10" parent="Obstacles" unique_id=1522008697 instance=ExtResource("6_f6se4")]
+position = Vector2(-2107.0002, 95.00001)
+scale = Vector2(0.2464305, 0.2752004)
 
 [node name="NetObstacle2" parent="Obstacles" unique_id=660619363 instance=ExtResource("6_f6se4")]
 position = Vector2(1016, -149.00002)
@@ -508,6 +556,22 @@ scale = Vector2(0.24146783, 0.57994014)
 
 [node name="EnemySpawnPoint" parent="EnemySpawns" unique_id=1638728096 instance=ExtResource("10_enemy_spawn_scene")]
 position = Vector2(371, -183)
+enemy_scene = ExtResource("7_enemy_one_scene")
+
+[node name="EnemySpawnPoint121" parent="EnemySpawns" unique_id=1518060247 instance=ExtResource("10_enemy_spawn_scene")]
+position = Vector2(-1176, 2)
+enemy_scene = ExtResource("7_enemy_one_scene")
+
+[node name="EnemySpawnPoint122" parent="EnemySpawns" unique_id=1056301778 instance=ExtResource("10_enemy_spawn_scene")]
+position = Vector2(-928, -193)
+enemy_scene = ExtResource("7_enemy_one_scene")
+
+[node name="EnemySpawnPoint123" parent="EnemySpawns" unique_id=1450817844 instance=ExtResource("10_enemy_spawn_scene")]
+position = Vector2(-624, 216)
+enemy_scene = ExtResource("7_enemy_one_scene")
+
+[node name="EnemySpawnPoint124" parent="EnemySpawns" unique_id=815252830 instance=ExtResource("10_enemy_spawn_scene")]
+position = Vector2(-111, 4)
 enemy_scene = ExtResource("7_enemy_one_scene")
 
 [node name="EnemySpawnPoint2" parent="EnemySpawns" unique_id=1613140110 instance=ExtResource("10_enemy_spawn_scene")]
@@ -556,7 +620,7 @@ custom_script = "static func main(e):
   e.can_move = false
   e.shoot_range = 1000"
 
-[node name="EnemySpawnPoint25" parent="EnemySpawns" unique_id=1518060247 instance=ExtResource("10_enemy_spawn_scene")]
+[node name="EnemySpawnPoint25" parent="EnemySpawns" unique_id=43774343 instance=ExtResource("10_enemy_spawn_scene")]
 position = Vector2(6887, -1)
 enemy_scene = ExtResource("10_hs7hk")
 

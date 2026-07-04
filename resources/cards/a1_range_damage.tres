@@ -9,5 +9,5 @@ card_name = "范围伤害"
 owner_player_id = 1
 card_type = "attack"
 tags = PackedStringArray()
-description = "连线对怪物造成伤害"
+description = "锚线对怪物造成伤害"
 effect_id = "range_damage"

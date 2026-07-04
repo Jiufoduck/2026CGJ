@@ -8,5 +8,5 @@ id = "b9_group_freeze"
 card_name = "切断冻结"
 owner_player_id = 2
 tags = PackedStringArray("break")
-description = "切断锚链。玩家冷却加快"
+description = "切断锚链。断裂时，冻结怪物"
 effect_id = "group_freeze"

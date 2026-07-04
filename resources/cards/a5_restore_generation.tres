@@ -8,5 +8,5 @@ id = "a5_restore_generation"
 card_name = "回血"
 owner_player_id = 1
 tags = PackedStringArray()
-description = "获得10点血量"
+description = "回10点血"
 effect_id = "restore_generation"

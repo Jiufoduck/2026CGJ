@@ -214,6 +214,17 @@ func _physics_process(delta: float) -> void:
 	_update_hud()
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	# 调试用!!!
+	if event.is_action_pressed("ui_accept") and not game_has_ended and not game_over_sequence_active:
+		if body_core.link_broken:
+			body_core.restore_link()
+		else:
+			body_core.current_health = body_core.max_health
+			body_core.health_changed.emit(body_core.current_health, body_core.max_health)
+			body_core._refresh_visual_state()
+
+
 func _ensure_default_input_actions() -> void:
 	_register_key_action("p1_move_left", KEY_A)
 	_register_key_action("p1_move_right", KEY_D)

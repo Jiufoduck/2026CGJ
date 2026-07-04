@@ -195,6 +195,16 @@ static func make_restore_link_card() -> Dictionary:
 	)
 
 
+func promote_first_restore_to_top() -> Dictionary:
+	for i in range(cards.size()):
+		if card_has_tag(cards[i], TAG_RESTORE):
+			if i > 0:
+				var card = cards.pop_at(i)
+				cards.insert(0, card)
+			return cards[0].duplicate(true)
+	return {}
+
+
 func _card_is_playable_in_link_state(card_data: Dictionary, link_is_active: bool) -> bool:
 	if card_has_tag(card_data, TAG_RESTORE) and link_is_active:
 		return false

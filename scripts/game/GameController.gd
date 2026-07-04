@@ -351,7 +351,15 @@ func _play_card_for_player(player_id: int) -> void:
 
 	card_effect_runner.on_card_success_started(player_id, played_card)
 	card_effect_runner.apply_card(player_id, played_card)
-	hud.set_message("P%d 打出 %s" % [player_id, played_card.get("name", "未命名牌")])
+	var _card_msg := "P%d 打出 %s" % [player_id, played_card.get("name", "未命名牌")]
+	if CardDeckScript.card_has_tag(played_card, CardDeckScript.TAG_BREAK_LINK):
+		var other_id := 3 - player_id
+		var promoted: Dictionary = decks_by_player[other_id].promote_first_restore_to_top()
+		if not promoted.is_empty():
+			var restore_name: String = promoted.get("name", "恢复牌")
+			print("[断线] P%d 打出断线牌，P%d 的 %s 已提到牌顶" % [player_id, other_id, restore_name])
+			_card_msg += " → P%d 的 %s 提到牌顶" % [other_id, restore_name]
+	hud.set_message(_card_msg)
 
 
 func _pass_card_for_player(player_id: int) -> void:

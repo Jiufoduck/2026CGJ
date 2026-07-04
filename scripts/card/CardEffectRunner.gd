@@ -254,7 +254,7 @@ func _apply_clear_screen(card_data: Dictionary) -> void:
 
 func _apply_restore_generation(player_id: int, card_data: Dictionary) -> void:
 	_spawn_ring(controller.body_core.global_position, 96.0, Color(0.15, 1.0, 0.45, 1.0), "恢复生成")
-	controller.body_core.force_break_link()
+	#controller.body_core.force_break_link()
 	_add_restore_cards(player_id, int(card_data.get("restore_cards_to_add", 0)))
 	var player := _get_player(player_id)
 	if player != null:

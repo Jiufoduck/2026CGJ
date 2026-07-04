@@ -4,7 +4,7 @@ class_name EnemyType5
 
 @export var charge_range = 200
 @export var charge_startup = 1.0
-@export var charge_recovery = 1.0
+@export var charge_recovery = 0.5
 
 var initial_move_speed: float
 
@@ -41,10 +41,18 @@ func do_charge():
 	move_speed = 0
 	calib_movedir(false)
 	await get_tree().create_timer(charge_startup).timeout
-	move_speed = initial_move_speed * 5
-	var duration = charge_range / move_speed
-	await get_tree().create_timer(duration).timeout
-	move_speed = 0
+	move_speed = initial_move_speed * 10
+
+	# d = m / a
+	# r = 1/2 * a * d^2
+	# a = 2r / d^2
+	# d = sqrt(2r / a)
+	# m^2 / 2r = a
+	# d = 2r / m
+
+
+	var duration = 2 * charge_range / move_speed
+	await create_tween().tween_property(self,"move_speed",0,duration).finished
 	await get_tree().create_timer(charge_recovery).timeout
 	move_speed = initial_move_speed
 	calib_movedir(true)

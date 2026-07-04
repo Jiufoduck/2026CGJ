@@ -28,6 +28,7 @@ var can_shoot = true
 
 func _ready() -> void:
 	super._ready()
+	$Visual.play("idle")
 	start_behavior_loop()
 
 func start_behavior_loop():
@@ -41,10 +42,12 @@ func start_behavior_loop():
 			continue
 		var dir = core.global_position - global_position
 		if dir.length() > shoot_range:
+			$Visual.rotation_degrees = 0
 			move_direction = EnemyUtils.force_left(dir.normalized())
 		else:
 			move_direction = Vector2.ZERO
 			if can_shoot:
+				$Visual.rotation = dir.normalized().angle_to_point(Vector2.ZERO)
 				shoot(dir)
 
 func shoot(dir: Vector2):
@@ -61,8 +64,14 @@ func shoot(dir: Vector2):
 		spawn_bullet(pos-dir1*elite_bullet_offset, dir)
 	else:
 		spawn_bullet(pos, dir)
+	play_tmp_anim()
 	await get_tree().create_timer(shoot_interval).timeout
 	can_shoot = true
+
+func play_tmp_anim():
+	$Visual.play("shoot")
+	await get_tree().create_timer(0.35).timeout
+	$Visual.play("idle")
 
 func spawn_bullet(pos: Vector2, dir: Vector2):
 	var obj = bullet.instantiate() as Bullet

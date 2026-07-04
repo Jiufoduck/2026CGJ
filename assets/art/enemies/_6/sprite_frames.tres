@@ -1,0 +1,61 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://exnhbs8db2lo"]
+
+[ext_resource type="Texture2D" uid="uid://nwv00qp4ohbw" path="res://assets/art/enemies/_6/未命名作品.png" id="1_kde12"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_03asj"]
+atlas = ExtResource("1_kde12")
+region = Rect2(0, 0, 509, 361)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2osi4"]
+atlas = ExtResource("1_kde12")
+region = Rect2(509, 0, 509, 361)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_62ofe"]
+atlas = ExtResource("1_kde12")
+region = Rect2(1018, 0, 509, 361)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_asldr"]
+atlas = ExtResource("1_kde12")
+region = Rect2(0, 0, 509, 361)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_y7ftl"]
+atlas = ExtResource("1_kde12")
+region = Rect2(509, 0, 509, 361)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_03asj")
+}],
+"loop": true,
+"name": &"charge_recovery",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2osi4")
+}],
+"loop": true,
+"name": &"charge_startup",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_62ofe")
+}],
+"loop": true,
+"name": &"charging",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_asldr")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_y7ftl")
+}],
+"loop": true,
+"name": &"chase",
+"speed": 5.0
+}]

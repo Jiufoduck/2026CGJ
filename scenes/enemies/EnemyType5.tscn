@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bloxux5kugg88"]
 
 [ext_resource type="Script" uid="uid://5i4nq0simf5n" path="res://scripts/enemies/EnemyType5.gd" id="1_os2cd"]
+[ext_resource type="SpriteFrames" uid="uid://bxhagd8dww3fb" path="res://assets/art/enemies/_5/sprite_frames.tres" id="2_oo0fb"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_enemy_body"]
 radius = 24.0
@@ -18,9 +19,10 @@ max_health = 8.0
 contact_damage = 25.0
 contact_damage_cooldown = 2.0
 
-[node name="Visual" type="Polygon2D" parent="." unique_id=54952112]
-color = Color(0.95, 0.25, 0.25, 1)
-polygon = PackedVector2Array(0, -28, 26, 18, -26, 18)
+[node name="Visual" type="AnimatedSprite2D" parent="." unique_id=1121019575]
+scale = Vector2(0.25, 0.25)
+sprite_frames = ExtResource("2_oo0fb")
+animation = &"charge_recovery"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=900316037]
 shape = SubResource("CircleShape2D_enemy_body")

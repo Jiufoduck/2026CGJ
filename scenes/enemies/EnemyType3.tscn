@@ -2,6 +2,41 @@
 
 [ext_resource type="Script" uid="uid://cgnw6vpcb1pfa" path="res://scripts/enemies/EnemyType3.gd" id="1_5bp4v"]
 [ext_resource type="PackedScene" uid="uid://dyasjuwpaa2df" path="res://scenes/enemies/Bullet3.tscn" id="2_040bh"]
+[ext_resource type="Texture2D" uid="uid://cqf7n6gsygkpj" path="res://assets/art/enemies/_3/03_远程_鱼_普通.png" id="3_80v7e"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cusdo"]
+atlas = ExtResource("3_80v7e")
+region = Rect2(0, 0, 345, 209)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_minsu"]
+atlas = ExtResource("3_80v7e")
+region = Rect2(345, 0, 345, 209)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fqukb"]
+atlas = ExtResource("3_80v7e")
+region = Rect2(0, 0, 345, 209)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_hql6v"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cusdo")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_minsu")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fqukb")
+}],
+"loop": true,
+"name": &"shoot",
+"speed": 5.0
+}]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_enemy_body"]
 radius = 22.0
@@ -23,9 +58,10 @@ max_health = 4.0
 contact_damage = 6.0
 contact_damage_cooldown = 2.0
 
-[node name="Visual" type="Polygon2D" parent="." unique_id=1332585819]
-color = Color(0.25, 0.95, 0.65, 1)
-polygon = PackedVector2Array(0, -28, 25, 0, 0, 28, -25, 0)
+[node name="Visual" type="AnimatedSprite2D" parent="." unique_id=120146398]
+scale = Vector2(0.25, 0.25)
+sprite_frames = SubResource("SpriteFrames_hql6v")
+animation = &"shoot"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1992244347]
 shape = SubResource("CircleShape2D_enemy_body")

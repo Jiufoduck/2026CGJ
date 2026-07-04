@@ -43,7 +43,7 @@ var card_frozen := false
 var overwhelming := Vector2.ZERO
 var decreasing_factor := 0.7
 
-@onready var visual_polygon: Polygon2D = $Visual
+@onready var visual_polygon: Node2D = $Visual
 @onready var damage_area: Area2D = get_node_or_null(^"DamageArea")
 
 
@@ -142,6 +142,8 @@ func _try_damage_body() -> void:
 
 func _refresh_visual_style() -> void:
 	if visual_polygon == null:
+		return
+	if visual_polygon is not Polygon2D:
 		return
 
 	if enemy_type_id == 1:

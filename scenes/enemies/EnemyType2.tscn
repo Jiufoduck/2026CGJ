@@ -1,12 +1,35 @@
 [gd_scene format=3 uid="uid://brsxxk1uv271h"]
 
 [ext_resource type="Script" uid="uid://hpy3rbq4g6b1" path="res://scripts/enemies/EnemyType1.gd" id="1_r8ucr"]
+[ext_resource type="Texture2D" uid="uid://bx41lm8jdba3n" path="res://assets/art/enemies/_2/02_敌人_追踪_鳄鱼_普通 2.png" id="2_4lkur"]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_enemy_body"]
-radius = 28.0
+[sub_resource type="AtlasTexture" id="AtlasTexture_8uocn"]
+atlas = ExtResource("2_4lkur")
+region = Rect2(0, 0, 648, 248)
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_damage_area"]
-radius = 40.0
+[sub_resource type="AtlasTexture" id="AtlasTexture_u5l3b"]
+atlas = ExtResource("2_4lkur")
+region = Rect2(648, 0, 648, 248)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_wg4l3"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8uocn")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_u5l3b")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_j8fca"]
+size = Vector2(123, 29)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_fpph3"]
+size = Vector2(94, 48.5)
 
 [node name="EnemyType2" type="CharacterBody2D" unique_id=685467082]
 collision_layer = 8
@@ -20,16 +43,19 @@ max_health = 9.0
 contact_damage = 20.0
 contact_damage_cooldown = 3.0
 
-[node name="Visual" type="Polygon2D" parent="." unique_id=1965926706]
-color = Color(0.75, 0.35, 1, 1)
-polygon = PackedVector2Array(-28, -28, 28, -28, 28, 28, -28, 28)
+[node name="Visual" type="AnimatedSprite2D" parent="." unique_id=860367043]
+position = Vector2(53, -2)
+scale = Vector2(0.3, 0.3)
+sprite_frames = SubResource("SpriteFrames_wg4l3")
+frame_progress = 0.008388909
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1754530060]
-shape = SubResource("CircleShape2D_enemy_body")
+position = Vector2(34.5, 4.5)
+shape = SubResource("RectangleShape2D_j8fca")
 
 [node name="DamageArea" type="Area2D" parent="." unique_id=1190489169]
 collision_layer = 0
 collision_mask = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="DamageArea" unique_id=800606698]
-shape = SubResource("CircleShape2D_damage_area")
+shape = SubResource("RectangleShape2D_fpph3")

@@ -18,7 +18,7 @@ class_name EnemySpawnPoint
 
 @export var enemy_scene: PackedScene
 @export var spawn_label := "敌人生成点"
-@export var spawn_distance = 1500
+const spawn_distance = 1100
 @export_multiline var custom_script: String
 
 var spawned_enemy: Node2D

@@ -171,17 +171,18 @@ physics_material_override = SubResource("PhysicsMaterial_f6se4")
 [node name="TaskCoordinateC_Top" parent="TaskPoints" unique_id=214977104 instance=ExtResource("5_task_scene")]
 position = Vector2(6371, -184)
 
+[node name="TaskCoordinateC_Top3" parent="TaskPoints" unique_id=1835141426 instance=ExtResource("5_task_scene")]
+position = Vector2(2078, 49)
+
 [node name="TaskCoordinateC_Top5" parent="TaskPoints" unique_id=857449563 instance=ExtResource("5_task_scene")]
 position = Vector2(5484, -7)
 
-[node name="TaskCoordinateC_Top4" parent="TaskPoints" unique_id=1754205899 instance=ExtResource("5_task_scene")]
-position = Vector2(2081, 179)
-
-[node name="TaskCoordinateC_Top3" parent="TaskPoints" unique_id=245019077 instance=ExtResource("5_task_scene")]
-position = Vector2(2086, 90)
-
 [node name="TaskCoordinateC_Bottom" parent="TaskPoints" unique_id=2144504814 instance=ExtResource("5_task_scene")]
 position = Vector2(6370, 193)
+assigned_player_id = 2
+
+[node name="TaskCoordinateC_Bottom14" parent="TaskPoints" unique_id=1098027971 instance=ExtResource("5_task_scene")]
+position = Vector2(2077, 160)
 assigned_player_id = 2
 
 [node name="TaskCoordinateC_Bottom3" parent="TaskPoints" unique_id=1941571653 instance=ExtResource("5_task_scene")]

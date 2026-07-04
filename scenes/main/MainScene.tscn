@@ -633,10 +633,6 @@ enemy_scene = ExtResource("7_enemy_one_scene")
 position = Vector2(1585, 193)
 enemy_scene = ExtResource("7_enemy_one_scene")
 
-[node name="EnemySpawnPoint5" parent="EnemySpawns" unique_id=73968687 instance=ExtResource("10_enemy_spawn_scene")]
-position = Vector2(2701, -156)
-enemy_scene = ExtResource("7_enemy_one_scene")
-
 [node name="EnemySpawnPoint8" parent="EnemySpawns" unique_id=618341021 instance=ExtResource("10_enemy_spawn_scene")]
 position = Vector2(3327, -5)
 enemy_scene = ExtResource("7_enemy_one_scene")

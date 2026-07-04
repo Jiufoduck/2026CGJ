@@ -2,10 +2,10 @@
 
 [ext_resource type="Script" uid="uid://rhrx5sxw0wnp" path="res://scripts/game/GameController.gd" id="1_game_script"]
 [ext_resource type="PackedScene" uid="uid://borc38mwxop4l" path="res://scenes/characters/Player.tscn" id="2_player_scene"]
-[ext_resource type="PackedScene" path="res://scenes/core/BodyCore.tscn" id="3_body_scene"]
+[ext_resource type="PackedScene" uid="uid://daa7p53w1mhco" path="res://scenes/core/BodyCore.tscn" id="3_body_scene"]
 [ext_resource type="PackedScene" uid="uid://5rlcx22ksidf" path="res://scenes/ui/HUD.tscn" id="4_hud_scene"]
 [ext_resource type="PackedScene" path="res://scenes/pickups/TaskPoint.tscn" id="5_task_scene"]
-[ext_resource type="PackedScene" path="res://scenes/obstacles/NetObstacle.tscn" id="6_f6se4"]
+[ext_resource type="PackedScene" uid="uid://bbx4ivqik1iqc" path="res://scenes/obstacles/NetObstacle.tscn" id="6_f6se4"]
 [ext_resource type="PackedScene" path="res://scenes/obstacles/RectangleObstacle.tscn" id="6_obstacle_scene"]
 [ext_resource type="PackedScene" uid="uid://253htnqnf3pa" path="res://scenes/enemies/EnemyType1.tscn" id="7_enemy_one_scene"]
 [ext_resource type="PackedScene" uid="uid://c2q4xwwctv2fl" path="res://scenes/enemies/EnemyType3.tscn" id="9_enemy_three_scene"]

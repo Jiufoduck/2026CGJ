@@ -376,6 +376,7 @@ func _is_player_action_just_pressed(player_id: int, action_name: StringName) -> 
 
 func _play_card_for_player(player_id: int) -> void:
 	var deck = decks_by_player[player_id]
+	var before_cards: Array = deck.get_cards_snapshot()
 	var current_card: Dictionary = deck.peek_current_card()
 	if current_card.is_empty():
 		return
@@ -397,11 +398,23 @@ func _play_card_for_player(player_id: int) -> void:
 	var _card_msg := "P%d 打出 %s" % [player_id, played_card.get("name", "未命名牌")]
 	if not body_core.is_link_active():
 		_promote_restore_cards_on_first_link_break()
+	if hud.has_method("animate_player_card_action"):
+		hud.animate_player_card_action(
+			player_id,
+			"play",
+			before_cards,
+			deck.get_cards_snapshot(),
+			deck.peek_current_card(),
+			deck.card_count(),
+			deck.cooldown_remaining,
+			not CardDeckScript.card_is_consumable(played_card)
+		)
 	hud.set_message(_card_msg)
 
 
 func _pass_card_for_player(player_id: int) -> void:
 	var deck = decks_by_player[player_id]
+	var before_cards: Array = deck.get_cards_snapshot()
 	var current_card: Dictionary = deck.peek_current_card()
 	if current_card.is_empty():
 		return
@@ -412,6 +425,17 @@ func _pass_card_for_player(player_id: int) -> void:
 		return
 
 	card_effect_runner.on_card_passed(player_id, passed_card)
+	if hud.has_method("animate_player_card_action"):
+		hud.animate_player_card_action(
+			player_id,
+			"pass",
+			before_cards,
+			deck.get_cards_snapshot(),
+			deck.peek_current_card(),
+			deck.card_count(),
+			deck.cooldown_remaining,
+			true
+		)
 	hud.set_message("P%d 跳过 %s，放到牌堆底部" % [player_id, passed_card.get("name", "未命名牌")])
 
 
@@ -970,9 +994,9 @@ func _capture_reward_pause_process_modes(node: Node) -> void:
 
 	reward_world_pause_process_modes.append({
 		"node_ref": weakref(node),
-		"process_mode": node.process_mode
+		"process_mode": node.process_mode,
 	})
-	node.set_deferred("process_mode",Node.PROCESS_MODE_DISABLED)
+	node.process_mode = Node.PROCESS_MODE_DISABLED
 	for child in node.get_children():
 		_capture_reward_pause_process_modes(child)
 

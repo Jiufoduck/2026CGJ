@@ -136,15 +136,6 @@ func add_cards(card_list: Array) -> void:
 func card_count() -> int:
 	return cards.size()
 
-
-func get_cards_snapshot() -> Array:
-	var snapshot := []
-	for card_data in cards:
-		if card_data is Dictionary:
-			snapshot.append((card_data as Dictionary).duplicate(true))
-	return snapshot
-
-
 func current_card_name() -> String:
 	if cards.is_empty():
 		return "无牌"

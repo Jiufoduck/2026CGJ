@@ -1343,6 +1343,12 @@ func set_player_deck_status(player_id: int, card_data: Dictionary, card_count: i
 		_update_player_card_panel(player_two_card_panel, card_data, card_count, cooldown_remaining, player_id, deck_cards)
 
 
+func animate_player_card_action(player_id: int, action_name: String, before_cards: Array, after_cards: Array, card_data: Dictionary, card_count: int, cooldown_remaining: float, top_returns_to_bottom := false) -> void:
+	var card_panel: Node = player_one_card_panel if player_id == 1 else player_two_card_panel
+	if card_panel != null and card_panel.has_method("animate_card_action"):
+		card_panel.animate_card_action(action_name, before_cards, after_cards, card_data, card_count, cooldown_remaining, player_id, top_returns_to_bottom)
+
+
 func _update_player_card_panel(card_panel: Node, card_data: Dictionary, card_count: int, cooldown_remaining: float, player_id: int, deck_cards: Array = []) -> void:
 	if card_panel == null:
 		return

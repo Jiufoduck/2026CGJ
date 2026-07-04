@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1_card_definition")
 id = "a6_phase_walk"
-card_name = "加速"
+card_name = "切断加速"
 owner_player_id = 1
 tags = PackedStringArray("break")
-description = "断裂。断裂时，移速增加"
+description = "切断锚链。断裂时，移速增加"
 effect_id = "phase_walk"

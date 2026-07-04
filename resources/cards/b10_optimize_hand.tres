@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_card_definition")
 id = "b10_optimize_hand"
-card_name = "优化手牌"
+card_name = "穿墙"
 owner_player_id = 2
 tags = PackedStringArray()
 description = "肉体可以穿墙"

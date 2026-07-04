@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_card_definition")
 id = "b7_knockback"
-card_name = "击退"
+card_name = "卖血击退"
 owner_player_id = 2
 card_type = "attack"
 tags = PackedStringArray()

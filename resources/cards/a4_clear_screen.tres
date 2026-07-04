@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1_card_definition")
 id = "a4_clear_screen"
-card_name = "清场"
+card_name = "切断位移"
 owner_player_id = 1
 tags = PackedStringArray("break")
-description = "断裂。所有怪物往左推"
+description = "切断锚链。所有怪物往左推"
 effect_id = "clear_screen"

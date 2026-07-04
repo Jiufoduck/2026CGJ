@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_card_definition")
 id = "a5_restore_generation"
-card_name = "恢复补充"
+card_name = "回血"
 owner_player_id = 1
 tags = PackedStringArray()
 description = "获得10点血量"

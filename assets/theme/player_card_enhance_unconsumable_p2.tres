@@ -1,0 +1,14 @@
+[gd_resource type="StyleBoxTexture" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/玩家手牌/增益 不可消耗 玩家2.png" id="1_texture"]
+
+[resource]
+content_margin_left = 59.0
+content_margin_top = 23.0
+content_margin_right = 71.0
+content_margin_bottom = 59.0
+texture = ExtResource("1_texture")
+expand_margin_left = 60.0
+expand_margin_top = 60.0
+expand_margin_right = 60.0
+expand_margin_bottom = 60.0

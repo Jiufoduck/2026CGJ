@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://q8m7tgakstqw"]
 
-[ext_resource type="StyleBox" uid="uid://c7ole2s1378hw" path="res://assets/theme/attack.tres" id="1_ovd31"]
+[ext_resource type="StyleBox" path="res://assets/theme/player_card_attack_consumable_p1.tres" id="1_ovd31"]
 [ext_resource type="Script" uid="uid://dh64jdywbqmuj" path="res://scripts/ui/player_card_panel.gd" id="2_ovd31"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_ovd31"]
@@ -17,21 +17,20 @@ offset_bottom = 616.0
 theme_override_styles/panel = ExtResource("1_ovd31")
 script = ExtResource("2_ovd31")
 
-[node name="Panel" type="Panel" parent="." unique_id=1481444802]
-layout_mode = 0
-offset_left = 76.0
-offset_top = 95.0
-offset_right = 116.0
-offset_bottom = 135.0
-
-[node name="Label" type="Label" parent="Panel" unique_id=1900898285]
+[node name="Label" type="Label" parent="." unique_id=1900898285]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -8.0
+offset_top = 53.0
+offset_right = 9.0
+offset_bottom = 95.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 20
 text = "3"
 horizontal_alignment = 1
 vertical_alignment = 1

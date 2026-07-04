@@ -33,7 +33,7 @@ const TRACKED_PLAYER_ACTIONS := [
 	"p2_pass_card",
 ]
 
-var active_input_preset := INPUT_PRESET_GAMEPAD
+var active_input_preset := INPUT_PRESET_KEYBOARD
 var player_devices := {
 	1: -1,
 	2: -1,
@@ -47,12 +47,14 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	process_priority = -100
 	_ensure_default_ui_actions()
-	refresh_gamepad_assignments()
+	if active_input_preset == INPUT_PRESET_GAMEPAD:
+		refresh_gamepad_assignments()
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
 
 
 func _physics_process(_delta: float) -> void:
-	_refresh_gamepad_assignments_if_needed()
+	if active_input_preset == INPUT_PRESET_GAMEPAD:
+		_refresh_gamepad_assignments_if_needed()
 	_refresh_just_pressed_cache()
 
 

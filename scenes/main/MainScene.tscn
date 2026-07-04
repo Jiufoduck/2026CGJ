@@ -573,6 +573,22 @@ enemy_scene = ExtResource("9_enemy_three_scene")
 position = Vector2(9723, 154)
 enemy_scene = ExtResource("9_enemy_three_scene")
 
+[node name="EnemySpawnPoint115" parent="EnemySpawns" unique_id=1916484851 instance=ExtResource("10_enemy_spawn_scene")]
+position = Vector2(9723, -16)
+enemy_scene = ExtResource("7_enemy_one_scene")
+
+[node name="EnemySpawnPoint116" parent="EnemySpawns" unique_id=894607382 instance=ExtResource("10_enemy_spawn_scene")]
+position = Vector2(9729, -133)
+enemy_scene = ExtResource("7_enemy_one_scene")
+
+[node name="EnemySpawnPoint117" parent="EnemySpawns" unique_id=484993216 instance=ExtResource("10_enemy_spawn_scene")]
+position = Vector2(9823, -133)
+enemy_scene = ExtResource("7_enemy_one_scene")
+
+[node name="EnemySpawnPoint118" parent="EnemySpawns" unique_id=1494028410 instance=ExtResource("10_enemy_spawn_scene")]
+position = Vector2(9913, -133)
+enemy_scene = ExtResource("7_enemy_one_scene")
+
 [node name="EnemySpawnPoint34" parent="EnemySpawns" unique_id=473623097 instance=ExtResource("10_enemy_spawn_scene")]
 position = Vector2(9127, 104)
 enemy_scene = ExtResource("11_jmjve")
@@ -589,13 +605,25 @@ enemy_scene = ExtResource("7_enemy_one_scene")
 position = Vector2(10608, -149)
 enemy_scene = ExtResource("12_tdtes")
 
+[node name="EnemySpawnPoint119" parent="EnemySpawns" unique_id=732597323 instance=ExtResource("10_enemy_spawn_scene")]
+position = Vector2(10976, -149)
+enemy_scene = ExtResource("7_enemy_one_scene")
+
+[node name="EnemySpawnPoint120" parent="EnemySpawns" unique_id=289916006 instance=ExtResource("10_enemy_spawn_scene")]
+position = Vector2(11552, 179)
+enemy_scene = ExtResource("7_enemy_one_scene")
+
 [node name="EnemySpawnPoint40" parent="EnemySpawns" unique_id=1891861830 instance=ExtResource("10_enemy_spawn_scene")]
 position = Vector2(10608, 137)
 enemy_scene = ExtResource("12_tdtes")
 
 [node name="EnemySpawnPoint41" parent="EnemySpawns" unique_id=2108988636 instance=ExtResource("10_enemy_spawn_scene")]
 position = Vector2(10802, -4)
-enemy_scene = ExtResource("9_enemy_three_scene")
+enemy_scene = ExtResource("12_tdtes")
+
+[node name="EnemySpawnPoint112" parent="EnemySpawns" unique_id=1896623966 instance=ExtResource("10_enemy_spawn_scene")]
+position = Vector2(10604, -4)
+enemy_scene = ExtResource("10_hs7hk")
 
 [node name="EnemySpawnPoint42" parent="EnemySpawns" unique_id=113693600 instance=ExtResource("10_enemy_spawn_scene")]
 position = Vector2(11209, -4)
@@ -624,6 +652,14 @@ enemy_scene = ExtResource("7_enemy_one_scene")
 [node name="EnemySpawnPoint48" parent="EnemySpawns" unique_id=556123833 instance=ExtResource("10_enemy_spawn_scene")]
 position = Vector2(12205, -4)
 enemy_scene = ExtResource("12_tdtes")
+
+[node name="EnemySpawnPoint113" parent="EnemySpawns" unique_id=1194060010 instance=ExtResource("10_enemy_spawn_scene")]
+position = Vector2(12499, -212)
+enemy_scene = ExtResource("9_enemy_three_scene")
+
+[node name="EnemySpawnPoint114" parent="EnemySpawns" unique_id=288900342 instance=ExtResource("10_enemy_spawn_scene")]
+position = Vector2(12499, 210)
+enemy_scene = ExtResource("9_enemy_three_scene")
 
 [node name="EnemySpawnPoint111" parent="EnemySpawns" unique_id=795799216 instance=ExtResource("10_enemy_spawn_scene")]
 position = Vector2(11772, -4)

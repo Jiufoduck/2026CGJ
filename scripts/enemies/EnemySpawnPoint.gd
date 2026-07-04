@@ -18,7 +18,8 @@ class_name EnemySpawnPoint
 
 @export var enemy_scene: PackedScene
 @export var spawn_label := "敌人生成点"
-const spawn_distance = 1100
+var spawn_distance = 1100
+@export var spawn_distance_override = 0
 @export_multiline var custom_script: String
 
 var spawned_enemy: Node2D
@@ -31,6 +32,8 @@ var spawn_loop_generation := 0
 func _ready() -> void:
 	add_to_group("enemy_spawn_points")
 	_refresh_label()
+	if spawn_distance_override > 0:
+		spawn_distance = spawn_distance_override
 	start_spawn_loop()
 
 

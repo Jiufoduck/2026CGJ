@@ -150,12 +150,14 @@ end_cap_mode = 2
 [node name="Actors" type="Node2D" parent="." unique_id=2042502936]
 
 [node name="PlayerOne" parent="Actors" unique_id=2026057950 instance=ExtResource("2_player_scene")]
-position = Vector2(61, -96)
+position = Vector2(62, -96)
+move_speed = 100
 player_color = Color(0.18, 0.62, 1, 1)
 
 [node name="PlayerTwo" parent="Actors" unique_id=671970584 instance=ExtResource("2_player_scene")]
 position = Vector2(61, 96)
 player_id = 2
+move_speed = 100
 player_color = Color(1, 0.38, 0.38, 1)
 
 [node name="BodyCore" parent="Actors" unique_id=188310188 instance=ExtResource("3_body_scene")]

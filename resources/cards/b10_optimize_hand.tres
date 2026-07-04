@@ -8,5 +8,5 @@ id = "b10_optimize_hand"
 card_name = "穿墙"
 owner_player_id = 2
 tags = PackedStringArray()
-description = "肉体可以穿墙"
+description = "锚可以穿墙"
 effect_id = "optimize_hand"

@@ -8,5 +8,5 @@ id = "b11_focused_fire"
 card_name = "切断输出"
 owner_player_id = 2
 tags = PackedStringArray("break")
-description = "切断锚链。断裂时，你无法出牌。队友没有CD"
+description = "切断锚链。断裂时，你无法出牌。队友没有冷却时间"
 effect_id = "focused_fire"

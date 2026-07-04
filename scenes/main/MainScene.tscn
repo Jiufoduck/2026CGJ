@@ -35,10 +35,10 @@ script = ExtResource("1_game_script")
 position = Vector2(-101, -3.9044194)
 scale = Vector2(1.7851977, 1.0002124)
 color = Color(0.12, 0.15, 0.17, 1)
-polygon = PackedVector2Array(0, -450, 11560.064, -445.00107, 11560.064, 453.80804, 0, 450)
+polygon = PackedVector2Array(0, -450, 14694.171, -446.00085, 14694.171, 453.80804, 0, 450)
 
 [node name="TopWall" type="StaticBody2D" parent="Level" unique_id=783944713]
-position = Vector2(2155, -270)
+position = Vector2(17598, -270)
 scale = Vector2(8.719999, 1)
 collision_layer = 2052
 collision_mask = 0
@@ -51,7 +51,7 @@ polygon = PackedVector2Array(-2150, -30, 2150, -30, 2150, 30, -2150, 30)
 shape = SubResource("RectangleShape2D_wall_horizontal")
 
 [node name="BottomWall" type="StaticBody2D" parent="Level" unique_id=743372559]
-position = Vector2(2155, 270)
+position = Vector2(17598, 270)
 scale = Vector2(9.2, 1)
 collision_layer = 2052
 collision_mask = 0
@@ -76,7 +76,7 @@ polygon = PackedVector2Array(-30, -450, 30, -450, 30, 450, -30, 450)
 shape = SubResource("RectangleShape2D_wall_vertical")
 
 [node name="RightWall" type="StaticBody2D" parent="Level" unique_id=1635120269]
-position = Vector2(20567, 0)
+position = Vector2(26161, 0)
 collision_layer = 2052
 collision_mask = 0
 
@@ -88,7 +88,7 @@ polygon = PackedVector2Array(-30, -450, 30, -450, 30, 450, -30, 450)
 shape = SubResource("RectangleShape2D_wall_vertical")
 
 [node name="FinishLine" type="Polygon2D" parent="Level" unique_id=2097621890]
-position = Vector2(16268, 0)
+position = Vector2(21887, 0)
 color = Color(0.92, 0.82, 0.25, 0.75)
 polygon = PackedVector2Array(4100, -450, 4140, -450, 4140, 450, 4100, 450)
 

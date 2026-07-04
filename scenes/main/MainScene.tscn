@@ -2,10 +2,12 @@
 
 [ext_resource type="Script" uid="uid://rhrx5sxw0wnp" path="res://scripts/game/GameController.gd" id="1_game_script"]
 [ext_resource type="PackedScene" uid="uid://borc38mwxop4l" path="res://scenes/characters/Player.tscn" id="2_player_scene"]
-[ext_resource type="PackedScene" path="res://scenes/core/BodyCore.tscn" id="3_body_scene"]
+[ext_resource type="PackedScene" uid="uid://daa7p53w1mhco" path="res://scenes/core/BodyCore.tscn" id="3_body_scene"]
+[ext_resource type="Texture2D" uid="uid://cyyphb8nc2ojn" path="res://assets/art/fire_2.png" id="3_xbdeh"]
 [ext_resource type="PackedScene" uid="uid://5rlcx22ksidf" path="res://scenes/ui/HUD.tscn" id="4_hud_scene"]
+[ext_resource type="Texture2D" uid="uid://blso6hjcbs8cq" path="res://assets/art/fire_1.png" id="4_ywwdm"]
 [ext_resource type="PackedScene" path="res://scenes/pickups/TaskPoint.tscn" id="5_task_scene"]
-[ext_resource type="PackedScene" path="res://scenes/obstacles/NetObstacle.tscn" id="6_f6se4"]
+[ext_resource type="PackedScene" uid="uid://bbx4ivqik1iqc" path="res://scenes/obstacles/NetObstacle.tscn" id="6_f6se4"]
 [ext_resource type="PackedScene" path="res://scenes/obstacles/RectangleObstacle.tscn" id="6_obstacle_scene"]
 [ext_resource type="PackedScene" uid="uid://253htnqnf3pa" path="res://scenes/enemies/EnemyType1.tscn" id="7_enemy_one_scene"]
 [ext_resource type="PackedScene" uid="uid://c2q4xwwctv2fl" path="res://scenes/enemies/EnemyType3.tscn" id="9_enemy_three_scene"]
@@ -22,6 +24,78 @@ size = Vector2(4300, 60)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_vertical"]
 size = Vector2(60, 900)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g3m55"]
+atlas = ExtResource("3_xbdeh")
+region = Rect2(10, 0, 270, 300)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0hk17"]
+atlas = ExtResource("3_xbdeh")
+region = Rect2(280, 0, 270, 300)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_50iuv"]
+atlas = ExtResource("3_xbdeh")
+region = Rect2(550, 0, 270, 300)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qwbvr"]
+atlas = ExtResource("3_xbdeh")
+region = Rect2(820, 0, 270, 300)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_0ld34"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g3m55")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0hk17")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_50iuv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qwbvr")
+}],
+"loop": true,
+"name": &"default",
+"speed": 7.0
+}]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kclug"]
+atlas = ExtResource("4_ywwdm")
+region = Rect2(0, 0, 247, 300)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_t3dd6"]
+atlas = ExtResource("4_ywwdm")
+region = Rect2(247, 0, 247, 300)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1fl3h"]
+atlas = ExtResource("4_ywwdm")
+region = Rect2(494, 0, 247, 300)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kq2m6"]
+atlas = ExtResource("4_ywwdm")
+region = Rect2(741, 0, 247, 300)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_uvfrc"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_kclug")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_t3dd6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1fl3h")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_kq2m6")
+}],
+"loop": true,
+"name": &"default",
+"speed": 7.0
+}]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_f6se4"]
 friction = 0.0
@@ -153,12 +227,14 @@ end_cap_mode = 2
 [node name="PlayerOne" parent="Actors" unique_id=2026057950 instance=ExtResource("2_player_scene")]
 position = Vector2(62, -96)
 collision_mask = 2051
+animation = SubResource("SpriteFrames_0ld34")
 move_speed = 150
 player_color = Color(0.18, 0.62, 1, 1)
 
 [node name="PlayerTwo" parent="Actors" unique_id=671970584 instance=ExtResource("2_player_scene")]
 position = Vector2(61, 96)
 collision_mask = 2051
+animation = SubResource("SpriteFrames_uvfrc")
 player_id = 2
 move_speed = 150
 player_color = Color(1, 0.38, 0.38, 1)

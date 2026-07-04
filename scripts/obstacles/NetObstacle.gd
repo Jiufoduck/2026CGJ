@@ -1,6 +1,8 @@
 extends StaticBody2D
 class_name NetObstacle
 
+const SoundCue = preload("res://scripts/audio/SoundCue.gd")
+
 # 脚本说明：
 # - release_lag_distance：肉体和玩家连线中心拉开到这个距离后，网开始积累挣脱进度。
 # - release_strain_seconds：持续拉扯达到这个时长后，网会被挣脱并不再阻挡肉体。
@@ -82,6 +84,7 @@ func reset_state() -> void:
 
 func _release() -> void:
 	released = true
+	SoundCue.play(self, &"net_break")
 	collision_layer = 0
 	collision_mask = 0
 	if collision_shape != null:

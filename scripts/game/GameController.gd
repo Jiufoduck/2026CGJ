@@ -127,6 +127,7 @@ const SHARED_INPUT_DOT := 0.65
 const CardDeckScript = preload("res://scripts/card/CardDeck.gd")
 const CardCatalogScript = preload("res://scripts/card/CardCatalog.gd")
 const CardEffectRunnerScript = preload("res://scripts/card/CardEffectRunner.gd")
+const SoundCue = preload("res://scripts/audio/SoundCue.gd")
 
 @export var player_one_path: NodePath = ^"Actors/PlayerOne"
 @export var player_two_path: NodePath = ^"Actors/PlayerTwo"
@@ -218,6 +219,7 @@ func _ready() -> void:
 	_update_body_and_line(0.0, false, true)
 	_advance_camera(0.0, true)
 	_update_hud()
+	SoundCue.play_music(self, &"battle", null, null, false, true)
 	if hud.has_method("show_tutorial_popup"):
 		hud.show_tutorial_popup(
 			"操作提示",
@@ -394,6 +396,7 @@ func _play_card_for_player(player_id: int) -> void:
 
 	card_effect_runner.on_card_success_started(player_id, played_card)
 	card_effect_runner.apply_card(player_id, played_card)
+	_play_card_sound(played_card)
 	_trigger_attack_card_camera_shake(played_card)
 	var _card_msg := "P%d 打出 %s" % [player_id, played_card.get("name", "未命名牌")]
 	if not body_core.is_link_active():
@@ -445,6 +448,13 @@ func _trigger_attack_card_camera_shake(card_data: Dictionary) -> void:
 
 	camera_shake_trauma = clampf(camera_shake_trauma + attack_card_camera_shake_impulse, 0.0, 1.0)
 	camera_shake_seed = randf_range(0.0, TAU)
+
+
+func _play_card_sound(card_data: Dictionary) -> void:
+	if str(card_data.get("type", "")) == CardDeckScript.CARD_TYPE_ATTACK:
+		SoundCue.play(self, &"attack")
+	else:
+		SoundCue.play(self, &"enhance")
 
 
 func _advance_camera(delta: float, snap_to_target := false) -> void:
@@ -841,6 +851,8 @@ func _end_game(message: String) -> void:
 
 	game_has_ended = true
 	get_tree().paused = false
+	SoundCue.stop_music(self)
+	SoundCue.play_music(self, &"egypt_victory", null, null, true, false)
 	_reset_camera_shake()
 	player_one.set_control_enabled(false)
 	player_two.set_control_enabled(false)
@@ -890,6 +902,8 @@ func _show_game_over_after_death_animations() -> void:
 		return
 
 	get_tree().paused = true
+	SoundCue.stop_music(self)
+	SoundCue.play_music(self, &"game_over", null, null, true, false)
 	hud.show_game_over(game_over_reason, game_over_fade_seconds)
 
 
@@ -996,7 +1010,7 @@ func _capture_reward_pause_process_modes(node: Node) -> void:
 		"node_ref": weakref(node),
 		"process_mode": node.process_mode,
 	})
-	node.process_mode = Node.PROCESS_MODE_DISABLED
+	node.set_deferred("process_mode",Node.PROCESS_MODE_DISABLED)
 	for child in node.get_children():
 		_capture_reward_pause_process_modes(child)
 
@@ -1028,6 +1042,7 @@ func _start_reward_choice(player_id: int, reward_cards: Array) -> void:
 	reward_choice_active = true
 	player_one.set_control_enabled(false)
 	player_two.set_control_enabled(false)
+	SoundCue.play_random(self, [&"checkpoint1", &"checkpoint2"])
 	hud.show_reward_choice(player_id, reward_cards)
 	hud.set_message("P%d 抵达专属任务点，选择 1 张奖励牌" % player_id)
 	_set_reward_world_pause(true)
@@ -1038,6 +1053,7 @@ func _finish_reward_choice(player_id: int, selected_card: Dictionary) -> void:
 		return
 
 	decks_by_player[player_id].add_card(selected_card)
+	SoundCue.play(self, &"acquire_card")
 	hud.hide_reward_choice()
 	hud.set_message("P%d 获得 %s" % [player_id, selected_card.get("name", "未命名牌")])
 	reward_choice_active = false
@@ -1097,6 +1113,7 @@ func _on_restart_fade_finished() -> void:
 	reward_choice_active = false
 	_set_reward_world_pause(false, false)
 	get_tree().paused = false
+	SoundCue.play_music(self, &"battle", null, null, true, true)
 	player_one.set_control_enabled(true)
 	player_two.set_control_enabled(true)
 	hud.set_message("")

@@ -2,6 +2,8 @@ extends RangedEnemyBase
 
 class_name EnemyType3
 
+const SoundCueScript = preload("res://scripts/audio/SoundCue.gd")
+
 # 脚本说明：
 # - bullet：远程敌人发射的子弹场景。
 # - bullet_speed：子弹初速度。
@@ -53,11 +55,13 @@ func start_behavior_loop():
 func shoot(dir: Vector2):
 	assert(can_shoot)
 	can_shoot = false
+
 	if is_card_frozen():
 		can_shoot = true
 		return
 	var pos = global_position
 	dir = dir.normalized()
+	SoundCueScript.play(self, &"emitting_bullet")
 	if is_elite:
 		var dir1 = Vector2(dir.y, -dir.x)
 		spawn_bullet(pos+dir1*elite_bullet_offset, dir)

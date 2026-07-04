@@ -972,7 +972,7 @@ func _apply_input_descriptor_binding(action_name: StringName, descriptor: Dictio
 	if should_save:
 		settings_config.set_value(_get_input_preset_section(active_input_preset), String(action_name), [descriptor])
 		_save_settings()
-		_play_ui_sound(&"upgrade_ui_selected")
+		_play_ui_sound(&"rebinded")
 	_refresh_rebind_buttons()
 
 

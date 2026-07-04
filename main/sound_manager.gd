@@ -23,6 +23,9 @@ const SOUND_CONFIG := {
 	&"checkpoint2": {"path": "res://assets/sound/checkpoint2.wav", "volume_db": -4.0},
 	&"line_broken": {"path": "res://assets/sound/line_broken.mp3", "volume_db": -2.0},
 	&"net_break": {"path": "res://assets/sound/net_break.mp3", "volume_db": -2.0},
+	&"emitting_bullet": {"path": "res://assets/sound/emmiting_bullet.mp3", "volume_db": -4.0},
+	&"emmiting_bullet": {"path": "res://assets/sound/emmiting_bullet.mp3", "volume_db": -4.0},
+	&"snake_strike": {"path": "res://assets/sound/SnakeStrike.mp3", "volume_db": -3.0},
 
 	&"body_hurt1": {"path": "res://assets/sound/body_hurt1.mp3", "volume_db": -4.0},
 	&"body_hurt2": {"path": "res://assets/sound/body_hurt2.mp3", "volume_db": -4.0},
@@ -52,6 +55,8 @@ var _streams: Dictionary = {}             # StringName -> AudioStream
 var _pending_loads: Array[StringName] = []
 var _players: Array[AudioStreamPlayer] = []
 var _missing_sound_warnings: Dictionary = {}
+var _music_player: AudioStreamPlayer
+var _current_music := StringName()
 
 func _ready() -> void:
 	setup_audio_buses()
@@ -128,6 +133,42 @@ func play_SFX(stream: AudioStream, volume_db: float = 0.0, pitch: float = 1.0, d
 	var sound_name := StringName(name_guess)
 	_play_stream(stream, volume_db, pitch, sound_name, delay, SFX_BUS_NAME)
 
+func play_music(sound_name: StringName, volume_db = null, pitch = null, restart := true, loop := true) -> void:
+	var stream := _load_stream(sound_name)
+	if stream == null:
+		if not _stream_paths.has(sound_name):
+			push_warning("Music not registered: %s" % String(sound_name))
+		return
+
+	if _music_player == null:
+		_music_player = AudioStreamPlayer.new()
+		_music_player.bus = MUSIC_BUS_NAME
+		add_child(_music_player)
+
+	if not restart and _current_music == sound_name and _music_player.playing:
+		return
+
+	var defaults = _sound_settings.get(sound_name, {"volume_db": 0.0, "pitch": 1.0})
+	var final_volume = volume_db if volume_db != null else defaults.get("volume_db", 0.0)
+	var final_pitch = pitch if pitch != null else defaults.get("pitch", 1.0)
+	var music_stream: AudioStream = stream.duplicate()
+	_apply_stream_loop(music_stream, loop)
+
+	_music_player.stop()
+	_music_player.stream = music_stream
+	_music_player.volume_db = final_volume
+	_music_player.pitch_scale = final_pitch
+	_music_player.play()
+	_current_music = sound_name
+
+
+func stop_music() -> void:
+	if _music_player != null:
+		_music_player.stop()
+		_music_player.stream = null
+	_current_music = StringName()
+
+
 func has_sound(sound_name: StringName) -> bool:
 	var path = _stream_paths.get(sound_name, "")
 	return path != "" and ResourceLoader.exists(path)
@@ -203,6 +244,19 @@ func _play_stream(stream: AudioStream, volume_db: float, pitch: float, sound_nam
 	var attenuation = float(current_per_sound) * SAME_SOUND_STEP_DB + max(current_total - 4, 0) * GLOBAL_STEP_DB
 	player.volume_db = clamp(volume_db - attenuation, MIN_VOLUME_DB, volume_db)
 	player.play()
+
+
+func _apply_stream_loop(stream: AudioStream, enabled: bool) -> void:
+	if stream == null:
+		return
+	for property_info in stream.get_property_list():
+		var property_name := String(property_info.get("name", ""))
+		if property_name == "loop":
+			stream.set("loop", enabled)
+			return
+		if property_name == "loop_mode":
+			stream.set("loop_mode", 1 if enabled else 0)
+			return
 
 func _get_free_player() -> AudioStreamPlayer:
 	for player in _players:

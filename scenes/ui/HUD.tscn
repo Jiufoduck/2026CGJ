@@ -1,11 +1,16 @@
 [gd_scene format=3 uid="uid://5rlcx22ksidf"]
 
 [ext_resource type="Script" uid="uid://ce0c0ntpbegwv" path="res://scripts/ui/HUD.gd" id="1_hud_script"]
+[ext_resource type="Texture2D" uid="uid://dii36thb14hal" path="res://assets/art/主界面ui.png" id="2_4ed8p"]
 [ext_resource type="Texture2D" uid="uid://vb1qkudg8pwm" path="res://assets/ui/hp_bar_bkg.png" id="2_6ll6g"]
 [ext_resource type="Texture2D" uid="uid://bpcen6tkrx7j0" path="res://assets/ui/hp_bar_fill.png" id="3_ig75s"]
 [ext_resource type="PackedScene" uid="uid://q8m7tgakstqw" path="res://scenes/ui/player_card_panel.tscn" id="4_ig75s"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ig75s"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4ed8p"]
+bg_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_rnyu1"]
+texture = ExtResource("2_4ed8p")
 
 [node name="HUD" type="CanvasLayer" unique_id=1619752691]
 script = ExtResource("1_hud_script")
@@ -19,6 +24,17 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
+[node name="Panel2" type="Panel" parent="Root" unique_id=351100520]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 492.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_4ed8p")
+
 [node name="Panel" type="Panel" parent="Root" unique_id=535262132]
 layout_mode = 1
 anchors_preset = 15
@@ -27,7 +43,7 @@ anchor_bottom = 1.0
 offset_top = 496.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_ig75s")
+theme_override_styles/panel = SubResource("StyleBoxTexture_rnyu1")
 
 [node name="SubViewportContainer" type="SubViewportContainer" parent="Root" unique_id=1509238378]
 layout_mode = 1
@@ -60,31 +76,31 @@ limit_bottom = 450
 
 [node name="HealthBar" type="TextureProgressBar" parent="Root" unique_id=883981419]
 layout_mode = 1
-offset_left = 434.0
-offset_top = 658.0
-offset_right = 1660.0
-offset_bottom = 866.0
-scale = Vector2(0.3, 0.3)
+offset_left = 494.0
+offset_top = 602.0
+offset_right = 1720.0
+offset_bottom = 810.0
+scale = Vector2(0.23, 0.23)
 value = 100.0
 texture_under = ExtResource("2_6ll6g")
 texture_progress = ExtResource("3_ig75s")
 
 [node name="PlayerAPanel" parent="Root" unique_id=1608253230 instance=ExtResource("4_ig75s")]
 layout_mode = 1
-offset_left = 34.0
-offset_top = 506.0
-offset_right = 334.0
-offset_bottom = 720.0
+offset_left = 80.0
+offset_top = 534.0
+offset_right = 380.0
+offset_bottom = 748.0
 
 [node name="PlayerBPanel" parent="Root" unique_id=1372259103 instance=ExtResource("4_ig75s")]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -334.0
-offset_top = 506.0
-offset_right = -34.0
-offset_bottom = 720.0
+offset_left = -382.0
+offset_top = 537.0
+offset_right = -82.0
+offset_bottom = 751.0
 
 [node name="MessageLabel" type="Label" parent="Root" unique_id=579635133]
 layout_mode = 1

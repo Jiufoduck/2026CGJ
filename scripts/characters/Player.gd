@@ -33,6 +33,7 @@ class_name TetherPlayer
 signal death_animation_started(player_id: int)
 signal death_animation_finished(player_id: int)
 
+@export var animation: SpriteFrames
 @export var player_id := 1
 @export var move_speed := 200
 @export var player_color := Color(0.2, 0.6, 1.0, 1.0)
@@ -48,16 +49,19 @@ var death_animation_tween: Tween
 var visual_base_scale := Vector2.ONE
 var visual_base_modulate := Color.WHITE
 
-@onready var visual_polygon: Polygon2D = $Visual
+@onready var visual: AnimatedSprite2D = $AnimatedSprite2D
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
 
 func _ready() -> void:
+
+	visual.sprite_frames = animation
+	visual.play("default")
+
 	original_collision_mask = collision_mask
-	if visual_polygon != null:
-		visual_base_scale = visual_polygon.scale
-		visual_base_modulate = visual_polygon.modulate
-	_update_visual_color()
+	if visual != null:
+		visual_base_scale = visual.scale
+		visual_base_modulate = visual.modulate
 
 
 func get_player_id() -> int:
@@ -125,38 +129,7 @@ func play_death_animation() -> void:
 		return
 
 	_kill_death_animation_tween()
-	if visual_polygon == null:
-		await get_tree().create_timer(duration, true).timeout
-		finish_death_animation()
-		return
 
-	death_animation_tween = create_tween()
-	death_animation_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-	death_animation_tween.tween_property(
-		visual_polygon,
-		"scale",
-		visual_base_scale * 1.16,
-		duration * 0.35
-	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	death_animation_tween.parallel().tween_property(
-		visual_polygon,
-		"modulate",
-		Color(1.0, 0.32, 0.22, 1.0),
-		duration * 0.35
-	)
-	death_animation_tween.tween_property(
-		visual_polygon,
-		"scale",
-		visual_base_scale * 0.72,
-		duration * 0.65
-	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	death_animation_tween.parallel().tween_property(
-		visual_polygon,
-		"modulate",
-		Color(0.18, 0.18, 0.18, 1.0),
-		duration * 0.65
-	)
-	death_animation_tween.finished.connect(finish_death_animation)
 
 
 func finish_death_animation() -> void:
@@ -172,11 +145,6 @@ func reset_death_animation_state() -> void:
 	death_animation_playing = false
 	_kill_death_animation_tween()
 	velocity = Vector2.ZERO
-	if visual_polygon != null:
-		visual_polygon.scale = visual_base_scale
-		visual_polygon.modulate = visual_base_modulate
-	_update_visual_color()
-
 
 func set_control_enabled(enabled: bool) -> void:
 	control_enabled = enabled
@@ -188,8 +156,3 @@ func _kill_death_animation_tween() -> void:
 	if death_animation_tween != null and death_animation_tween.is_valid():
 		death_animation_tween.kill()
 	death_animation_tween = null
-
-
-func _update_visual_color() -> void:
-	if visual_polygon != null:
-		visual_polygon.color = player_color

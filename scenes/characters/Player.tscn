@@ -9,9 +9,9 @@ radius = 22.0
 collision_mask = 7
 script = ExtResource("1_player_script")
 
-[node name="Visual" type="Polygon2D" parent="." unique_id=57210787]
-color = Color(0.2, 0.6, 1, 1)
-polygon = PackedVector2Array(-22, -22, 22, -22, 22, 22, -22, 22)
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1896131113]
+position = Vector2(0, -29)
+scale = Vector2(0.3, 0.3)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1719314409]
 shape = SubResource("CircleShape2D_player")

@@ -13,6 +13,7 @@ class_name BodyCore
 # - snapback_finish_speed：肉体接近连线中心时保留的低速，避免最后一段瞬移。
 # - snapback_slow_distance：肉体距离连线中心小于这个距离后开始明显减速。
 # - snapback_arrive_distance：肉体距离连线中心小于这个值时认为回弹完成。
+# - obstacle_slide_max_iterations：肉体被普通障碍挡住时，最多尝试几次沿墙滑动。
 # - current_health：肉体当前血量。受击减少，恢复连线时回满。
 # - link_broken：当前连线是否已经断开。断开后 Line2D 隐藏，倒计时开始。
 # - broken_seconds_left：断线后剩余倒计时秒数。它只在 link_broken 为 true 时递减。
@@ -24,10 +25,12 @@ class_name BodyCore
 # - _ready()：初始化血量、信号和视觉状态。
 # - _physics_process(delta)：断线状态下推进 10 秒倒计时，到 0 后请求游戏结束。
 # - place_between(player_one_position, player_two_position)：把肉体放到两个玩家中点，满足“连线中心是受击点：肉体”的设定。
-# - move_toward_position(target_position)：让肉体尝试回到目标点；如果被 net 挡住，就停在碰撞点并记录阻挡物。
+# - move_toward_position(target_position)：让肉体尝试回到目标点；普通障碍会沿墙滑动，net 会直接挡住并记录阻挡物。
 # - start_snapback()：net 被挣脱时调用，启动初始高速、随后减速的回弹运动。
 # - advance_snapback_to_position(target_position, delta)：按当前回弹速度朝连线中心移动一小段。
 # - is_snapback_active()：返回肉体是否仍处于回弹状态。
+# - _move_with_obstacle_slide(motion)：移动肉体；普通障碍保留切向剩余位移，net 保持原来的阻挡手感。
+# - _should_stop_without_sliding(collider)：识别 net 等不应该被滑过的阻挡物。
 # - take_hit(amount, source_enemy)：处理受击扣血；血量归零时断开连线并启动 10 秒倒计时。
 # - force_break_link()：卡牌直接断线入口。它把肉体血量归零并启动断线倒计时。
 # - restore_link()：恢复连线并回满血量，用于恢复连线卡。
@@ -48,6 +51,7 @@ signal damaged_by_enemy(amount: float, source_enemy: Node)
 @export var snapback_finish_speed := 120.0
 @export var snapback_slow_distance := 520.0
 @export var snapback_arrive_distance := 6.0
+@export var obstacle_slide_max_iterations := 4
 
 var current_health := 100.0
 var link_broken := false
@@ -94,9 +98,7 @@ func move_toward_position(target_position: Vector2) -> Node:
 		global_position = target_position
 		return null
 
-	var collision := move_and_collide(motion)
-	if collision != null:
-		last_motion_blocker = collision.get_collider()
+	_move_with_obstacle_slide(motion)
 	return last_motion_blocker
 
 
@@ -126,18 +128,45 @@ func advance_snapback_to_position(target_position: Vector2, delta: float) -> Nod
 	snapback_speed = lerpf(snapback_speed, target_speed, clampf(delta * 8.0, 0.0, 1.0))
 
 	var motion: Vector2 = to_target.normalized() * minf(distance, snapback_speed * delta)
-	var collision := move_and_collide(motion)
-	if collision != null:
-		last_motion_blocker = collision.get_collider()
+	var blocker := _move_with_obstacle_slide(motion)
+	if blocker != null and _should_stop_without_sliding(blocker):
 		snapback_active = false
 		snapback_speed = 0.0
 		return last_motion_blocker
 
-	if motion.length() >= distance - snapback_arrive_distance:
+	if global_position.distance_to(target_position) <= snapback_arrive_distance:
 		global_position = target_position
 		snapback_active = false
 		snapback_speed = 0.0
 	return null
+
+
+func _move_with_obstacle_slide(motion: Vector2) -> Node:
+	var remaining_motion := motion
+	for _iteration in range(obstacle_slide_max_iterations):
+		if remaining_motion.length() <= 0.001:
+			break
+
+		var collision := move_and_collide(remaining_motion)
+		if collision == null:
+			break
+
+		last_motion_blocker = collision.get_collider()
+		if _should_stop_without_sliding(last_motion_blocker):
+			return last_motion_blocker
+
+		var slide_motion: Vector2 = collision.get_remainder().slide(collision.get_normal())
+		if slide_motion.length() <= 0.001:
+			break
+		remaining_motion = slide_motion
+
+	return last_motion_blocker
+
+
+func _should_stop_without_sliding(collider: Node) -> bool:
+	if collider == null:
+		return false
+	return collider.has_method("apply_tether_strain") or collider.is_in_group("net_obstacles")
 
 
 func is_snapback_active() -> bool:

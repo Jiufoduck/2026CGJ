@@ -7,16 +7,15 @@ class_name GameHUD
 # - link_status_label：显示连线稳定、断线倒计时、胜利或失败状态的 Label。
 # - death_countdown_panel：断线后显示在屏幕上的死亡倒计时面板，避免只在底部状态栏里显示而被忽略。
 # - death_countdown_label：死亡倒计时数字文本。BodyCore 断线倒计时每帧刷新它。
-# - player_one_card_label：玩家 1 当前牌显示。它只读牌堆顶，不改变牌堆。
-# - player_two_card_label：玩家 2 当前牌显示。它只读牌堆顶，不改变牌堆。
-# - player_one_count_label：玩家 1 当前战斗牌堆剩余数量。
-# - player_two_count_label：玩家 2 当前战斗牌堆剩余数量。
+# - player_one_card_panel/player_two_card_panel：玩家当前牌独立显示面板。面板自己处理卡面、标题、描述和牌数。
 # - message_label：显示最近一次卡牌、任务点或结束状态消息。
 # - reward_choice_overlay：任务点奖励三选一界面根节点。默认隐藏，玩家到达专属任务点后显示。
 # - reward_choice_panel：任务点奖励三选一界面的中心面板。显示/隐藏动画会缩放它。
 # - reward_title_label：奖励界面标题，显示是哪个玩家正在选择奖励。
 # - reward_hint_label：奖励界面提示，说明只能选择一张牌加入该玩家牌堆。
-# - reward_choice_buttons：三个奖励按钮的数组。每个按钮对应一张候选牌，按钮文本由卡牌名称、类型和说明组成。
+# - reward_choice_buttons：三个奖励卡牌按钮。按钮背景由卡牌类型和消耗词条决定，文字由子 Label 排版。
+# - reward_card_face_styleboxes：奖励卡面 StyleBox 缓存，避免每次打开奖励面板重复创建资源。
+# - current_link_is_active：HUD 最近一次收到的连线状态。当前牌面板用它判断是否播放恢复牌提示。
 # - sub_viewport：UI 内承载主世界画面的 SubViewport。它共享主场景 World2D，但必须使用自己的 Camera2D。
 # - sub_viewport_camera：SubViewport 专属的镜像相机。它不参与主场景逻辑，只复制主 Camera2D 的视角。
 # - source_world_camera：主场景真正用于跟随和边界计算的 Camera2D。
@@ -65,15 +64,18 @@ class_name GameHUD
 # - _load_saved_settings()/_save_settings()：读取和保存玩家设置。
 # - set_health(current_health, max_health)：更新醒目的血量条和血量文字。
 # - set_link_state(is_active, seconds_left)：更新连线稳定或断线倒计时文字。
-# - set_player_deck_status(player_id, card_name, card_count, cooldown_remaining)：更新指定玩家的当前牌、牌数和冷却状态。
+# - set_player_deck_status(player_id, card_data, card_count, cooldown_remaining)：把当前牌字典交给指定玩家卡牌面板显示。
 # - set_message(message)：更新短消息区域，用于反馈任务点拾取和打牌结果。
 # - set_game_result(message)：显示最终结果，并把结果同步到连线状态区域。
 # - show_reward_choice(player_id, reward_cards)：显示任务点奖励面板，把 3 张候选牌渲染到按钮上。
 # - hide_reward_choice()：隐藏任务点奖励面板并清空当前候选牌。
+# - _setup_reward_choice_card_buttons()：为奖励按钮创建标题和描述子 Label，并关闭按钮默认文字。
 # - _play_reward_show_animation()/_play_reward_hide_animation()：播放奖励面板动画，动画不受世界时停影响。
 # - _kill_reward_choice_tween()：切换奖励面板状态前停止旧动画，避免重复 Tween 抢同一属性。
 # - _on_reward_button_pressed(index)：处理玩家点击第 index 个奖励按钮，发出 card_reward_selected 信号。
-# - _format_reward_button_text(index, card_data)：把卡牌字典格式化成按钮上可读的三行文本。
+# - _render_reward_choice_button(button, card_data)：按卡牌数据更新奖励卡面、标题和描述。
+# - _get_reward_card_face_stylebox(card_data)：根据 attack/other 与 consumable 组合选择对应奖励卡面。
+# - _card_has_tag(card_data, tag)：HUD 内部通用词条判断，用于恢复牌提示和奖励卡面判断。
 
 signal card_reward_selected(player_id: int, card_data: Dictionary)
 signal try_again_requested
@@ -82,6 +84,13 @@ signal restart_fade_finished
 
 const SETTINGS_PATH := "user://settings.cfg"
 const DEFAULT_GAME_OVER_FADE_SECONDS := 3.0
+const REWARD_TAG_CONSUMABLE := "consumable"
+const CARD_TAG_RESTORE := "restore"
+const REWARD_CARD_TYPE_ATTACK := "attack"
+const REWARD_ATTACK_CONSUMABLE_FACE = preload("res://assets/art/card_face/award_attack_consumable_card_face.png")
+const REWARD_ATTACK_UNCONSUMABLE_FACE = preload("res://assets/art/card_face/award_card_face_attack_unconsumable.png")
+const REWARD_ENHANCE_CONSUMABLE_FACE = preload("res://assets/art/card_face/award_enhance_consumabel_cardface.png")
+const REWARD_ENHANCE_UNCONSUMABLE_FACE = preload("res://assets/art/card_face/award_enhance_unconsumable.png")
 const INPUT_PRESET_KEYBOARD := "keyboard"
 const INPUT_PRESET_GAMEPAD := "gamepad"
 const DEFAULT_INPUT_PRESET := INPUT_PRESET_GAMEPAD
@@ -179,10 +188,8 @@ const DEFAULT_INPUT_PRESET_BINDINGS := {
 @onready var health_bar: TextureProgressBar = $Root/HealthBar
 @onready var death_countdown_panel: Control = $Root/DeathCountdownPanel
 @onready var death_countdown_label: Label = $Root/DeathCountdownPanel/DeathCountdownLabel
-@onready var player_one_card_label: Label = $Root/PlayerOnePanel/CardLabel
-@onready var player_two_card_label: Label = $Root/PlayerTwoPanel/CardLabel
-@onready var player_one_count_label: Label = $Root/PlayerOnePanel/CountLabel
-@onready var player_two_count_label: Label = $Root/PlayerTwoPanel/CountLabel
+@onready var player_one_card_panel: Panel = $Root/PlayerAPanel
+@onready var player_two_card_panel: Panel = $Root/PlayerBPanel
 @onready var message_label: Label = $Root/MessageLabel
 @onready var reward_choice_overlay: Control = $Root/RewardChoiceOverlay
 @onready var reward_choice_panel: Panel = $Root/RewardChoiceOverlay/Panel
@@ -214,6 +221,8 @@ const DEFAULT_INPUT_PRESET_BINDINGS := {
 var active_reward_player_id := 0
 var active_reward_cards: Array = []
 var reward_choice_tween: Tween
+var reward_card_face_styleboxes := {}
+var current_link_is_active := true
 var game_over_overlay: ColorRect
 var game_over_title_label: Label
 var game_over_reason_label: Label
@@ -232,6 +241,7 @@ func _ready() -> void:
 	_set_pause_independent_ui_tree(self)
 	_ensure_pause_menu_action_defaults()
 	_build_game_over_overlay()
+	_setup_reward_choice_card_buttons()
 	set_message("")
 	death_countdown_panel.visible = false
 	hide_reward_choice(false)
@@ -1113,25 +1123,33 @@ func set_health(current_health: float, max_health: float) -> void:
 
 
 func set_link_state(is_active: bool, seconds_left: float) -> void:
+	current_link_is_active = is_active
 	if is_active:
 		death_countdown_panel.visible = false
+		_set_restore_hint_for_panel(player_one_card_panel, false)
+		_set_restore_hint_for_panel(player_two_card_panel, false)
 	else:
 		var clamped_seconds: float = maxf(0.0, seconds_left)
 		death_countdown_label.text = "死亡倒计时 %.1f" % clamped_seconds
 		death_countdown_panel.visible = true
 
 
-func set_player_deck_status(player_id: int, card_name: String, card_count: int, cooldown_remaining: float) -> void:
-	var cooldown_text := ""
-	if cooldown_remaining > 0.0:
-		cooldown_text = "  %.1fs" % cooldown_remaining
-
+func set_player_deck_status(player_id: int, card_data: Dictionary, card_count: int, cooldown_remaining: float) -> void:
 	if player_id == 1:
-		player_one_card_label.text = "P1  %s%s" % [card_name, cooldown_text]
-		player_one_count_label.text = "牌堆 %d" % card_count
+		_update_player_card_panel(player_one_card_panel, card_data, card_count, cooldown_remaining)
 	elif player_id == 2:
-		player_two_card_label.text = "P2  %s%s" % [card_name, cooldown_text]
-		player_two_count_label.text = "牌堆 %d" % card_count
+		_update_player_card_panel(player_two_card_panel, card_data, card_count, cooldown_remaining)
+
+
+func _update_player_card_panel(card_panel: Node, card_data: Dictionary, card_count: int, cooldown_remaining: float) -> void:
+	if card_panel != null and card_panel.has_method("load_card_data"):
+		card_panel.load_card_data(card_data, card_count, cooldown_remaining)
+		_set_restore_hint_for_panel(card_panel, not current_link_is_active and _card_has_tag(card_data, CARD_TAG_RESTORE))
+
+
+func _set_restore_hint_for_panel(card_panel: Node, active: bool) -> void:
+	if card_panel != null and card_panel.has_method("set_restore_hint_active"):
+		card_panel.set_restore_hint_active(active)
 
 
 func set_message(message: String) -> void:
@@ -1153,7 +1171,9 @@ func show_reward_choice(player_id: int, reward_cards: Array) -> void:
 		reward_choice_buttons[index].visible = has_card
 		reward_choice_buttons[index].disabled = not has_card
 		if has_card:
-			reward_choice_buttons[index].text = _format_reward_button_text(index, active_reward_cards[index])
+			_render_reward_choice_button(reward_choice_buttons[index], active_reward_cards[index])
+		else:
+			_clear_reward_choice_button(reward_choice_buttons[index])
 	reward_choice_overlay.visible = true
 	_play_reward_show_animation()
 	if not reward_choice_buttons.is_empty() and reward_choice_buttons[0].visible:
@@ -1164,6 +1184,8 @@ func hide_reward_choice(animate := true) -> void:
 	var was_visible := reward_choice_overlay.visible
 	active_reward_player_id = 0
 	active_reward_cards.clear()
+	for button in reward_choice_buttons:
+		_clear_reward_choice_button(button)
 	if not animate or not was_visible:
 		_kill_reward_choice_tween()
 		reward_choice_overlay.visible = false
@@ -1206,21 +1228,114 @@ func _kill_reward_choice_tween() -> void:
 	reward_choice_tween = null
 
 
+func _setup_reward_choice_card_buttons() -> void:
+	for button in reward_choice_buttons:
+		button.text = ""
+		button.flat = false
+		button.clip_contents = true
+		button.add_theme_constant_override("content_margin_left", 0)
+		button.add_theme_constant_override("content_margin_top", 0)
+		button.add_theme_constant_override("content_margin_right", 0)
+		button.add_theme_constant_override("content_margin_bottom", 0)
+		_get_or_create_reward_button_label(button, "RewardCardTitleLabel", true)
+		_get_or_create_reward_button_label(button, "RewardCardDescriptionLabel", false)
+		_clear_reward_choice_button(button)
+
+
+func _render_reward_choice_button(button: Button, card_data: Dictionary) -> void:
+	button.text = ""
+	var stylebox := _get_reward_card_face_stylebox(card_data)
+	for style_name in ["normal", "hover", "pressed", "disabled", "focus"]:
+		button.add_theme_stylebox_override(style_name, stylebox)
+
+	var title_label := _get_or_create_reward_button_label(button, "RewardCardTitleLabel", true)
+	var description_label := _get_or_create_reward_button_label(button, "RewardCardDescriptionLabel", false)
+	title_label.text = str(card_data.get("name", "未命名牌"))
+	description_label.text = str(card_data.get("description", ""))
+
+
+func _clear_reward_choice_button(button: Button) -> void:
+	button.text = ""
+	var title_label := button.get_node_or_null("RewardCardTitleLabel") as Label
+	if title_label != null:
+		title_label.text = ""
+	var description_label := button.get_node_or_null("RewardCardDescriptionLabel") as Label
+	if description_label != null:
+		description_label.text = ""
+
+
+func _get_or_create_reward_button_label(button: Button, label_name: String, is_title: bool) -> Label:
+	var label := button.get_node_or_null(label_name) as Label
+	if label != null:
+		return label
+
+	label = Label.new()
+	label.name = label_name
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.clip_text = true
+	label.add_theme_color_override("font_color", Color(0.27, 0.18, 0.11, 1.0))
+	label.add_theme_color_override("font_shadow_color", Color(1.0, 0.86, 0.66, 0.38))
+	label.add_theme_constant_override("shadow_offset_x", 1)
+	label.add_theme_constant_override("shadow_offset_y", 1)
+	if is_title:
+		label.anchor_left = 0.12
+		label.anchor_top = 0.49
+		label.anchor_right = 0.88
+		label.anchor_bottom = 0.59
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.add_theme_font_size_override("font_size", 19)
+	else:
+		label.anchor_left = 0.13
+		label.anchor_top = 0.60
+		label.anchor_right = 0.87
+		label.anchor_bottom = 0.84
+		label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+		label.add_theme_font_size_override("font_size", 11)
+	button.add_child(label)
+	return label
+
+
+func _get_reward_card_face_stylebox(card_data: Dictionary) -> StyleBoxTexture:
+	var card_type := str(card_data.get("type", ""))
+	var is_attack := card_type == REWARD_CARD_TYPE_ATTACK
+	var is_consumable := _reward_card_has_tag(card_data, REWARD_TAG_CONSUMABLE)
+	var key := "enhance_unconsumable"
+	var texture: Texture2D = REWARD_ENHANCE_UNCONSUMABLE_FACE
+	if is_attack and is_consumable:
+		key = "attack_consumable"
+		texture = REWARD_ATTACK_CONSUMABLE_FACE
+	elif is_attack and not is_consumable:
+		key = "attack_unconsumable"
+		texture = REWARD_ATTACK_UNCONSUMABLE_FACE
+	elif not is_attack and is_consumable:
+		key = "enhance_consumable"
+		texture = REWARD_ENHANCE_CONSUMABLE_FACE
+
+	if reward_card_face_styleboxes.has(key):
+		return reward_card_face_styleboxes[key]
+
+	var stylebox := StyleBoxTexture.new()
+	stylebox.texture = texture
+	reward_card_face_styleboxes[key] = stylebox
+	return stylebox
+
+
+func _reward_card_has_tag(card_data: Dictionary, tag: String) -> bool:
+	return _card_has_tag(card_data, tag)
+
+
+func _card_has_tag(card_data: Dictionary, tag: String) -> bool:
+	for tag_value in card_data.get("tags", []):
+		if str(tag_value) == tag:
+			return true
+	return false
+
+
 func _on_reward_button_pressed(index: int) -> void:
 	if index < 0 or index >= active_reward_cards.size():
 		return
 
 	var selected_card: Dictionary = active_reward_cards[index].duplicate(true)
 	card_reward_selected.emit(active_reward_player_id, selected_card)
-
-
-func _format_reward_button_text(index: int, card_data: Dictionary) -> String:
-	var type_text := "其他牌"
-	if card_data.get("type", "") == "attack":
-		type_text = "攻击牌"
-	return "%d. %s\n%s\n%s" % [
-		index + 1,
-		card_data.get("name", "未命名牌"),
-		type_text,
-		card_data.get("description", ""),
-	]

@@ -48,7 +48,9 @@ class_name GameController
 # - game_over_reason：当前失败原因文本，死亡动画结束后交给 HUD 显示。
 # - pending_death_animation_players：仍未发出 death_animation_finished 的玩家集合。
 # - restart_state：主场景初始位置快照。Try again 用它恢复玩家、肉体和相机起点。
-# - card_effect_runner：运行时创建的卡牌效果执行器。它只负责逻辑，不承担场景结构；世界暂停时也要暂停效果检测。
+# - reward_world_pause_active：任务点选卡期间的世界暂停锁。它和 SceneTree.paused 配合，不使用 Engine.time_scale。
+# - reward_world_pause_process_modes：选卡暂停前保存的世界节点 process_mode，结束选卡后原样恢复。
+# - card_effect_runner：运行时创建的卡牌效果执行器。它只负责逻辑，不承担场景结构；世界暂停时随世界一起暂停。
 # - _ready()：读取节点、注册输入、建立牌堆、连接任务点/肉体信号，把主世界相机同步给 HUD 的 SubViewport，并初始化 HUD。
 # - _physics_process(delta)：每帧推进摄像机、移动、连线、卡牌冷却、任务终点和 HUD。
 # - _ensure_default_input_actions()：注册默认键位，保证空项目运行时可以直接测试。
@@ -80,6 +82,7 @@ class_name GameController
 # - _update_body_and_line(delta, apply_net_strain, snap_to_center)：让肉体尝试回到两名玩家中点；如果被 net 挡住则停下，挣脱后用减速回弹运动回到中心。
 # - _apply_net_strain(blocker, body_target, delta)：肉体被 net 挡住时，把拉扯距离传给 net；挣脱后给 HUD 一条反馈。
 # - _update_hud()：集中刷新血量、连线状态、当前牌和牌堆数量。
+# - _promote_restore_cards_while_link_broken()：断线期间持续监测牌堆，发现恢复牌就提到当前牌位供 HUD 高亮提示。
 # - _check_finish_condition()：两个玩家都抵达最右侧后结束游戏。
 # - _end_game(message)：统一处理胜利或失败，关闭控制并显示结果。
 # - _begin_game_over_sequence(reason)：死亡倒计时归零后的失败流程入口。
@@ -89,6 +92,9 @@ class_name GameController
 # - _restore_start_positions()：把两个玩家、肉体和相机放回主场景起点。
 # - _reset_dynamic_world_state()：清理敌人、子弹、卡牌反馈，并重启生成点。
 # - _reset_interactable_world_state()：恢复任务点和 net 障碍等关卡交互物。
+# - _set_reward_world_pause(enabled, apply_tree_pause)：切换任务点选卡暂停锁，显式禁用世界节点处理但跳过 HUD。
+# - _capture_reward_pause_process_modes(node)：递归保存并禁用某个世界节点子树的 process_mode。
+# - _restore_reward_pause_process_modes()：恢复选卡暂停前保存的世界节点 process_mode。
 # - _start_reward_choice(player_id, reward_cards)：打开任务点三选一奖励面板，暂停游戏并等待该玩家选择一张牌。
 # - _finish_reward_choice(player_id, selected_card)：收到 HUD 选择结果后，把选中的卡加入对应玩家牌堆并恢复游戏。
 # - _on_player_death_animation_finished(player_id)：收到玩家动画结束信号；两人都结束后才显示 Gameover。
@@ -157,6 +163,8 @@ var restart_in_progress := false
 var game_over_reason := ""
 var pending_death_animation_players := {}
 var restart_state := {}
+var reward_world_pause_active := false
+var reward_world_pause_process_modes: Array = []
 var card_effect_runner
 
 
@@ -352,13 +360,13 @@ func _play_card_for_player(player_id: int) -> void:
 	card_effect_runner.on_card_success_started(player_id, played_card)
 	card_effect_runner.apply_card(player_id, played_card)
 	var _card_msg := "P%d 打出 %s" % [player_id, played_card.get("name", "未命名牌")]
-	if CardDeckScript.card_has_tag(played_card, CardDeckScript.TAG_BREAK_LINK):
-		var other_id := 3 - player_id
-		var promoted: Dictionary = decks_by_player[other_id].promote_first_restore_to_top()
-		if not promoted.is_empty():
-			var restore_name: String = promoted.get("name", "恢复牌")
-			print("[断线] P%d 打出断线牌，P%d 的 %s 已提到牌顶" % [player_id, other_id, restore_name])
-			_card_msg += " → P%d 的 %s 提到牌顶" % [other_id, restore_name]
+	if not body_core.is_link_active():
+		var promoted_by_player := _promote_restore_cards_while_link_broken()
+		for promoted_player_id in promoted_by_player.keys():
+			var promoted_card: Dictionary = promoted_by_player[promoted_player_id]
+			var restore_name: String = promoted_card.get("name", "恢复牌")
+			print("[断线] P%d 的 %s 已提到牌顶" % [promoted_player_id, restore_name])
+			_card_msg += " → P%d 的 %s 提到牌顶" % [promoted_player_id, restore_name]
 	hud.set_message(_card_msg)
 
 
@@ -698,9 +706,27 @@ func _apply_net_strain(blocker: Node, body_target: Vector2, delta: float) -> voi
 func _update_hud() -> void:
 	hud.set_health(body_core.current_health, body_core.max_health)
 	hud.set_link_state(body_core.is_link_active(), body_core.broken_seconds_left)
+	_promote_restore_cards_while_link_broken()
 	for player_id in decks_by_player.keys():
 		var deck = decks_by_player[player_id]
-		hud.set_player_deck_status(player_id, deck.current_card_name(), deck.card_count(), deck.cooldown_remaining)
+		hud.set_player_deck_status(player_id, deck.peek_current_card(), deck.card_count(), deck.cooldown_remaining)
+
+
+func _promote_restore_cards_while_link_broken() -> Dictionary:
+	var promoted_by_player := {}
+	if body_core == null or body_core.is_link_active():
+		return promoted_by_player
+
+	for player_id in decks_by_player.keys():
+		var deck = decks_by_player[player_id]
+		var current_card: Dictionary = deck.peek_current_card()
+		if CardDeckScript.card_has_tag(current_card, CardDeckScript.TAG_RESTORE):
+			continue
+
+		var promoted_card: Dictionary = deck.promote_first_restore_to_top()
+		if not promoted_card.is_empty():
+			promoted_by_player[player_id] = promoted_card
+	return promoted_by_player
 
 
 func _check_finish_condition() -> void:
@@ -728,6 +754,7 @@ func _begin_game_over_sequence(reason: String) -> void:
 	game_has_ended = true
 	game_over_reason = reason
 	reward_choice_active = false
+	_set_reward_world_pause(false, false)
 	get_tree().paused = false
 	hud.hide_reward_choice(false)
 	player_one.set_control_enabled(false)
@@ -765,6 +792,7 @@ func _show_game_over_after_death_animations() -> void:
 
 
 func _reset_game_state_for_restart() -> void:
+	_set_reward_world_pause(false, false)
 	get_tree().paused = true
 	reward_choice_active = false
 	game_has_ended = true
@@ -835,6 +863,55 @@ func _queue_free_nodes_in_group(group_name: StringName) -> void:
 			node.queue_free()
 
 
+func _set_reward_world_pause(enabled: bool, apply_tree_pause := true) -> void:
+	if enabled:
+		if reward_world_pause_active:
+			if apply_tree_pause:
+				get_tree().paused = true
+			return
+
+		reward_world_pause_active = true
+		reward_world_pause_process_modes.clear()
+		for child in get_children():
+			if child == hud:
+				continue
+			_capture_reward_pause_process_modes(child)
+		if apply_tree_pause:
+			get_tree().paused = true
+		return
+
+	_restore_reward_pause_process_modes()
+	if apply_tree_pause:
+		get_tree().paused = false
+
+
+func _capture_reward_pause_process_modes(node: Node) -> void:
+	if node == null or not is_instance_valid(node):
+		return
+
+	reward_world_pause_process_modes.append({
+		"node": node,
+		"process_mode": node.process_mode,
+	})
+	node.process_mode = Node.PROCESS_MODE_DISABLED
+	for child in node.get_children():
+		_capture_reward_pause_process_modes(child)
+
+
+func _restore_reward_pause_process_modes() -> void:
+	if not reward_world_pause_active:
+		return
+
+	for index in range(reward_world_pause_process_modes.size() - 1, -1, -1):
+		var state: Dictionary = reward_world_pause_process_modes[index]
+		var node: Node = state.get("node", null)
+		if node != null and is_instance_valid(node):
+			node.process_mode = int(state.get("process_mode", Node.PROCESS_MODE_INHERIT))
+
+	reward_world_pause_process_modes.clear()
+	reward_world_pause_active = false
+
+
 func _start_reward_choice(player_id: int, reward_cards: Array) -> void:
 	if reward_cards.is_empty() or not decks_by_player.has(player_id):
 		return
@@ -844,7 +921,7 @@ func _start_reward_choice(player_id: int, reward_cards: Array) -> void:
 	player_two.set_control_enabled(false)
 	hud.show_reward_choice(player_id, reward_cards)
 	hud.set_message("P%d 抵达专属任务点，选择 1 张奖励牌" % player_id)
-	get_tree().paused = true
+	_set_reward_world_pause(true)
 
 
 func _finish_reward_choice(player_id: int, selected_card: Dictionary) -> void:
@@ -855,7 +932,7 @@ func _finish_reward_choice(player_id: int, selected_card: Dictionary) -> void:
 	hud.hide_reward_choice()
 	hud.set_message("P%d 获得 %s" % [player_id, selected_card.get("name", "未命名牌")])
 	reward_choice_active = false
-	get_tree().paused = false
+	_set_reward_world_pause(false)
 	if not game_has_ended:
 		player_one.set_control_enabled(true)
 		player_two.set_control_enabled(true)
@@ -867,6 +944,7 @@ func _on_body_health_changed(current_health: float, max_health: float) -> void:
 
 
 func _on_link_broken_started(seconds_left: float) -> void:
+	_promote_restore_cards_while_link_broken()
 	hud.set_link_state(false, seconds_left)
 
 
@@ -902,6 +980,7 @@ func _on_restart_fade_finished() -> void:
 	game_has_ended = false
 	game_over_reason = ""
 	reward_choice_active = false
+	_set_reward_world_pause(false, false)
 	get_tree().paused = false
 	player_one.set_control_enabled(true)
 	player_two.set_control_enabled(true)

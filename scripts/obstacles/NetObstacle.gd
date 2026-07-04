@@ -19,9 +19,9 @@ class_name NetObstacle
 # - _release()：关闭碰撞并刷新视觉。
 # - _refresh_visual_state()：按挣脱进度更新网的颜色。
 
-@export var release_lag_distance := 260.0
-@export var release_strain_seconds := 0.75
-@export var strain_decay_speed := 1.2
+@export var release_lag_distance := 30.0
+@export var release_strain_seconds := 2
+@export var strain_decay_speed := 2
 
 var strain_progress := 0.0
 var released := false

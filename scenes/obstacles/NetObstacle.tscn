@@ -1,39 +1,39 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://bbx4ivqik1iqc"]
 
-[ext_resource type="Script" path="res://scripts/obstacles/NetObstacle.gd" id="1_net_script"]
+[ext_resource type="Script" uid="uid://dc78a3p4wbi37" path="res://scripts/obstacles/NetObstacle.gd" id="1_net_script"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_net"]
 size = Vector2(86, 300)
 
-[node name="NetObstacle" type="StaticBody2D"]
+[node name="NetObstacle" type="StaticBody2D" unique_id=294870126]
 collision_layer = 16
 collision_mask = 0
 script = ExtResource("1_net_script")
 
-[node name="Visual" type="Polygon2D" parent="."]
+[node name="Visual" type="Polygon2D" parent="." unique_id=1367066814]
 color = Color(0.1, 0.78, 0.95, 0.36)
 polygon = PackedVector2Array(-43, -150, 43, -150, 43, 150, -43, 150)
 
-[node name="Border" type="Line2D" parent="."]
+[node name="Border" type="Line2D" parent="." unique_id=1778139630]
 points = PackedVector2Array(-43, -150, 43, -150, 43, 150, -43, 150, -43, -150)
+closed = true
 width = 5.0
 default_color = Color(0.55, 0.95, 1, 0.86)
-closed = true
 
-[node name="VerticalStrands" type="Line2D" parent="."]
+[node name="VerticalStrands" type="Line2D" parent="." unique_id=871516049]
 points = PackedVector2Array(-24, -144, -24, 144, 0, 144, 0, -144, 24, -144, 24, 144)
 width = 3.0
 default_color = Color(0.75, 1, 1, 0.72)
 
-[node name="DiagonalStrandsA" type="Line2D" parent="."]
+[node name="DiagonalStrandsA" type="Line2D" parent="." unique_id=857773177]
 points = PackedVector2Array(-38, -138, 38, -62, -38, 14, 38, 90)
 width = 2.5
 default_color = Color(0.75, 1, 1, 0.62)
 
-[node name="DiagonalStrandsB" type="Line2D" parent="."]
+[node name="DiagonalStrandsB" type="Line2D" parent="." unique_id=520503463]
 points = PackedVector2Array(38, -138, -38, -62, 38, 14, -38, 90)
 width = 2.5
 default_color = Color(0.75, 1, 1, 0.62)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1927765296]
 shape = SubResource("RectangleShape2D_net")

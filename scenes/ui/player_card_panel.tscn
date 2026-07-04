@@ -1,0 +1,65 @@
+[gd_scene format=3 uid="uid://q8m7tgakstqw"]
+
+[ext_resource type="StyleBox" uid="uid://c7ole2s1378hw" path="res://assets/theme/attack.tres" id="1_ovd31"]
+[ext_resource type="Script" uid="uid://dh64jdywbqmuj" path="res://scripts/ui/player_card_panel.gd" id="2_ovd31"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_ovd31"]
+font_size = 20
+
+[sub_resource type="LabelSettings" id="LabelSettings_dmeyx"]
+font_size = 15
+
+[node name="PlayerOnePanel" type="Panel" unique_id=1608253230]
+offset_left = 17.0
+offset_top = 526.0
+offset_right = 217.0
+offset_bottom = 616.0
+theme_override_styles/panel = ExtResource("1_ovd31")
+script = ExtResource("2_ovd31")
+
+[node name="Panel" type="Panel" parent="." unique_id=1481444802]
+layout_mode = 0
+offset_left = 76.0
+offset_top = 95.0
+offset_right = 116.0
+offset_bottom = 135.0
+
+[node name="Label" type="Label" parent="Panel" unique_id=1900898285]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 30
+text = "3"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1757887613]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -83.0
+offset_top = -60.0
+offset_right = 32.0
+offset_bottom = 60.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="CardTitle" type="Label" parent="VBoxContainer" unique_id=903221595]
+custom_minimum_size = Vector2(115, 0)
+layout_mode = 2
+text = "标题"
+label_settings = SubResource("LabelSettings_ovd31")
+autowrap_mode = 3
+
+[node name="CardDescrip" type="Label" parent="VBoxContainer" unique_id=479691872]
+custom_minimum_size = Vector2(115, 0)
+layout_mode = 2
+text = "介绍"
+label_settings = SubResource("LabelSettings_dmeyx")
+autowrap_mode = 3

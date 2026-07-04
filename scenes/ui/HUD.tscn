@@ -2,14 +2,10 @@
 
 [ext_resource type="Script" uid="uid://ce0c0ntpbegwv" path="res://scripts/ui/HUD.gd" id="1_hud_script"]
 [ext_resource type="Texture2D" uid="uid://vb1qkudg8pwm" path="res://assets/ui/hp_bar_bkg.png" id="2_6ll6g"]
-[ext_resource type="Texture2D" uid="uid://cqqd0ntr0grtk" path="res://assets/art/panel.png" id="2_ig75s"]
 [ext_resource type="Texture2D" uid="uid://bpcen6tkrx7j0" path="res://assets/ui/hp_bar_fill.png" id="3_ig75s"]
+[ext_resource type="PackedScene" uid="uid://q8m7tgakstqw" path="res://scenes/ui/player_card_panel.tscn" id="4_ig75s"]
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_4ed8p"]
-texture = ExtResource("2_ig75s")
-axis_stretch_horizontal = 1
-axis_stretch_vertical = 1
-region_rect = Rect2(197.70972, 210.6889, 1654.5156, 1625.2681)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ig75s"]
 
 [node name="HUD" type="CanvasLayer" unique_id=1619752691]
 script = ExtResource("1_hud_script")
@@ -31,7 +27,7 @@ anchor_bottom = 1.0
 offset_top = 475.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxTexture_4ed8p")
+theme_override_styles/panel = SubResource("StyleBoxFlat_ig75s")
 
 [node name="SubViewportContainer" type="SubViewportContainer" parent="Root" unique_id=1509238378]
 layout_mode = 1
@@ -73,69 +69,22 @@ value = 100.0
 texture_under = ExtResource("2_6ll6g")
 texture_progress = ExtResource("3_ig75s")
 
-[node name="PlayerOnePanel" type="Panel" parent="Root" unique_id=1472266852]
+[node name="PlayerAPanel" parent="Root" unique_id=1608253230 instance=ExtResource("4_ig75s")]
 layout_mode = 1
-anchors_preset = -1
-offset_left = 17.0
-offset_top = 526.0
-offset_right = 351.0
-offset_bottom = 616.0
+offset_left = 50.0
+offset_top = 557.0
+offset_right = 250.0
+offset_bottom = 647.0
 
-[node name="CardLabel" type="Label" parent="Root/PlayerOnePanel" unique_id=1508434162]
-layout_mode = 1
-offset_left = 16.0
-offset_top = 14.0
-offset_right = 316.0
-offset_bottom = 42.0
-text = "P1  轻击"
-
-[node name="CountLabel" type="Label" parent="Root/PlayerOnePanel" unique_id=1582232655]
-layout_mode = 1
-offset_left = 16.0
-offset_top = 48.0
-offset_right = 316.0
-offset_bottom = 76.0
-text = "牌堆 6"
-
-[node name="ColorRect" type="ColorRect" parent="Root/PlayerOnePanel" unique_id=991886633]
-layout_mode = 0
-offset_left = 294.0
-offset_right = 334.0
-offset_bottom = 80.0
-color = Color(0, 0.5294118, 1, 1)
-
-[node name="PlayerTwoPanel" type="Panel" parent="Root" unique_id=1255065686]
+[node name="PlayerBPanel" parent="Root" unique_id=1372259103 instance=ExtResource("4_ig75s")]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -358.0
-offset_top = 520.0
-offset_right = -24.0
-offset_bottom = 610.0
-
-[node name="CardLabel" type="Label" parent="Root/PlayerTwoPanel" unique_id=621861783]
-layout_mode = 1
-offset_left = 16.0
-offset_top = 14.0
-offset_right = 316.0
-offset_bottom = 42.0
-text = "P2  重击"
-
-[node name="CountLabel" type="Label" parent="Root/PlayerTwoPanel" unique_id=1445857268]
-layout_mode = 1
-offset_left = 16.0
-offset_top = 48.0
-offset_right = 316.0
-offset_bottom = 76.0
-text = "牌堆 6"
-
-[node name="ColorRect" type="ColorRect" parent="Root/PlayerTwoPanel" unique_id=721846424]
-layout_mode = 0
-offset_left = 294.0
-offset_right = 334.0
-offset_bottom = 80.0
-color = Color(1, 0, 0, 1)
+offset_left = -251.0
+offset_top = 554.0
+offset_right = -51.0
+offset_bottom = 644.0
 
 [node name="MessageLabel" type="Label" parent="Root" unique_id=579635133]
 layout_mode = 1
@@ -192,63 +141,51 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -360.0
-offset_top = -190.0
-offset_right = 360.0
-offset_bottom = 190.0
+offset_left = -440.0
+offset_top = -280.0
+offset_right = 440.0
+offset_bottom = 280.0
 grow_horizontal = 2
 grow_vertical = 2
 
 [node name="TitleLabel" type="Label" parent="Root/RewardChoiceOverlay/Panel" unique_id=1705491015]
 layout_mode = 1
-offset_left = 24.0
-offset_top = 20.0
-offset_right = 696.0
-offset_bottom = 48.0
+offset_left = 32.0
+offset_top = 22.0
+offset_right = 848.0
+offset_bottom = 54.0
 text = "P1 任务点奖励"
 horizontal_alignment = 1
 
 [node name="HintLabel" type="Label" parent="Root/RewardChoiceOverlay/Panel" unique_id=939582198]
 layout_mode = 1
-offset_left = 24.0
-offset_top = 54.0
-offset_right = 696.0
-offset_bottom = 80.0
+offset_left = 32.0
+offset_top = 60.0
+offset_right = 848.0
+offset_bottom = 88.0
 text = "选择 1 张牌加入牌堆"
 horizontal_alignment = 1
 
 [node name="ChoiceOneButton" type="Button" parent="Root/RewardChoiceOverlay/Panel" unique_id=988537333]
 layout_mode = 1
-offset_left = 24.0
-offset_top = 106.0
-offset_right = 232.0
-offset_bottom = 338.0
-text = "1. 奖励攻击牌
-攻击牌
-说明"
-autowrap_mode = 2
+offset_left = 92.0
+offset_top = 112.0
+offset_right = 302.0
+offset_bottom = 462.0
 
 [node name="ChoiceTwoButton" type="Button" parent="Root/RewardChoiceOverlay/Panel" unique_id=1501081623]
 layout_mode = 1
-offset_left = 256.0
-offset_top = 106.0
-offset_right = 464.0
-offset_bottom = 338.0
-text = "2. 奖励支援牌
-其他牌
-说明"
-autowrap_mode = 2
+offset_left = 335.0
+offset_top = 112.0
+offset_right = 545.0
+offset_bottom = 462.0
 
 [node name="ChoiceThreeButton" type="Button" parent="Root/RewardChoiceOverlay/Panel" unique_id=650347707]
 layout_mode = 1
-offset_left = 488.0
-offset_top = 106.0
-offset_right = 696.0
-offset_bottom = 338.0
-text = "3. 恢复连线
-其他牌
-说明"
-autowrap_mode = 2
+offset_left = 578.0
+offset_top = 112.0
+offset_right = 788.0
+offset_bottom = 462.0
 
 [node name="PauseMenuOverlay" type="ColorRect" parent="Root" unique_id=1191306827]
 visible = false

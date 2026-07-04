@@ -53,7 +53,7 @@ class_name GameController
 # - pending_death_animation_players：仍未发出 death_animation_finished 的玩家集合。
 # - restart_state：主场景初始位置快照。Try again 用它恢复玩家、肉体和相机起点。
 # - reward_world_pause_active：任务点选卡期间的世界暂停锁。它和 SceneTree.paused 配合，不使用 Engine.time_scale。
-# - reward_world_pause_process_modes：选卡暂停前保存的世界节点 process_mode，结束选卡后原样恢复。
+# - reward_world_pause_process_modes：选卡暂停前保存的世界节点 weakref 和 process_mode，结束选卡后原样恢复。
 # - camera_base_offset：主相机原始 offset。晃动只叠加到 offset 上，不改相机真实世界坐标。
 # - camera_shake_trauma/camera_shake_time/camera_shake_seed：攻击牌镜头晃动状态。trauma 衰减到 0 后恢复原 offset。
 # - card_effect_runner：运行时创建的卡牌效果执行器。它只负责逻辑，不承担场景结构；世界暂停时随世界一起暂停。
@@ -950,7 +950,7 @@ func _capture_reward_pause_process_modes(node: Node) -> void:
 		return
 
 	reward_world_pause_process_modes.append({
-		"node": node,
+		"node_ref": weakref(node),
 		"process_mode": node.process_mode,
 	})
 	node.process_mode = Node.PROCESS_MODE_DISABLED
@@ -964,9 +964,15 @@ func _restore_reward_pause_process_modes() -> void:
 
 	for index in range(reward_world_pause_process_modes.size() - 1, -1, -1):
 		var state: Dictionary = reward_world_pause_process_modes[index]
-		var node: Node = state.get("node", null)
-		if node != null and is_instance_valid(node):
-			node.process_mode = int(state.get("process_mode", Node.PROCESS_MODE_INHERIT))
+		var node_ref = state.get("node_ref", null)
+		if not (node_ref is WeakRef):
+			continue
+
+		var node = node_ref.get_ref()
+		if node == null or not (node is Node) or not is_instance_valid(node) or node.is_queued_for_deletion():
+			continue
+
+		node.process_mode = int(state.get("process_mode", Node.PROCESS_MODE_INHERIT))
 
 	reward_world_pause_process_modes.clear()
 	reward_world_pause_active = false

@@ -24,8 +24,11 @@ SoundManager="*uid://7s11kww04f0m"
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
-window/stretch/mode="canvas_items"
-window/stretch/aspect="expand"
+window/stretch/mode="viewport"
+
+[gui]
+
+theme/custom="res://assets/theme/global_text_theme.tres"
 
 [rendering]
 

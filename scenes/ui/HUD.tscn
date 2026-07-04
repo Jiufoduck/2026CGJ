@@ -24,7 +24,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = 475.0
+offset_top = 496.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_ig75s")
@@ -60,10 +60,10 @@ limit_bottom = 450
 
 [node name="HealthBar" type="TextureProgressBar" parent="Root" unique_id=883981419]
 layout_mode = 1
-offset_left = 439.0
-offset_top = 615.0
-offset_right = 1665.0
-offset_bottom = 823.0
+offset_left = 434.0
+offset_top = 658.0
+offset_right = 1660.0
+offset_bottom = 866.0
 scale = Vector2(0.3, 0.3)
 value = 100.0
 texture_under = ExtResource("2_6ll6g")

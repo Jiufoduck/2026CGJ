@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" path="res://scenes/core/BodyCore.tscn" id="3_body_scene"]
 [ext_resource type="PackedScene" uid="uid://5rlcx22ksidf" path="res://scenes/ui/HUD.tscn" id="4_hud_scene"]
 [ext_resource type="PackedScene" path="res://scenes/pickups/TaskPoint.tscn" id="5_task_scene"]
-[ext_resource type="PackedScene" uid="uid://bbx4ivqik1iqc" path="res://scenes/obstacles/NetObstacle.tscn" id="6_f6se4"]
+[ext_resource type="PackedScene" path="res://scenes/obstacles/NetObstacle.tscn" id="6_f6se4"]
 [ext_resource type="PackedScene" path="res://scenes/obstacles/RectangleObstacle.tscn" id="6_obstacle_scene"]
 [ext_resource type="PackedScene" uid="uid://253htnqnf3pa" path="res://scenes/enemies/EnemyType1.tscn" id="7_enemy_one_scene"]
 [ext_resource type="PackedScene" uid="uid://c2q4xwwctv2fl" path="res://scenes/enemies/EnemyType3.tscn" id="9_enemy_three_scene"]

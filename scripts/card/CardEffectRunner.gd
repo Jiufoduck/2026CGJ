@@ -19,8 +19,8 @@ class_name CardEffectRunner
 # - counterattack_active：A3 反杀怪物是否正在等待下一只攻击肉体的怪物。
 # - counterattack_lifetime：A3 弹道反馈存在时间。
 # - counterattack_feedback：A3 等待反杀期间跟随肉体的白模反馈节点。
-# - phase_walk_active：A6 穿墙状态是否正在断线期间生效。
-# - phase_walk_feedbacks：A6 穿墙期间跟随两名玩家的白模反馈节点。
+# - phase_walk_active：A6 加速状态是否正在断线期间生效。
+# - phase_walk_feedbacks：A6 加速期间跟随两名玩家的白模反馈节点。
 # - group_freeze_active：B9 群体冻结状态是否正在断线期间生效。
 # - group_freeze_feedback：B9 冻结触发时的摄像机范围反馈节点。
 # - focused_fire_owner_id：B11 集中火力中无法出牌的玩家编号。0 表示未生效。
@@ -182,8 +182,8 @@ func reset_all_effects() -> void:
 	_end_counterattack()
 	if phase_walk_active:
 		for player in [controller.player_one, controller.player_two]:
-			if player.has_method("set_wall_phase_enabled"):
-				player.set_wall_phase_enabled(false)
+			if player.has_method("set_move_speed_multiplier"):
+				player.set_move_speed_multiplier(1.0)
 	phase_walk_active = false
 	_clear_feedback_array(phase_walk_feedbacks)
 
@@ -261,15 +261,16 @@ func _apply_restore_generation(player_id: int, card_data: Dictionary) -> void:
 		_spawn_marker(player.global_position, 52.0, Color(0.15, 1.0, 0.45, 1.0), "+恢复牌", 0.75)
 
 
-func _apply_phase_walk(_card_data: Dictionary) -> void:
-	_spawn_ring(controller.body_core.global_position, 88.0, Color(0.25, 0.85, 1.0, 1.0), "断裂穿墙")
+func _apply_phase_walk(card_data: Dictionary) -> void:
+	var move_speed_scale: float = float(card_data.get("move_speed_scale", 1.5))
+	_spawn_ring(controller.body_core.global_position, 88.0, Color(1.0, 0.85, 0.2, 1.0), "断裂")
 	controller.body_core.force_break_link()
 	phase_walk_active = true
 	_clear_feedback_array(phase_walk_feedbacks)
 	for player in [controller.player_one, controller.player_two]:
-		if player.has_method("set_wall_phase_enabled"):
-			player.set_wall_phase_enabled(true)
-		phase_walk_feedbacks.append(_spawn_follow_marker(player, 44.0, Color(0.25, 0.85, 1.0, 1.0), "穿墙"))
+		if player.has_method("set_move_speed_multiplier"):
+			player.set_move_speed_multiplier(move_speed_scale)
+		phase_walk_feedbacks.append(_spawn_follow_marker(player, 44.0, Color(1.0, 0.85, 0.2, 1.0), "加速"))
 
 
 func _apply_knockback(player_id: int, card_data: Dictionary) -> void:
@@ -424,8 +425,8 @@ func _on_link_broken_started(_seconds_left: float) -> void:
 func _on_link_restored() -> void:
 	if phase_walk_active:
 		for player in [controller.player_one, controller.player_two]:
-			if player.has_method("set_wall_phase_enabled"):
-				player.set_wall_phase_enabled(false)
+			if player.has_method("set_move_speed_multiplier"):
+				player.set_move_speed_multiplier(1.0)
 		_clear_feedback_array(phase_walk_feedbacks)
 		phase_walk_active = false
 

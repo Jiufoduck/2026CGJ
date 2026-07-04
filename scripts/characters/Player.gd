@@ -23,7 +23,6 @@ class_name TetherPlayer
 # - move_with_velocity(requested_velocity)：让角色按主控制器算出的速度移动；真正的阻力、牵引和摄像机限制都由主控制器决定。
 # - apply_tether_motion(motion)：让连线控制器对角色施加一小段位置修正，并优先使用碰撞移动避免穿过场景障碍。
 # - set_move_speed_multiplier(multiplier)：设置卡牌移动倍率。
-# - set_wall_phase_enabled(enabled)：切换玩家是否穿过墙和普通障碍。
 # - reset_card_motion_state()：恢复所有卡牌施加在玩家移动/碰撞上的临时状态。
 # - play_death_animation()：死亡流程入口。发出 started 信号，并播放当前占位动画或等待外部动画。
 # - finish_death_animation()：死亡动画真正结束时调用；主控制器收到后才允许 HUD 显示 Gameover。
@@ -105,20 +104,8 @@ func set_move_speed_multiplier(multiplier: float) -> void:
 	move_speed_multiplier = maxf(0.0, multiplier)
 
 
-func set_wall_phase_enabled(enabled: bool) -> void:
-	if wall_phase_enabled == enabled:
-		return
-
-	wall_phase_enabled = enabled
-	if enabled:
-		set_collision_mask_value(3, false)
-	else:
-		collision_mask = original_collision_mask
-
-
 func reset_card_motion_state() -> void:
 	set_move_speed_multiplier(1.0)
-	set_wall_phase_enabled(false)
 
 
 func play_death_animation() -> void:

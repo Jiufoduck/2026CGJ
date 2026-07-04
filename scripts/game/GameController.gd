@@ -218,6 +218,12 @@ func _ready() -> void:
 	_update_body_and_line(0.0, false, true)
 	_advance_camera(0.0, true)
 	_update_hud()
+	if hud.has_method("show_tutorial_popup"):
+		hud.show_tutorial_popup(
+			"操作提示",
+			"P1：WASD 移动，Q 打牌，E 跳过。\nP2：方向键移动，K 打牌，L 跳过。\n断线后，当前牌会切到恢复牌；断线期间打出恢复牌可满血重连。",
+			true
+		)
 
 
 func _physics_process(delta: float) -> void:
@@ -246,7 +252,12 @@ func _physics_process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	# 调试用!!!
-	if event.is_action_pressed("ui_accept") and not game_has_ended and not game_over_sequence_active:
+	var key_event := event as InputEventKey
+	if key_event == null or not key_event.pressed or key_event.echo:
+		return
+	if key_event.physical_keycode != KEY_DELETE:
+		return
+	if not game_has_ended and not game_over_sequence_active:
 		if body_core.link_broken:
 			body_core.restore_link()
 		else:
@@ -765,7 +776,7 @@ func _update_hud() -> void:
 	hud.set_link_state(body_core.is_link_active(), body_core.broken_seconds_left)
 	for player_id in decks_by_player.keys():
 		var deck = decks_by_player[player_id]
-		hud.set_player_deck_status(player_id, deck.peek_current_card(), deck.card_count(), deck.cooldown_remaining)
+		hud.set_player_deck_status(player_id, deck.peek_current_card(), deck.card_count(), deck.cooldown_remaining, deck.get_cards_snapshot())
 
 
 func _promote_restore_cards_on_first_link_break() -> Dictionary:
@@ -1018,8 +1029,14 @@ func _on_body_health_changed(current_health: float, max_health: float) -> void:
 
 
 func _on_link_broken_started(seconds_left: float) -> void:
-	_promote_restore_cards_on_first_link_break()
+	var promoted_cards := _promote_restore_cards_on_first_link_break()
 	hud.set_link_state(false, seconds_left)
+	if not promoted_cards.is_empty() and hud.has_method("show_tutorial_popup"):
+		hud.show_tutorial_popup(
+			"恢复牌",
+			"连线断裂，双方的恢复牌已切到当前牌。\n恢复牌只能在断线期间使用；成功打出后会恢复链接，并把肉体生命值回满。",
+			true
+		)
 
 
 func _on_link_restored() -> void:

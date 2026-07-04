@@ -66,7 +66,7 @@ class_name GameHUD
 # - _load_saved_settings()/_save_settings()：读取和保存玩家设置。
 # - set_health(current_health, max_health)：更新醒目的血量条和血量文字。
 # - set_link_state(is_active, seconds_left)：更新连线稳定或断线倒计时文字。
-# - set_player_deck_status(player_id, card_data, card_count, cooldown_remaining)：把当前牌字典交给指定玩家卡牌面板显示。
+# - set_player_deck_status(player_id, card_data, card_count, cooldown_remaining, deck_cards)：把当前牌和完整牌堆交给指定玩家卡牌面板显示。
 # - set_message(message)：更新短消息区域，用于反馈任务点拾取和打牌结果。
 # - set_game_result(message)：显示最终结果，并把结果同步到连线状态区域。
 # - show_reward_choice(player_id, reward_cards)：显示任务点奖励面板，把 3 张候选牌渲染到按钮上。
@@ -239,6 +239,13 @@ var game_over_title_label: Label
 var game_over_reason_label: Label
 var game_over_try_again_button: Button
 var game_over_tween: Tween
+var tutorial_overlay: ColorRect
+var tutorial_panel: Panel
+var tutorial_title_label: Label
+var tutorial_body_label: Label
+var tutorial_close_button: Button
+var tutorial_tween: Tween
+var tutorial_pause_tree := false
 var source_world_camera: Camera2D
 var active_input_preset := DEFAULT_INPUT_PRESET
 var waiting_rebind_action := StringName()
@@ -252,12 +259,14 @@ func _ready() -> void:
 	_set_pause_independent_ui_tree(self)
 	_ensure_pause_menu_action_defaults()
 	_build_game_over_overlay()
+	_build_tutorial_overlay()
 	_setup_reward_choice_card_buttons()
 	set_message("")
 	death_countdown_panel.visible = false
 	hide_reward_choice(false)
 	_hide_pause_menu_without_unpausing()
 	_hide_game_over_overlay_without_signal()
+	_hide_tutorial_overlay_without_unpausing()
 	for index in reward_choice_buttons.size():
 		reward_choice_buttons[index].pressed.connect(_on_reward_button_pressed.bind(index))
 		reward_choice_buttons[index].mouse_entered.connect(_focus_reward_button.bind(index))
@@ -269,6 +278,7 @@ func _ready() -> void:
 	settings_back_button.pressed.connect(_show_pause_main_panel)
 	input_preset_toggle_button.pressed.connect(_toggle_input_preset)
 	game_over_try_again_button.pressed.connect(_on_try_again_button_pressed)
+	tutorial_close_button.pressed.connect(hide_tutorial_popup)
 	var input_router := get_node_or_null("/root/InputRouter")
 	if input_router != null and input_router.has_signal("gamepad_assignments_changed"):
 		input_router.gamepad_assignments_changed.connect(_on_gamepad_assignments_changed)
@@ -294,6 +304,12 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if game_over_overlay != null and game_over_overlay.visible:
+		return
+
+	if tutorial_overlay != null and tutorial_overlay.visible:
+		if event.is_action_pressed("ui_accept") or _is_pause_menu_event(event):
+			hide_tutorial_popup()
+			get_viewport().set_input_as_handled()
 		return
 
 	if reward_choice_overlay.visible:
@@ -346,6 +362,159 @@ func create_pause_independent_tween() -> Tween:
 	var tween := create_tween()
 	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	return tween
+
+
+func _build_tutorial_overlay() -> void:
+	if tutorial_overlay != null:
+		return
+
+	tutorial_overlay = ColorRect.new()
+	tutorial_overlay.name = "TutorialOverlay"
+	tutorial_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	tutorial_overlay.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	tutorial_overlay.grow_vertical = Control.GROW_DIRECTION_BOTH
+	tutorial_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	tutorial_overlay.color = Color(0.02, 0.03, 0.05, 0.72)
+	tutorial_overlay.visible = false
+	root.add_child(tutorial_overlay)
+
+	tutorial_panel = Panel.new()
+	tutorial_panel.name = "TutorialPanel"
+	tutorial_panel.set_anchors_preset(Control.PRESET_CENTER)
+	tutorial_panel.offset_left = -320.0
+	tutorial_panel.offset_top = -160.0
+	tutorial_panel.offset_right = 320.0
+	tutorial_panel.offset_bottom = 160.0
+	tutorial_overlay.add_child(tutorial_panel)
+
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.08, 0.08, 0.10, 0.96)
+	panel_style.border_color = Color(0.95, 0.82, 0.42, 0.92)
+	panel_style.border_width_left = 2
+	panel_style.border_width_top = 2
+	panel_style.border_width_right = 2
+	panel_style.border_width_bottom = 2
+	panel_style.corner_radius_top_left = 8
+	panel_style.corner_radius_top_right = 8
+	panel_style.corner_radius_bottom_left = 8
+	panel_style.corner_radius_bottom_right = 8
+	tutorial_panel.add_theme_stylebox_override("panel", panel_style)
+
+	var content := VBoxContainer.new()
+	content.name = "TutorialContent"
+	content.anchor_left = 0.08
+	content.anchor_top = 0.12
+	content.anchor_right = 0.92
+	content.anchor_bottom = 0.88
+	content.add_theme_constant_override("separation", 16)
+	tutorial_panel.add_child(content)
+
+	tutorial_title_label = Label.new()
+	tutorial_title_label.name = "TutorialTitleLabel"
+	tutorial_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tutorial_title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	tutorial_title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tutorial_title_label.custom_minimum_size = Vector2(0.0, 44.0)
+	tutorial_title_label.add_theme_font_size_override("font_size", 32)
+	tutorial_title_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.42, 1.0))
+	content.add_child(tutorial_title_label)
+
+	tutorial_body_label = Label.new()
+	tutorial_body_label.name = "TutorialBodyLabel"
+	tutorial_body_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	tutorial_body_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	tutorial_body_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tutorial_body_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	tutorial_body_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tutorial_body_label.add_theme_font_size_override("font_size", 20)
+	tutorial_body_label.add_theme_color_override("font_color", Color(0.93, 0.94, 0.96, 1.0))
+	content.add_child(tutorial_body_label)
+
+	tutorial_close_button = Button.new()
+	tutorial_close_button.name = "TutorialCloseButton"
+	tutorial_close_button.text = "继续"
+	tutorial_close_button.custom_minimum_size = Vector2(150.0, 46.0)
+	tutorial_close_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	content.add_child(tutorial_close_button)
+	_set_pause_independent_ui_tree(tutorial_overlay)
+
+
+func show_tutorial_popup(title: String, body: String, should_pause_tree := true) -> void:
+	_build_tutorial_overlay()
+	_kill_tutorial_tween()
+	tutorial_pause_tree = should_pause_tree
+	tutorial_title_label.text = title
+	tutorial_body_label.text = body
+	tutorial_close_button.disabled = false
+	tutorial_overlay.visible = true
+	tutorial_overlay.modulate.a = 0.0
+	tutorial_panel.scale = Vector2(0.96, 0.96)
+	tutorial_panel.pivot_offset = tutorial_panel.size * 0.5
+	if should_pause_tree:
+		get_tree().paused = true
+
+	tutorial_tween = create_pause_independent_tween()
+	tutorial_tween.set_parallel(true)
+	tutorial_tween.tween_property(tutorial_overlay, "modulate:a", 1.0, 0.12)
+	tutorial_tween.tween_property(tutorial_panel, "scale", Vector2.ONE, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tutorial_close_button.grab_focus()
+	_play_ui_sound(&"menu_next")
+
+
+func hide_tutorial_popup(animate := true) -> void:
+	if tutorial_overlay == null:
+		return
+	var was_visible := tutorial_overlay.visible
+	tutorial_close_button.disabled = true
+	_release_tutorial_pause_if_needed()
+	if not animate or not was_visible:
+		_hide_tutorial_overlay_without_unpausing()
+		return
+
+	_kill_tutorial_tween()
+	tutorial_panel.pivot_offset = tutorial_panel.size * 0.5
+	tutorial_tween = create_pause_independent_tween()
+	tutorial_tween.set_parallel(true)
+	tutorial_tween.tween_property(tutorial_overlay, "modulate:a", 0.0, 0.10)
+	tutorial_tween.tween_property(tutorial_panel, "scale", Vector2(0.98, 0.98), 0.10)
+	tutorial_tween.finished.connect(func() -> void:
+		_hide_tutorial_overlay_without_unpausing()
+	)
+	_play_ui_sound(&"menu_previous")
+
+
+func _release_tutorial_pause_if_needed() -> void:
+	if tutorial_pause_tree:
+		tutorial_pause_tree = false
+		if not _another_overlay_keeps_tree_paused():
+			get_tree().paused = false
+
+
+func _another_overlay_keeps_tree_paused() -> bool:
+	if reward_choice_overlay.visible:
+		return true
+	if pause_menu_overlay.visible:
+		return true
+	if game_over_overlay != null and game_over_overlay.visible:
+		return true
+	return false
+
+
+func _hide_tutorial_overlay_without_unpausing() -> void:
+	_kill_tutorial_tween()
+	if tutorial_overlay == null:
+		return
+	tutorial_pause_tree = false
+	tutorial_overlay.visible = false
+	tutorial_overlay.modulate.a = 1.0
+	tutorial_panel.scale = Vector2.ONE
+	tutorial_close_button.disabled = true
+
+
+func _kill_tutorial_tween() -> void:
+	if tutorial_tween != null and tutorial_tween.is_valid():
+		tutorial_tween.kill()
+	tutorial_tween = null
 
 
 func _handle_pause_menu_pressed() -> void:
@@ -487,6 +656,7 @@ func fade_out_game_over_after_restart(fade_seconds := DEFAULT_GAME_OVER_FADE_SEC
 func reset_runtime_ui_for_restart() -> void:
 	hide_reward_choice(false)
 	_hide_pause_menu_without_unpausing()
+	_hide_tutorial_overlay_without_unpausing()
 	set_message("")
 	death_countdown_panel.visible = false
 	waiting_rebind_action = StringName()
@@ -1166,22 +1336,34 @@ func set_link_state(is_active: bool, seconds_left: float) -> void:
 		death_countdown_panel.visible = true
 
 
-func set_player_deck_status(player_id: int, card_data: Dictionary, card_count: int, cooldown_remaining: float) -> void:
+func set_player_deck_status(player_id: int, card_data: Dictionary, card_count: int, cooldown_remaining: float, deck_cards: Array = []) -> void:
 	if player_id == 1:
-		_update_player_card_panel(player_one_card_panel, card_data, card_count, cooldown_remaining, player_id)
+		_update_player_card_panel(player_one_card_panel, card_data, card_count, cooldown_remaining, player_id, deck_cards)
 	elif player_id == 2:
-		_update_player_card_panel(player_two_card_panel, card_data, card_count, cooldown_remaining, player_id)
+		_update_player_card_panel(player_two_card_panel, card_data, card_count, cooldown_remaining, player_id, deck_cards)
 
 
-func _update_player_card_panel(card_panel: Node, card_data: Dictionary, card_count: int, cooldown_remaining: float, player_id: int) -> void:
-	if card_panel != null and card_panel.has_method("load_card_data"):
+func _update_player_card_panel(card_panel: Node, card_data: Dictionary, card_count: int, cooldown_remaining: float, player_id: int, deck_cards: Array = []) -> void:
+	if card_panel == null:
+		return
+
+	if card_panel.has_method("load_card_stack_data"):
+		card_panel.load_card_stack_data(deck_cards, card_data, card_count, cooldown_remaining, player_id)
+	elif card_panel.has_method("load_card_data"):
 		card_panel.load_card_data(card_data, card_count, cooldown_remaining, player_id)
-		_set_restore_hint_for_panel(card_panel, not current_link_is_active and _card_has_tag(card_data, CARD_TAG_RESTORE))
+	_set_restore_hint_for_panel(card_panel, not current_link_is_active and (_card_has_tag(card_data, CARD_TAG_RESTORE) or _card_list_has_tag(deck_cards, CARD_TAG_RESTORE)))
 
 
 func _set_restore_hint_for_panel(card_panel: Node, active: bool) -> void:
 	if card_panel != null and card_panel.has_method("set_restore_hint_active"):
 		card_panel.set_restore_hint_active(active)
+
+
+func _card_list_has_tag(card_list: Array, tag: String) -> bool:
+	for card_data in card_list:
+		if card_data is Dictionary and _card_has_tag(card_data, tag):
+			return true
+	return false
 
 
 func set_message(message: String) -> void:

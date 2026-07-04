@@ -78,6 +78,14 @@ func peek_current_card() -> Dictionary:
 	return cards[0].duplicate(true)
 
 
+func get_cards_snapshot() -> Array:
+	var snapshot := []
+	for card_data in cards:
+		if card_data is Dictionary:
+			snapshot.append((card_data as Dictionary).duplicate(true))
+	return snapshot
+
+
 func is_current_card_playable(link_is_active: bool) -> bool:
 	if cards.is_empty():
 		return false

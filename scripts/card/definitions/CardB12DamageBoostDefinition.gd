@@ -5,7 +5,7 @@ class_name CardB12DamageBoostDefinition
 # - damage_multiplier_base：B12 给队友下一次数值伤害使用的倍率。
 # - get_effect_data()：只把 B12 需要的效果数值交给运行时牌堆。
 
-@export var damage_multiplier_base := 2.0
+@export var damage_multiplier_base := 1.5
 
 
 func get_effect_data() -> Dictionary:

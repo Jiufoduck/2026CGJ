@@ -71,20 +71,20 @@ texture_progress = ExtResource("3_ig75s")
 
 [node name="PlayerAPanel" parent="Root" unique_id=1608253230 instance=ExtResource("4_ig75s")]
 layout_mode = 1
-offset_left = 50.0
-offset_top = 557.0
-offset_right = 250.0
-offset_bottom = 647.0
+offset_left = 34.0
+offset_top = 506.0
+offset_right = 334.0
+offset_bottom = 720.0
 
 [node name="PlayerBPanel" parent="Root" unique_id=1372259103 instance=ExtResource("4_ig75s")]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -251.0
-offset_top = 554.0
-offset_right = -51.0
-offset_bottom = 644.0
+offset_left = -334.0
+offset_top = 506.0
+offset_right = -34.0
+offset_bottom = 720.0
 
 [node name="MessageLabel" type="Label" parent="Root" unique_id=579635133]
 layout_mode = 1

@@ -67,11 +67,13 @@ var collision_charge_hit_cooldown := 0.35
 var collision_charge_hit_cooldowns := {}
 var collision_charge_feedback
 var counterattack_active := false
+var counterattack_seconds_left := 0.0
 var counterattack_lifetime := 0.35
 var counterattack_feedback
 var phase_walk_active := false
 var phase_walk_feedbacks: Array = []
 var body_phase_active := false
+var body_phase_seconds_left := 0.0
 var body_phase_feedback
 var group_freeze_active := false
 var group_freeze_feedback
@@ -79,6 +81,10 @@ var focused_fire_owner_id := 0
 var focused_fire_ally_id := 0
 var focused_fire_cooldown := 0.0
 var focused_fire_feedbacks: Array = []
+var cooldown_speed_active := false
+var cooldown_speed_seconds_left := 0.0
+var cooldown_speed_multiplier := 1.0
+var cooldown_speed_feedbacks: Array = []
 var next_damage_multiplier_by_player := {
 	1: 1.0,
 	2: 1.0,
@@ -113,7 +119,7 @@ func is_card_playable(card_data: Dictionary) -> bool:
 func get_play_cooldown(player_id: int, card_data: Dictionary) -> float:
 	if focused_fire_ally_id == player_id:
 		return focused_fire_cooldown
-	return float(card_data.get("base_cooldown", CardDeckScript.PLAY_COOLDOWN_SECONDS))
+	return _apply_cooldown_speed(float(card_data.get("base_cooldown", CardDeckScript.PLAY_COOLDOWN_SECONDS)))
 
 
 func get_pass_cooldown(player_id: int, card_data: Dictionary) -> float:
@@ -121,12 +127,11 @@ func get_pass_cooldown(player_id: int, card_data: Dictionary) -> float:
 		return 0.0
 	if focused_fire_ally_id == player_id:
 		return focused_fire_cooldown
-	return CardDeckScript.PASS_COOLDOWN_SECONDS
+	return _apply_cooldown_speed(CardDeckScript.PASS_COOLDOWN_SECONDS)
 
 
 func on_card_success_started(_player_id: int, _card_data: Dictionary) -> void:
 	_end_collision_charge()
-	_end_counterattack()
 
 
 func on_card_passed(_player_id: int, _card_data: Dictionary) -> void:
@@ -199,6 +204,7 @@ func reset_all_effects() -> void:
 	group_freeze_feedback = null
 
 	_end_focused_fire()
+	_end_cooldown_speed()
 	next_damage_multiplier_by_player = {
 		1: 1.0,
 		2: 1.0,
@@ -209,8 +215,20 @@ func reset_all_effects() -> void:
 func _physics_process(delta: float) -> void:
 	if collision_charge_player_id != 0:
 		_apply_collision_charge_hits(delta)
+	if counterattack_active:
+		counterattack_seconds_left = maxf(0.0, counterattack_seconds_left - delta)
+		if counterattack_seconds_left <= 0.0:
+			_end_counterattack()
+	if body_phase_active:
+		body_phase_seconds_left = maxf(0.0, body_phase_seconds_left - delta)
+		if body_phase_seconds_left <= 0.0:
+			_end_body_phase()
 	if group_freeze_active:
 		_set_all_enemies_frozen(true)
+	if cooldown_speed_active:
+		cooldown_speed_seconds_left = maxf(0.0, cooldown_speed_seconds_left - delta)
+		if cooldown_speed_seconds_left <= 0.0:
+			_end_cooldown_speed()
 
 
 func _apply_range_damage(player_id: int, card_data: Dictionary) -> void:
@@ -230,6 +248,7 @@ func _apply_range_damage(player_id: int, card_data: Dictionary) -> void:
 		if distance_to_link <= line_hit_radius and enemy.has_method("take_damage"):
 			enemy.take_damage(damage)
 			_spawn_marker(enemy.global_position, 30.0, Color(1.0, 0.25, 0.12, 1.0), "-%s" % _format_amount(damage), 0.45)
+	_clear_projectiles_near_anchor_links(player_one_position, center, player_two_position, line_hit_radius)
 
 
 func _apply_collision_charge(player_id: int, card_data: Dictionary) -> void:
@@ -248,9 +267,10 @@ func _apply_collision_charge(player_id: int, card_data: Dictionary) -> void:
 
 func _apply_counterattack(card_data: Dictionary) -> void:
 	counterattack_active = true
+	counterattack_seconds_left = maxf(0.0, float(card_data.get("counterattack_duration", 3.0)))
 	counterattack_lifetime = float(card_data.get("projectile_lifetime", 0.35))
 	_free_feedback(counterattack_feedback)
-	counterattack_feedback = _spawn_follow_marker(controller.body_core, 54.0, Color(0.9, 0.35, 1.0, 1.0), "反杀待机")
+	counterattack_feedback = _spawn_follow_marker(controller.body_core, 54.0, Color(0.9, 0.35, 1.0, 1.0), "反伤 %.0fs" % counterattack_seconds_left)
 
 
 func _apply_clear_screen(card_data: Dictionary) -> void:
@@ -262,6 +282,7 @@ func _apply_clear_screen(card_data: Dictionary) -> void:
 	for enemy in _get_alive_enemies(false):
 		_overwhelm_enemy(enemy, Vector2.LEFT, push_distance, overwhelm_decay)
 		_spawn_marker(enemy.global_position, 24.0, Color(0.3, 0.9, 1.0, 1.0), "←", 0.35)
+	_clear_projectiles_in_world()
 
 
 func _apply_restore_generation(player_id: int, card_data: Dictionary) -> void:
@@ -312,6 +333,7 @@ func _apply_knockback(player_id: int, card_data: Dictionary) -> void:
 	var body_damage: float = apply_player_damage_multiplier(player_id, float(card_data.get("body_damage_amount", 0.0)))
 	controller.body_core.take_hit(body_damage)
 	_spawn_marker(center, 40.0, Color(1.0, 0.2, 0.1, 1.0), "肉体 -%s" % _format_amount(body_damage), 0.55)
+	_clear_projectiles_in_world()
 
 
 func _apply_cd_distribution(player_id: int, card_data: Dictionary) -> void:
@@ -324,10 +346,21 @@ func _apply_cd_distribution(player_id: int, card_data: Dictionary) -> void:
 	controller.body_core.force_break_link()
 	var own_deck = _get_deck(player_id)
 	var other_deck = _get_deck(_get_other_player_id(player_id))
+	var self_multiplier := float(card_data.get("cooldown_self_multiplier", 1.0))
+	var other_multiplier := float(card_data.get("cooldown_other_multiplier", 1.0))
 	if own_deck != null:
-		own_deck.multiply_cooldown(float(card_data.get("cooldown_self_multiplier", 1.0)))
+		own_deck.multiply_cooldown(self_multiplier)
 	if other_deck != null:
-		other_deck.multiply_cooldown(float(card_data.get("cooldown_other_multiplier", 1.0)))
+		other_deck.multiply_cooldown(other_multiplier)
+
+	cooldown_speed_active = true
+	cooldown_speed_seconds_left = maxf(0.0, float(card_data.get("duration_seconds", 7.0)))
+	cooldown_speed_multiplier = minf(self_multiplier, other_multiplier)
+	_clear_feedback_array(cooldown_speed_feedbacks)
+	if player != null:
+		cooldown_speed_feedbacks.append(_spawn_follow_marker(player, 40.0, Color(0.45, 0.7, 1.0, 1.0), "CD x%s" % _format_amount(cooldown_speed_multiplier)))
+	if other_player != null:
+		cooldown_speed_feedbacks.append(_spawn_follow_marker(other_player, 40.0, Color(0.45, 0.7, 1.0, 1.0), "CD x%s" % _format_amount(cooldown_speed_multiplier)))
 
 
 func _apply_group_freeze() -> void:
@@ -343,10 +376,11 @@ func _apply_group_freeze() -> void:
 func _apply_optimize_hand(player_id: int, card_data: Dictionary) -> void:
 	_end_body_phase()
 	body_phase_active = true
+	body_phase_seconds_left = maxf(0.0, float(card_data.get("duration_seconds", 7.0)))
 	var wall_layer_index := int(card_data.get("body_phase_collision_layer", 3))
 	if controller.body_core.has_method("set_body_phase_enabled"):
 		controller.body_core.set_body_phase_enabled(true, wall_layer_index)
-	body_phase_feedback = _spawn_follow_marker(controller.body_core, 56.0, Color(0.45, 0.95, 1.0, 1.0), "肉体穿墙")
+	body_phase_feedback = _spawn_follow_marker(controller.body_core, 56.0, Color(0.45, 0.95, 1.0, 1.0), "穿墙 %.0fs" % body_phase_seconds_left)
 	var player := _get_player(player_id)
 	if player != null:
 		_spawn_line(player.global_position, controller.body_core.global_position, Color(0.45, 0.95, 1.0, 1.0), "穿墙", 0.7)
@@ -403,6 +437,7 @@ func _apply_collision_charge_hits(delta: float) -> void:
 				enemy.take_damage(damage)
 				_spawn_marker(enemy.global_position, 30.0, Color(1.0, 0.82, 0.12, 1.0), "-%s" % _format_amount(damage), 0.4)
 				_spawn_line(player.global_position, enemy.global_position, Color(1.0, 0.82, 0.12, 1.0), "", 0.22)
+	_clear_projectiles_near_position(player.global_position, collision_charge_radius, "弹幕破坏")
 
 
 func _tick_collision_charge_hit_cooldowns(delta: float) -> void:
@@ -425,18 +460,21 @@ func _add_restore_cards(player_id: int, amount: int) -> void:
 		deck.add_card(CardCatalogScript.make_restore_card())
 
 
-func _on_body_damaged_by_enemy(_amount: float, source_enemy: Node) -> void:
+func _on_body_damaged_by_enemy(amount: float, source_enemy: Node) -> void:
 	if not counterattack_active or source_enemy == null or not is_instance_valid(source_enemy):
 		return
 
 	_spawn_counter_projectile(source_enemy)
-	if source_enemy.has_method("force_defeat"):
-		source_enemy.force_defeat()
-	counterattack_active = false
+	var enemy_position: Vector2 = controller.body_core.global_position
+	if source_enemy is Node2D:
+		enemy_position = (source_enemy as Node2D).global_position
+	if source_enemy.has_method("take_damage"):
+		source_enemy.take_damage(amount)
+		_spawn_marker(enemy_position, 34.0, Color(0.9, 0.35, 1.0, 1.0), "反伤 -%s" % _format_amount(amount), 0.55)
 
 
 func _on_link_broken_started(_seconds_left: float) -> void:
-	_end_body_phase()
+	pass
 
 
 func _on_link_restored() -> void:
@@ -453,7 +491,6 @@ func _on_link_restored() -> void:
 		group_freeze_feedback = null
 		group_freeze_active = false
 
-	_end_body_phase()
 	_end_focused_fire()
 
 
@@ -475,6 +512,7 @@ func _end_collision_charge() -> void:
 
 func _end_counterattack() -> void:
 	counterattack_active = false
+	counterattack_seconds_left = 0.0
 	_free_feedback(counterattack_feedback)
 	counterattack_feedback = null
 
@@ -491,15 +529,32 @@ func _end_body_phase() -> void:
 		if controller.body_core.has_method("set_body_phase_enabled"):
 			controller.body_core.set_body_phase_enabled(false)
 	body_phase_active = false
+	body_phase_seconds_left = 0.0
 	_free_feedback(body_phase_feedback)
 	body_phase_feedback = null
+
+
+func _end_cooldown_speed() -> void:
+	cooldown_speed_active = false
+	cooldown_speed_seconds_left = 0.0
+	cooldown_speed_multiplier = 1.0
+	_clear_feedback_array(cooldown_speed_feedbacks)
+
+
+func _apply_cooldown_speed(cooldown: float) -> float:
+	if cooldown_speed_active:
+		return maxf(0.0, cooldown * cooldown_speed_multiplier)
+	return cooldown
 
 
 func _spawn_counter_projectile(source_enemy: Node) -> void:
 	var projectile = CounterProjectileScene.instantiate()
 	controller.add_child(projectile)
 	if projectile.has_method("play"):
-		projectile.play(controller.body_core.global_position, source_enemy.global_position, counterattack_lifetime)
+		var target_position: Vector2 = controller.body_core.global_position
+		if source_enemy is Node2D:
+			target_position = (source_enemy as Node2D).global_position
+		projectile.play(controller.body_core.global_position, target_position, counterattack_lifetime)
 
 
 func _spawn_ring(center: Vector2, radius: float, color: Color, label: String, lifetime := 0.55):
@@ -626,6 +681,49 @@ func _distance_to_segment(point: Vector2, segment_start: Vector2, segment_end: V
 	var t := clampf((point - segment_start).dot(segment) / segment_length_squared, 0.0, 1.0)
 	var closest_point := segment_start + segment * t
 	return point.distance_to(closest_point)
+
+
+func _clear_projectiles_near_anchor_links(player_one_position: Vector2, center: Vector2, player_two_position: Vector2, radius: float) -> void:
+	for projectile in _get_enemy_projectiles():
+		if projectile is not Node2D:
+			continue
+		var projectile_position: Vector2 = (projectile as Node2D).global_position
+		var distance_to_link: float = minf(
+			_distance_to_segment(projectile_position, player_one_position, center),
+			_distance_to_segment(projectile_position, center, player_two_position)
+		)
+		if distance_to_link <= radius:
+			_destroy_projectile(projectile, "弹幕破坏")
+
+
+func _clear_projectiles_near_position(center: Vector2, radius: float, label := "") -> void:
+	for projectile in _get_enemy_projectiles():
+		if projectile is not Node2D:
+			continue
+		if (projectile as Node2D).global_position.distance_to(center) <= radius:
+			_destroy_projectile(projectile, label)
+
+
+func _clear_projectiles_in_world() -> void:
+	for projectile in _get_enemy_projectiles():
+		_destroy_projectile(projectile, "弹幕清除")
+
+
+func _destroy_projectile(projectile: Node, label := "") -> void:
+	if projectile == null or not is_instance_valid(projectile) or projectile.is_queued_for_deletion():
+		return
+
+	if projectile is Node2D and not label.is_empty():
+		_spawn_marker((projectile as Node2D).global_position, 18.0, Color(0.95, 0.95, 1.0, 1.0), label, 0.25)
+	projectile.queue_free()
+
+
+func _get_enemy_projectiles() -> Array:
+	var projectiles: Array = []
+	for projectile in get_tree().get_nodes_in_group("enemy_projectiles"):
+		if is_instance_valid(projectile) and not projectile.is_queued_for_deletion():
+			projectiles.append(projectile)
+	return projectiles
 
 
 func _format_amount(amount: float) -> String:

@@ -37,7 +37,7 @@ func _physics_process(delta: float) -> void:
 			$Visual.play("chase")
 			dir = dir.normalized()
 			move_direction = EnemyUtils.force_left(dir)
-	
+
 	reset_flip(delta)
 	#print($Visual.animation)
 	super._physics_process(delta)
@@ -69,11 +69,11 @@ func do_charge():
 
 	var duration = 2 * charge_range / move_speed
 	await create_tween().tween_property(self,"move_speed",0,duration).finished
-	
+
 	$Visual.play("charge_recovery")
 	await get_tree().create_timer(charge_recovery).timeout
 	move_speed = initial_move_speed
 	calib_movedir(true)
 	is_charging = false
-	
+
 	$Visual.play("chase")

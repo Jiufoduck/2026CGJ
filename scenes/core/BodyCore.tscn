@@ -3,8 +3,8 @@
 [ext_resource type="Script" uid="uid://cajawyiotkhue" path="res://scripts/core/BodyCore.gd" id="1_body_script"]
 [ext_resource type="Texture2D" uid="uid://v7oy671np62m" path="res://assets/art/body.png" id="2_nted3"]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_body"]
-radius = 18.0
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_nted3"]
+size = Vector2(89, 50)
 
 [node name="BodyCore" type="AnimatableBody2D" unique_id=2022257245]
 collision_layer = 2
@@ -13,9 +13,10 @@ sync_to_physics = false
 script = ExtResource("1_body_script")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2067795787]
-shape = SubResource("CircleShape2D_body")
+position = Vector2(-5.5, 9)
+shape = SubResource("RectangleShape2D_nted3")
 
 [node name="Body" type="Sprite2D" parent="." unique_id=1125397488]
 rotation = -0.7853982
-scale = Vector2(0.1, 0.1)
+scale = Vector2(0.3, 0.3)
 texture = ExtResource("2_nted3")

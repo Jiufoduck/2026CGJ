@@ -6,7 +6,7 @@ class_name CardA4ClearScreenDefinition
 # - overwhelm_decay：A4 推开敌人后，EnemyBase 惯性速度每帧衰减系数。
 # - get_effect_data()：只把 A4 需要的效果数值交给运行时牌堆。
 
-@export var push_distance := 320.0
+@export var push_distance := 260.0
 @export var overwhelm_decay := 0.72
 
 

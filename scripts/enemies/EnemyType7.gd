@@ -41,4 +41,5 @@ func spawn_bullet(pos: Vector2, dir: Vector2):
 	obj.global_position = pos
 	obj.linear_velocity = dir * bullet_speed
 	obj.damage = bullet_damage
+	obj.source_enemy = self
 	EnemyUtils.get_main_scene().add_child(obj)

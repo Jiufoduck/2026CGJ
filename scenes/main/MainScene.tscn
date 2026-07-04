@@ -40,7 +40,7 @@ polygon = PackedVector2Array(0, -450, 11560.064, -445.00107, 11560.064, 453.8080
 [node name="TopWall" type="StaticBody2D" parent="Level" unique_id=783944713]
 position = Vector2(2155, -270)
 scale = Vector2(8.719999, 1)
-collision_layer = 4
+collision_layer = 2052
 collision_mask = 0
 
 [node name="Visual" type="Polygon2D" parent="Level/TopWall" unique_id=1770999093]
@@ -53,7 +53,7 @@ shape = SubResource("RectangleShape2D_wall_horizontal")
 [node name="BottomWall" type="StaticBody2D" parent="Level" unique_id=743372559]
 position = Vector2(2155, 270)
 scale = Vector2(9.2, 1)
-collision_layer = 4
+collision_layer = 2052
 collision_mask = 0
 
 [node name="Visual" type="Polygon2D" parent="Level/BottomWall" unique_id=992807157]
@@ -65,7 +65,7 @@ shape = SubResource("RectangleShape2D_wall_horizontal")
 
 [node name="LeftWall" type="StaticBody2D" parent="Level" unique_id=1598895613]
 position = Vector2(-30, 0)
-collision_layer = 4
+collision_layer = 2052
 collision_mask = 0
 
 [node name="Visual" type="Polygon2D" parent="Level/LeftWall" unique_id=588268000]
@@ -77,7 +77,7 @@ shape = SubResource("RectangleShape2D_wall_vertical")
 
 [node name="RightWall" type="StaticBody2D" parent="Level" unique_id=1635120269]
 position = Vector2(20567, 0)
-collision_layer = 4
+collision_layer = 2052
 collision_mask = 0
 
 [node name="Visual" type="Polygon2D" parent="Level/RightWall" unique_id=864311954]
@@ -151,11 +151,13 @@ end_cap_mode = 2
 
 [node name="PlayerOne" parent="Actors" unique_id=2026057950 instance=ExtResource("2_player_scene")]
 position = Vector2(62, -96)
+collision_mask = 2051
 move_speed = 100
 player_color = Color(0.18, 0.62, 1, 1)
 
 [node name="PlayerTwo" parent="Actors" unique_id=671970584 instance=ExtResource("2_player_scene")]
 position = Vector2(61, 96)
+collision_mask = 2051
 player_id = 2
 move_speed = 100
 player_color = Color(1, 0.38, 0.38, 1)

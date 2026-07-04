@@ -162,7 +162,7 @@ var card_effect_runner
 
 func _ready() -> void:
 	camera.make_current()
-	process_mode = Node.PROCESS_MODE_ALWAYS
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	_ensure_default_input_actions()
 	hud.initialize(camera)
 	_sync_level_length_from_scene()

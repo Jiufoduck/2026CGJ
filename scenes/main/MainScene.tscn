@@ -58,7 +58,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"default",
-"speed": 7.0
+"speed": 6.0
 }]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_kclug"]
@@ -94,7 +94,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"default",
-"speed": 7.0
+"speed": 6.0
 }]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_f6se4"]
@@ -608,6 +608,7 @@ position = Vector2(1016, 151)
 scale = Vector2(0.24146783, 0.57994014)
 
 [node name="EnemySpawns" type="Node2D" parent="." unique_id=356443544]
+visible = false
 position = Vector2(3659, 0)
 
 [node name="EnemySpawnPoint" parent="EnemySpawns" unique_id=1638728096 instance=ExtResource("10_enemy_spawn_scene")]
@@ -1092,3 +1093,5 @@ limit_right = 4300
 limit_bottom = 450
 
 [node name="HUD" parent="." unique_id=1530108984 instance=ExtResource("4_hud_scene")]
+reward_panel_player_one_stylebox = null
+reward_panel_player_two_stylebox = null

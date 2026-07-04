@@ -10,11 +10,8 @@ class_name GameHUD
 # - player_one_card_panel/player_two_card_panel：玩家当前牌独立显示面板。面板自己处理卡面、标题、描述和牌数。
 # - message_label：显示最近一次卡牌、任务点或结束状态消息。
 # - reward_choice_overlay：任务点奖励三选一界面根节点。默认隐藏，玩家到达专属任务点后显示。
-# - reward_choice_panel：任务点奖励三选一界面的中心面板。显示/隐藏动画会缩放它。
-# - reward_title_label：奖励界面标题，显示是哪个玩家正在选择奖励。
-# - reward_hint_label：奖励界面提示，说明只能选择一张牌加入该玩家牌堆。
-# - reward_choice_buttons：三个奖励卡牌按钮。按钮背景由卡牌类型和消耗词条决定，文字由子 Label 排版。
-# - reward_card_face_styleboxes：奖励卡面 StyleBox 缓存，避免每次打开奖励面板重复创建资源。
+# - reward_choice_panel：任务点奖励三选一界面的中心面板。显示/隐藏动画只改透明度和颜色。
+# - reward_choice_buttons：三个奖励卡牌按钮。按钮 icon 由卡牌类型和消耗词条决定，文字使用 tscn 内 title/descript 排版。
 # - current_link_is_active：HUD 最近一次收到的连线状态。当前牌面板用它判断是否播放恢复牌提示。
 # - sub_viewport：UI 内承载主世界画面的 SubViewport。它共享主场景 World2D，但必须使用自己的 Camera2D。
 # - sub_viewport_camera：SubViewport 专属的镜像相机。它不参与主场景逻辑，只复制主 Camera2D 的视角。
@@ -71,15 +68,15 @@ class_name GameHUD
 # - set_game_result(message)：显示最终结果，并把结果同步到连线状态区域。
 # - show_reward_choice(player_id, reward_cards)：显示任务点奖励面板，把 3 张候选牌渲染到按钮上。
 # - hide_reward_choice()：隐藏任务点奖励面板并清空当前候选牌。
-# - _setup_reward_choice_card_buttons()：为奖励按钮创建标题和描述子 Label，并关闭按钮默认文字。
+# - _setup_reward_choice_card_buttons()：按 tscn 里 choice1/choice2/choice3 的现有控件设置奖励按钮。
 # - _handle_reward_choice_input(event)：奖励面板打开时手动处理手柄/键盘导航，并过滤非当前奖励玩家的手柄。
 # - _focus_reward_button(index)：设置奖励按钮焦点；鼠标悬浮也走这个入口。
-# - _refresh_reward_button_focus_visuals()：根据当前焦点给奖励按钮加亮、放大和描边。
+# - _refresh_reward_button_focus_visuals()：根据当前焦点给奖励按钮加亮和描边，不改场景里调好的位置、旋转、尺寸。
 # - _play_reward_show_animation()/_play_reward_hide_animation()：播放奖励面板动画，动画不受世界时停影响。
 # - _kill_reward_choice_tween()：切换奖励面板状态前停止旧动画，避免重复 Tween 抢同一属性。
 # - _on_reward_button_pressed(index)：处理玩家点击第 index 个奖励按钮，发出 card_reward_selected 信号。
-# - _render_reward_choice_button(button, card_data)：按卡牌数据更新奖励卡面、标题和描述。
-# - _get_reward_card_face_stylebox(card_data)：根据 attack/other 与 consumable 组合选择对应奖励卡面。
+# - _render_reward_choice_button(button, card_data)：按卡牌数据更新奖励卡面 icon、标题和描述。
+# - _get_reward_card_face_texture(card_data)：根据 attack/other 与 consumable 组合选择对应奖励卡面。
 # - _card_has_tag(card_data, tag)：HUD 内部通用词条判断，用于恢复牌提示和奖励卡面判断。
 
 signal card_reward_selected(player_id: int, card_data: Dictionary)
@@ -92,14 +89,17 @@ const DEFAULT_GAME_OVER_FADE_SECONDS := 3.0
 const REWARD_TAG_CONSUMABLE := "consumable"
 const CARD_TAG_RESTORE := "restore"
 const REWARD_CARD_TYPE_ATTACK := "attack"
-const REWARD_ATTACK_CONSUMABLE_FACE = preload("res://assets/art/card_face/award_attack_consumable_card_face.png")
-const REWARD_ATTACK_UNCONSUMABLE_FACE = preload("res://assets/art/card_face/award_card_face_attack_unconsumable.png")
-const REWARD_ENHANCE_CONSUMABLE_FACE = preload("res://assets/art/card_face/award_enhance_consumabel_cardface.png")
-const REWARD_ENHANCE_UNCONSUMABLE_FACE = preload("res://assets/art/card_face/award_enhance_unconsumable.png")
+const REWARD_PANEL_PLAYER_ONE_TEXTURE = preload("res://assets/art/玩家1_奖励牌背景.png")
+const REWARD_PANEL_PLAYER_TWO_TEXTURE = preload("res://assets/art/玩家2_奖励牌背景.png")
+const REWARD_ATTACK_CONSUMABLE_FACE = preload("res://assets/art/card_face/attack.png")
+const REWARD_ATTACK_UNCONSUMABLE_FACE = preload("res://assets/art/card_face/attack_unconsumable.png")
+const REWARD_ENHANCE_CONSUMABLE_FACE = preload("res://assets/art/card_face/enhance_card_face.png")
+const REWARD_ENHANCE_UNCONSUMABLE_FACE = preload("res://assets/art/card_face/enhance_card_unconsumable.png")
 const REWARD_FOCUS_MODULATE := Color(1.16, 1.10, 0.86, 1.0)
 const REWARD_UNFOCUSED_MODULATE := Color.WHITE
-const REWARD_FOCUS_SCALE := Vector2(1.045, 1.045)
-const REWARD_UNFOCUSED_SCALE := Vector2.ONE
+const REWARD_PANEL_BLACK := Color(0.0, 0.0, 0.0, 1.0)
+const REWARD_STICK_NAVIGATION_PRESS_DEADZONE := 0.55
+const REWARD_STICK_NAVIGATION_RELEASE_DEADZONE := 0.30
 const INPUT_PRESET_KEYBOARD := "keyboard"
 const INPUT_PRESET_GAMEPAD := "gamepad"
 const DEFAULT_INPUT_PRESET := INPUT_PRESET_GAMEPAD
@@ -191,6 +191,9 @@ const DEFAULT_INPUT_PRESET_BINDINGS := {
 	},
 }
 
+@export var reward_panel_player_one_stylebox: StyleBoxTexture
+@export var reward_panel_player_two_stylebox: StyleBoxTexture
+
 @onready var root: Control = $Root
 @onready var sub_viewport: SubViewport = $Root/SubViewportContainer/SubViewport
 @onready var sub_viewport_camera: Camera2D = $Root/SubViewportContainer/SubViewport/ViewportCamera2D
@@ -202,12 +205,10 @@ const DEFAULT_INPUT_PRESET_BINDINGS := {
 @onready var message_label: Label = $Root/MessageLabel
 @onready var reward_choice_overlay: Control = $Root/RewardChoiceOverlay
 @onready var reward_choice_panel: Panel = $Root/RewardChoiceOverlay/Panel
-@onready var reward_title_label: Label = $Root/RewardChoiceOverlay/Panel/TitleLabel
-@onready var reward_hint_label: Label = $Root/RewardChoiceOverlay/Panel/HintLabel
 @onready var reward_choice_buttons: Array[Button] = [
-	$Root/RewardChoiceOverlay/Panel/ChoiceOneButton,
-	$Root/RewardChoiceOverlay/Panel/ChoiceTwoButton,
-	$Root/RewardChoiceOverlay/Panel/ChoiceThreeButton,
+	$Root/RewardChoiceOverlay/Panel/choice1,
+	$Root/RewardChoiceOverlay/Panel/choice2,
+	$Root/RewardChoiceOverlay/Panel/choice3,
 ]
 @onready var pause_menu_overlay: ColorRect = $Root/PauseMenuOverlay
 @onready var pause_main_panel: Panel = $Root/PauseMenuOverlay/MainPanel
@@ -230,9 +231,11 @@ const DEFAULT_INPUT_PRESET_BINDINGS := {
 var active_reward_player_id := 0
 var active_reward_cards: Array = []
 var reward_choice_tween: Tween
-var reward_card_face_styleboxes := {}
-var reward_focus_stylebox: StyleBoxFlat
+var reward_panel_styleboxes := {}
+var reward_focus_stylebox: StyleBox
 var reward_focused_button_index := 0
+var reward_button_base_modulates: Array[Color] = []
+var reward_stick_navigation_locked := false
 var current_link_is_active := true
 var game_over_overlay: ColorRect
 var game_over_title_label: Label
@@ -1385,8 +1388,8 @@ func show_reward_choice(player_id: int, reward_cards: Array) -> void:
 	active_reward_player_id = player_id
 	active_reward_cards = reward_cards.duplicate(true)
 	reward_focused_button_index = 0
-	reward_title_label.text = "P%d 任务点奖励" % player_id
-	reward_hint_label.text = "选择 1 张牌加入 P%d 的牌堆" % player_id
+	reward_stick_navigation_locked = false
+	_apply_reward_panel_background(player_id)
 	for index in reward_choice_buttons.size():
 		var has_card := index < active_reward_cards.size()
 		reward_choice_buttons[index].visible = has_card
@@ -1396,14 +1399,18 @@ func show_reward_choice(player_id: int, reward_cards: Array) -> void:
 		else:
 			_clear_reward_choice_button(reward_choice_buttons[index])
 	reward_choice_overlay.visible = true
+	var first_focus := _get_first_visible_reward_button_index()
+	if first_focus >= 0:
+		reward_focused_button_index = first_focus
+		reward_choice_buttons[first_focus].grab_focus()
 	_play_reward_show_animation()
-	_focus_reward_button(_get_first_visible_reward_button_index())
 
 
 func hide_reward_choice(animate := true) -> void:
 	var was_visible := reward_choice_overlay.visible
 	active_reward_player_id = 0
 	reward_focused_button_index = 0
+	reward_stick_navigation_locked = false
 	active_reward_cards.clear()
 	for button in reward_choice_buttons:
 		_clear_reward_choice_button(button)
@@ -1412,7 +1419,7 @@ func hide_reward_choice(animate := true) -> void:
 		_kill_reward_choice_tween()
 		reward_choice_overlay.visible = false
 		reward_choice_overlay.modulate.a = 1.0
-		reward_choice_panel.scale = Vector2.ONE
+		reward_choice_panel.modulate = Color.WHITE
 		return
 
 	_play_reward_hide_animation()
@@ -1421,25 +1428,42 @@ func hide_reward_choice(animate := true) -> void:
 func _play_reward_show_animation() -> void:
 	_kill_reward_choice_tween()
 	reward_choice_overlay.modulate.a = 0.0
-	reward_choice_panel.scale = Vector2(0.96, 0.96)
-	reward_choice_panel.pivot_offset = reward_choice_panel.size * 0.5
+	reward_choice_panel.modulate = REWARD_PANEL_BLACK
+	for index in reward_choice_buttons.size():
+		var button := reward_choice_buttons[index]
+		if button.visible:
+			var start_modulate := _get_reward_button_base_modulate(index)
+			start_modulate.a = 0.0
+			button.modulate = start_modulate
 	reward_choice_tween = create_pause_independent_tween()
-	reward_choice_tween.set_parallel(true)
 	reward_choice_tween.tween_property(reward_choice_overlay, "modulate:a", 1.0, 0.12)
-	reward_choice_tween.tween_property(reward_choice_panel, "scale", Vector2.ONE, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	reward_choice_tween.parallel().tween_property(reward_choice_panel, "modulate", Color.WHITE, 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	reward_choice_tween.tween_interval(0.04)
+	for index in reward_choice_buttons.size():
+		var button := reward_choice_buttons[index]
+		if not button.visible:
+			continue
+		var target_modulate := _get_reward_button_target_modulate(index)
+		reward_choice_tween.tween_property(button, "modulate", target_modulate, 0.14).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		reward_choice_tween.tween_interval(0.055)
+	reward_choice_tween.finished.connect(func() -> void:
+		reward_choice_tween = null
+		_refresh_reward_button_focus_visuals()
+	)
 
 
 func _play_reward_hide_animation() -> void:
 	_kill_reward_choice_tween()
-	reward_choice_panel.pivot_offset = reward_choice_panel.size * 0.5
 	reward_choice_tween = create_pause_independent_tween()
 	reward_choice_tween.set_parallel(true)
 	reward_choice_tween.tween_property(reward_choice_overlay, "modulate:a", 0.0, 0.10)
-	reward_choice_tween.tween_property(reward_choice_panel, "scale", Vector2(0.98, 0.98), 0.10)
+	reward_choice_tween.tween_property(reward_choice_panel, "modulate", REWARD_PANEL_BLACK, 0.10)
+	for button in reward_choice_buttons:
+		reward_choice_tween.tween_property(button, "modulate:a", 0.0, 0.08)
 	reward_choice_tween.finished.connect(func() -> void:
 		reward_choice_overlay.visible = false
 		reward_choice_overlay.modulate.a = 1.0
-		reward_choice_panel.scale = Vector2.ONE
+		reward_choice_panel.modulate = Color.WHITE
 		reward_choice_tween = null
 	)
 
@@ -1451,78 +1475,61 @@ func _kill_reward_choice_tween() -> void:
 
 
 func _setup_reward_choice_card_buttons() -> void:
+	reward_button_base_modulates.clear()
+	for button in reward_choice_buttons:
+		reward_button_base_modulates.append(button.modulate)
 	for button in reward_choice_buttons:
 		button.text = ""
-		button.flat = false
-		button.clip_contents = true
+		button.flat = true
+		button.clip_contents = false
 		button.focus_mode = Control.FOCUS_ALL
-		button.pivot_offset = button.size * 0.5
-		button.add_theme_constant_override("content_margin_left", 0)
-		button.add_theme_constant_override("content_margin_top", 0)
-		button.add_theme_constant_override("content_margin_right", 0)
-		button.add_theme_constant_override("content_margin_bottom", 0)
-		_get_or_create_reward_button_label(button, "RewardCardTitleLabel", true)
-		_get_or_create_reward_button_label(button, "RewardCardDescriptionLabel", false)
+		button.expand_icon = true
+		button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_setup_reward_choice_button_labels(button)
 		_clear_reward_choice_button(button)
 
 
 func _render_reward_choice_button(button: Button, card_data: Dictionary) -> void:
 	button.text = ""
-	var stylebox := _get_reward_card_face_stylebox(card_data)
-	for style_name in ["normal", "hover", "pressed", "disabled"]:
-		button.add_theme_stylebox_override(style_name, stylebox)
 	button.add_theme_stylebox_override("focus", _get_reward_focus_stylebox())
+	button.icon = _get_reward_card_face_texture(card_data)
+	button.flat = true
+	button.expand_icon = true
+	_set_reward_focus_outline_texture(button, button.icon)
 
-	var title_label := _get_or_create_reward_button_label(button, "RewardCardTitleLabel", true)
-	var description_label := _get_or_create_reward_button_label(button, "RewardCardDescriptionLabel", false)
-	title_label.text = str(card_data.get("name", "未命名牌"))
-	description_label.text = str(card_data.get("description", ""))
+	var title_label := button.get_node_or_null("title") as Label
+	var description_label := button.get_node_or_null("descript") as Label
+	if title_label != null:
+		title_label.text = str(card_data.get("name", "未命名牌"))
+	if description_label != null:
+		description_label.text = str(card_data.get("description", ""))
 
 
 func _clear_reward_choice_button(button: Button) -> void:
 	button.text = ""
-	button.scale = REWARD_UNFOCUSED_SCALE
-	button.modulate = REWARD_UNFOCUSED_MODULATE
+	button.icon = null
+	button.modulate = _get_reward_button_base_modulate(reward_choice_buttons.find(button))
 	button.z_index = 0
-	var title_label := button.get_node_or_null("RewardCardTitleLabel") as Label
+	_set_reward_focus_outline_texture(button, null)
+	_set_reward_focus_outline_visible(button, false)
+	var title_label := button.get_node_or_null("title") as Label
 	if title_label != null:
 		title_label.text = ""
-	var description_label := button.get_node_or_null("RewardCardDescriptionLabel") as Label
+	var description_label := button.get_node_or_null("descript") as Label
 	if description_label != null:
 		description_label.text = ""
 
 
-func _get_or_create_reward_button_label(button: Button, label_name: String, is_title: bool) -> Label:
-	var label := button.get_node_or_null(label_name) as Label
-	if label != null:
-		return label
-
-	label = Label.new()
-	label.name = label_name
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.clip_text = true
-	label.add_theme_color_override("font_color", Color(0.27, 0.18, 0.11, 1.0))
-	label.add_theme_color_override("font_shadow_color", Color(1.0, 0.86, 0.66, 0.38))
-	label.add_theme_constant_override("shadow_offset_x", 1)
-	label.add_theme_constant_override("shadow_offset_y", 1)
-	if is_title:
-		label.anchor_left = 0.12
-		label.anchor_top = 0.49
-		label.anchor_right = 0.88
-		label.anchor_bottom = 0.59
-		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.add_theme_font_size_override("font_size", 19)
-	else:
-		label.anchor_left = 0.13
-		label.anchor_top = 0.60
-		label.anchor_right = 0.87
-		label.anchor_bottom = 0.84
-		label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-		label.add_theme_font_size_override("font_size", 11)
-	button.add_child(label)
-	return label
+func _setup_reward_choice_button_labels(button: Button) -> void:
+	var title_label := button.get_node_or_null("title") as Label
+	var description_label := button.get_node_or_null("descript") as Label
+	for label in [title_label, description_label]:
+		if label == null:
+			continue
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.clip_text = true
 
 
 func _handle_reward_choice_input(event: InputEvent) -> bool:
@@ -1543,6 +1550,9 @@ func _handle_reward_choice_input(event: InputEvent) -> bool:
 
 
 func _handle_reward_choice_navigation_event(event: InputEvent) -> bool:
+	if event is InputEventJoypadMotion:
+		return _handle_reward_choice_stick_navigation(event as InputEventJoypadMotion)
+
 	if event.is_action_pressed("ui_left") or event.is_action_pressed("ui_up"):
 		_focus_reward_button_delta(-1)
 		return true
@@ -1555,7 +1565,64 @@ func _handle_reward_choice_navigation_event(event: InputEvent) -> bool:
 	return false
 
 
+func _handle_reward_choice_stick_navigation(event: InputEventJoypadMotion) -> bool:
+	if not _is_reward_choice_stick_axis_motion(event):
+		return false
+
+	var axis_strength := absf(event.axis_value)
+	if axis_strength <= REWARD_STICK_NAVIGATION_RELEASE_DEADZONE:
+		reward_stick_navigation_locked = false
+		return false
+
+	if reward_stick_navigation_locked:
+		return true
+
+	if axis_strength < REWARD_STICK_NAVIGATION_PRESS_DEADZONE:
+		return true
+
+	var delta := _get_reward_choice_stick_navigation_delta(event)
+	if delta == 0:
+		return true
+
+	reward_stick_navigation_locked = true
+	_focus_reward_button_delta(delta)
+	return true
+
+
+func _get_reward_choice_stick_navigation_delta(event: InputEventJoypadMotion) -> int:
+	if event.is_action_pressed("ui_left") or event.is_action_pressed("ui_up"):
+		return -1
+	if event.is_action_pressed("ui_right") or event.is_action_pressed("ui_down"):
+		return 1
+
+	if event.axis == JOY_AXIS_LEFT_X or event.axis == JOY_AXIS_RIGHT_X:
+		return -1 if event.axis_value < 0.0 else 1
+	if event.axis == JOY_AXIS_LEFT_Y or event.axis == JOY_AXIS_RIGHT_Y:
+		return -1 if event.axis_value < 0.0 else 1
+	return 0
+
+
+func _is_reward_choice_stick_axis_motion(event: InputEventJoypadMotion) -> bool:
+	if event.axis == JOY_AXIS_LEFT_X or event.axis == JOY_AXIS_LEFT_Y:
+		return true
+	if event.axis == JOY_AXIS_RIGHT_X or event.axis == JOY_AXIS_RIGHT_Y:
+		return true
+	return (
+		event.is_action_pressed("ui_left")
+		or event.is_action_pressed("ui_right")
+		or event.is_action_pressed("ui_up")
+		or event.is_action_pressed("ui_down")
+	)
+
+
 func _is_reward_choice_navigation_event(event: InputEvent) -> bool:
+	if event is InputEventJoypadMotion:
+		var motion_event := event as InputEventJoypadMotion
+		return (
+			_is_reward_choice_stick_axis_motion(motion_event)
+			and absf(motion_event.axis_value) >= REWARD_STICK_NAVIGATION_RELEASE_DEADZONE
+		)
+
 	return (
 		event.is_action_pressed("ui_left")
 		or event.is_action_pressed("ui_right")
@@ -1585,7 +1652,6 @@ func _focus_reward_button(index: int) -> void:
 		return
 
 	reward_focused_button_index = index
-	button.pivot_offset = button.size * 0.5
 	button.grab_focus()
 	_refresh_reward_button_focus_visuals()
 
@@ -1648,56 +1714,76 @@ func _refresh_reward_button_focus_visuals() -> void:
 	var focused_index := _get_current_reward_focus_index()
 	for index in reward_choice_buttons.size():
 		var button := reward_choice_buttons[index]
-		button.pivot_offset = button.size * 0.5
+		var alpha := button.modulate.a
+		if reward_choice_overlay.visible and button.visible and not button.disabled:
+			var target_modulate := _get_reward_button_target_modulate(index)
+			target_modulate.a = alpha
+			button.modulate = target_modulate
 		if reward_choice_overlay.visible and index == focused_index and button.visible and not button.disabled:
-			button.scale = REWARD_FOCUS_SCALE
-			button.modulate = REWARD_FOCUS_MODULATE
 			button.z_index = 1
+			_set_reward_focus_outline_visible(button, true)
 		else:
-			button.scale = REWARD_UNFOCUSED_SCALE
-			button.modulate = REWARD_UNFOCUSED_MODULATE
 			button.z_index = 0
+			_set_reward_focus_outline_visible(button, false)
 
 
-func _get_reward_focus_stylebox() -> StyleBoxFlat:
+func _get_reward_button_target_modulate(index: int) -> Color:
+	return _get_reward_button_base_modulate(index)
+
+
+func _get_reward_button_base_modulate(index: int) -> Color:
+	if index >= 0 and index < reward_button_base_modulates.size():
+		return reward_button_base_modulates[index]
+	return Color.WHITE
+
+
+func _get_reward_focus_stylebox() -> StyleBox:
 	if reward_focus_stylebox != null:
 		return reward_focus_stylebox
 
-	reward_focus_stylebox = StyleBoxFlat.new()
-	reward_focus_stylebox.bg_color = Color(1.0, 0.94, 0.28, 0.10)
-	reward_focus_stylebox.border_color = Color(1.0, 0.92, 0.18, 1.0)
-	reward_focus_stylebox.set_border_width_all(5)
-	reward_focus_stylebox.set_corner_radius_all(10)
-	reward_focus_stylebox.expand_margin_left = 8.0
-	reward_focus_stylebox.expand_margin_top = 8.0
-	reward_focus_stylebox.expand_margin_right = 8.0
-	reward_focus_stylebox.expand_margin_bottom = 8.0
+	reward_focus_stylebox = StyleBoxEmpty.new()
 	return reward_focus_stylebox
 
 
-func _get_reward_card_face_stylebox(card_data: Dictionary) -> StyleBoxTexture:
+func _set_reward_focus_outline_texture(button: Button, texture: Texture2D) -> void:
+	var focus_outline := button.get_node_or_null("FocusOutline") as TextureRect
+	if focus_outline == null:
+		return
+	focus_outline.texture = texture
+
+
+func _set_reward_focus_outline_visible(button: Button, is_visible: bool) -> void:
+	var focus_outline := button.get_node_or_null("FocusOutline") as TextureRect
+	if focus_outline == null:
+		return
+	focus_outline.visible = is_visible
+
+
+func _apply_reward_panel_background(player_id: int) -> void:
+	var stylebox: StyleBoxTexture = reward_panel_player_two_stylebox if player_id == 2 else reward_panel_player_one_stylebox
+	if stylebox == null:
+		var key := "p2" if player_id == 2 else "p1"
+		if not reward_panel_styleboxes.has(key):
+			var fallback_stylebox := StyleBoxTexture.new()
+			fallback_stylebox.texture = REWARD_PANEL_PLAYER_TWO_TEXTURE if player_id == 2 else REWARD_PANEL_PLAYER_ONE_TEXTURE
+			reward_panel_styleboxes[key] = fallback_stylebox
+		stylebox = reward_panel_styleboxes[key]
+	reward_choice_panel.add_theme_stylebox_override("panel", stylebox)
+
+
+func _get_reward_card_face_texture(card_data: Dictionary) -> Texture2D:
 	var card_type := str(card_data.get("type", ""))
 	var is_attack := card_type == REWARD_CARD_TYPE_ATTACK
 	var is_consumable := _reward_card_has_tag(card_data, REWARD_TAG_CONSUMABLE)
-	var key := "enhance_unconsumable"
 	var texture: Texture2D = REWARD_ENHANCE_UNCONSUMABLE_FACE
 	if is_attack and is_consumable:
-		key = "attack_consumable"
 		texture = REWARD_ATTACK_CONSUMABLE_FACE
 	elif is_attack and not is_consumable:
-		key = "attack_unconsumable"
 		texture = REWARD_ATTACK_UNCONSUMABLE_FACE
 	elif not is_attack and is_consumable:
-		key = "enhance_consumable"
 		texture = REWARD_ENHANCE_CONSUMABLE_FACE
 
-	if reward_card_face_styleboxes.has(key):
-		return reward_card_face_styleboxes[key]
-
-	var stylebox := StyleBoxTexture.new()
-	stylebox.texture = texture
-	reward_card_face_styleboxes[key] = stylebox
-	return stylebox
+	return texture
 
 
 func _reward_card_has_tag(card_data: Dictionary, tag: String) -> bool:

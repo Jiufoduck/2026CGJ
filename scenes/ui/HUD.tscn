@@ -5,6 +5,15 @@
 [ext_resource type="Texture2D" uid="uid://vb1qkudg8pwm" path="res://assets/ui/hp_bar_bkg.png" id="2_6ll6g"]
 [ext_resource type="Texture2D" uid="uid://bpcen6tkrx7j0" path="res://assets/ui/hp_bar_fill.png" id="3_ig75s"]
 [ext_resource type="PackedScene" uid="uid://q8m7tgakstqw" path="res://scenes/ui/player_card_panel.tscn" id="4_ig75s"]
+[ext_resource type="Texture2D" uid="uid://bkbhkcgv8u1ou" path="res://assets/art/玩家1_奖励牌背景.png" id="6_rnyu1"]
+[ext_resource type="Texture2D" uid="uid://dmqr066leq1ip" path="res://assets/art/card_face/attack_unconsumable.png" id="7_jlufg"]
+[ext_resource type="Texture2D" uid="uid://d26axbxsyskde" path="res://assets/art/玩家2_奖励牌背景.png" id="8_p2rw"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_jlufg"]
+texture = ExtResource("6_rnyu1")
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_p2rw"]
+texture = ExtResource("8_p2rw")
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4ed8p"]
 bg_color = Color(0, 0, 0, 1)
@@ -12,8 +21,31 @@ bg_color = Color(0, 0, 0, 1)
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_rnyu1"]
 texture = ExtResource("2_4ed8p")
 
+[sub_resource type="LabelSettings" id="LabelSettings_jlufg"]
+font_size = 13
+
+[sub_resource type="LabelSettings" id="LabelSettings_l20r4"]
+font_size = 8
+
+[sub_resource type="Shader" id="Shader_reward_focus_outline"]
+code = "shader_type canvas_item;
+uniform vec4 outline_color : source_color = vec4(1.0, 0.82, 0.08, 0.95);
+
+void fragment() {
+	float alpha = texture(TEXTURE, UV).a;
+	COLOR = outline_color;
+	COLOR.a *= alpha;
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_reward_focus_outline"]
+shader = SubResource("Shader_reward_focus_outline")
+shader_parameter/outline_color = Color(1, 0.82, 0.08, 0.95)
+
 [node name="HUD" type="CanvasLayer" unique_id=1619752691]
 script = ExtResource("1_hud_script")
+reward_panel_player_one_stylebox = SubResource("StyleBoxTexture_jlufg")
+reward_panel_player_two_stylebox = SubResource("StyleBoxTexture_p2rw")
 
 [node name="Root" type="Control" parent="." unique_id=1832017169]
 layout_mode = 3
@@ -141,7 +173,6 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="RewardChoiceOverlay" type="ColorRect" parent="Root" unique_id=1071400036]
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -163,45 +194,151 @@ offset_right = 440.0
 offset_bottom = 280.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxTexture_jlufg")
 
-[node name="TitleLabel" type="Label" parent="Root/RewardChoiceOverlay/Panel" unique_id=1705491015]
-layout_mode = 1
-offset_left = 32.0
-offset_top = 22.0
-offset_right = 848.0
-offset_bottom = 54.0
-text = "P1 任务点奖励"
-horizontal_alignment = 1
+[node name="choice1" type="Button" parent="Root/RewardChoiceOverlay/Panel" unique_id=2091936476]
+custom_minimum_size = Vector2(160, 100)
+layout_mode = 0
+offset_left = 183.0
+offset_top = 283.0
+offset_right = 343.0
+offset_bottom = 383.0
+rotation = -0.43633232
+icon = ExtResource("7_jlufg")
+flat = true
+clip_contents = false
+icon_alignment = 1
+expand_icon = true
 
-[node name="HintLabel" type="Label" parent="Root/RewardChoiceOverlay/Panel" unique_id=939582198]
-layout_mode = 1
-offset_left = 32.0
-offset_top = 60.0
-offset_right = 848.0
-offset_bottom = 88.0
-text = "选择 1 张牌加入牌堆"
-horizontal_alignment = 1
+[node name="FocusOutline" type="TextureRect" parent="Root/RewardChoiceOverlay/Panel/choice1" unique_id=1876380722]
+visible = false
+show_behind_parent = true
+material = SubResource("ShaderMaterial_reward_focus_outline")
+layout_mode = 0
+offset_left = -9.0
+offset_top = -6.0
+offset_right = 169.0
+offset_bottom = 106.0
+mouse_filter = 2
+texture = ExtResource("7_jlufg")
+expand_mode = 1
+stretch_mode = 5
 
-[node name="ChoiceOneButton" type="Button" parent="Root/RewardChoiceOverlay/Panel" unique_id=988537333]
-layout_mode = 1
-offset_left = 92.0
-offset_top = 112.0
-offset_right = 302.0
-offset_bottom = 462.0
+[node name="title" type="Label" parent="Root/RewardChoiceOverlay/Panel/choice1" unique_id=2012471043]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 0
+offset_left = 81.98544
+offset_top = 20.576395
+offset_right = 121.98544
+offset_bottom = 38.576393
+text = "啊我多傻"
+label_settings = SubResource("LabelSettings_jlufg")
 
-[node name="ChoiceTwoButton" type="Button" parent="Root/RewardChoiceOverlay/Panel" unique_id=1501081623]
-layout_mode = 1
-offset_left = 335.0
-offset_top = 112.0
-offset_right = 545.0
-offset_bottom = 462.0
+[node name="descript" type="Label" parent="Root/RewardChoiceOverlay/Panel/choice1" unique_id=1675830974]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 0
+offset_left = 82.112465
+offset_top = 41.599808
+offset_right = 122.112465
+offset_bottom = 59.599808
+text = "带盒都塞hd哦断货我的有收到"
+label_settings = SubResource("LabelSettings_l20r4")
+autowrap_mode = 3
 
-[node name="ChoiceThreeButton" type="Button" parent="Root/RewardChoiceOverlay/Panel" unique_id=650347707]
-layout_mode = 1
-offset_left = 578.0
-offset_top = 112.0
-offset_right = 788.0
-offset_bottom = 462.0
+[node name="choice2" type="Button" parent="Root/RewardChoiceOverlay/Panel" unique_id=1331973618]
+layout_mode = 0
+offset_left = 361.0
+offset_top = 202.0
+offset_right = 521.0
+offset_bottom = 302.0
+icon = ExtResource("7_jlufg")
+flat = true
+clip_contents = false
+icon_alignment = 1
+expand_icon = true
+
+[node name="FocusOutline" type="TextureRect" parent="Root/RewardChoiceOverlay/Panel/choice2" unique_id=1083931365]
+visible = false
+show_behind_parent = true
+material = SubResource("ShaderMaterial_reward_focus_outline")
+layout_mode = 0
+offset_left = -9.0
+offset_top = -6.0
+offset_right = 169.0
+offset_bottom = 106.0
+mouse_filter = 2
+texture = ExtResource("7_jlufg")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="title" type="Label" parent="Root/RewardChoiceOverlay/Panel/choice2" unique_id=1916271562]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 0
+offset_left = 81.98544
+offset_top = 20.576395
+offset_right = 121.98544
+offset_bottom = 38.576393
+text = "啊我多傻"
+label_settings = SubResource("LabelSettings_jlufg")
+
+[node name="descript" type="Label" parent="Root/RewardChoiceOverlay/Panel/choice2" unique_id=1620718767]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 0
+offset_left = 82.112465
+offset_top = 41.599808
+offset_right = 122.112465
+offset_bottom = 59.599808
+text = "带盒都塞hd哦断货我的有收到"
+label_settings = SubResource("LabelSettings_l20r4")
+autowrap_mode = 3
+
+[node name="choice3" type="Button" parent="Root/RewardChoiceOverlay/Panel" unique_id=625786159]
+layout_mode = 0
+offset_left = 550.99994
+offset_top = 212.99997
+offset_right = 710.99994
+offset_bottom = 312.99997
+rotation = 0.43633232
+icon = ExtResource("7_jlufg")
+flat = true
+clip_contents = false
+icon_alignment = 1
+expand_icon = true
+
+[node name="FocusOutline" type="TextureRect" parent="Root/RewardChoiceOverlay/Panel/choice3" unique_id=692590692]
+visible = false
+show_behind_parent = true
+material = SubResource("ShaderMaterial_reward_focus_outline")
+layout_mode = 0
+offset_left = -9.0
+offset_top = -6.0
+offset_right = 169.0
+offset_bottom = 106.0
+mouse_filter = 2
+texture = ExtResource("7_jlufg")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="title" type="Label" parent="Root/RewardChoiceOverlay/Panel/choice3" unique_id=241501853]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 0
+offset_left = 81.98544
+offset_top = 20.576395
+offset_right = 121.98544
+offset_bottom = 38.576393
+text = "啊我多傻"
+label_settings = SubResource("LabelSettings_jlufg")
+
+[node name="descript" type="Label" parent="Root/RewardChoiceOverlay/Panel/choice3" unique_id=1587805467]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 0
+offset_left = 82.112465
+offset_top = 41.599808
+offset_right = 122.112465
+offset_bottom = 59.599808
+text = "带盒都塞hd哦断货我的有收到"
+label_settings = SubResource("LabelSettings_l20r4")
+autowrap_mode = 3
 
 [node name="PauseMenuOverlay" type="ColorRect" parent="Root" unique_id=1191306827]
 visible = false

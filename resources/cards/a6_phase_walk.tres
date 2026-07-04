@@ -8,5 +8,5 @@ id = "a6_phase_walk"
 card_name = "加速"
 owner_player_id = 1
 tags = PackedStringArray("break")
-description = "断裂。改了"
+description = "断裂。断裂期间，玩家移速翻倍。"
 effect_id = "phase_walk"

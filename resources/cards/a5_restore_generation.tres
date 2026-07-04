@@ -8,5 +8,5 @@ id = "a5_restore_generation"
 card_name = "恢复补充"
 owner_player_id = 1
 tags = PackedStringArray("consumable", "restore_generation")
-description = "消耗：使用后这张牌会被移除。获得3 张恢复。"
+description = "消耗：使用后这张牌会被移除。获得2 张恢复。"
 effect_id = "restore_generation"

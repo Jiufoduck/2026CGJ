@@ -970,9 +970,9 @@ func _capture_reward_pause_process_modes(node: Node) -> void:
 
 	reward_world_pause_process_modes.append({
 		"node_ref": weakref(node),
-		"process_mode": node.process_mode,
+		"process_mode": node.process_mode
 	})
-	node.process_mode = Node.PROCESS_MODE_DISABLED
+	node.set_deferred("process_mode",Node.PROCESS_MODE_DISABLED)
 	for child in node.get_children():
 		_capture_reward_pause_process_modes(child)
 

@@ -42,7 +42,7 @@ const INITIAL_DECK_IDS_BY_PLAYER := {
 }
 
 const REWARD_POOL_IDS_BY_PLAYER := {
-	1: ["a1_range_damage", "a2_collision_charge", "a3_counterattack", "a4_clear_screen", "a5_restore_generation", "a6_phase_walk", RESTORE_CARD_ID],
+	1: ["a1_range_damage", "a2_collision_charge", "a3_counterattack", "a4_clear_screen", "a5_restore_generation", "a6_phase_walk"],
 	2: ["b7_knockback", "b8_cd_distribution", "b9_group_freeze", "b10_optimize_hand", "b11_focused_fire", "b12_damage_boost", RESTORE_CARD_ID],
 }
 

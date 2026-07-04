@@ -157,15 +157,49 @@ physics_material_override = SubResource("PhysicsMaterial_f6se4")
 [node name="TaskCoordinateC_Top" parent="TaskPoints" unique_id=214977104 instance=ExtResource("5_task_scene")]
 position = Vector2(6371, -184)
 
+[node name="TaskCoordinateC_Top5" parent="TaskPoints" unique_id=857449563 instance=ExtResource("5_task_scene")]
+position = Vector2(5484, -7)
+
+[node name="TaskCoordinateC_Top4" parent="TaskPoints" unique_id=1754205899 instance=ExtResource("5_task_scene")]
+position = Vector2(2081, 179)
+
+[node name="TaskCoordinateC_Top3" parent="TaskPoints" unique_id=245019077 instance=ExtResource("5_task_scene")]
+position = Vector2(2086, 90)
+
 [node name="TaskCoordinateC_Bottom" parent="TaskPoints" unique_id=2144504814 instance=ExtResource("5_task_scene")]
 position = Vector2(6370, 193)
+assigned_player_id = 2
+
+[node name="TaskCoordinateC_Bottom3" parent="TaskPoints" unique_id=1941571653 instance=ExtResource("5_task_scene")]
+position = Vector2(5621, -5)
 assigned_player_id = 2
 
 [node name="TaskCoordinateC_Top2" parent="TaskPoints" unique_id=420481162 instance=ExtResource("5_task_scene")]
 position = Vector2(13075, -184)
 
+[node name="TaskCoordinateC_Top7" parent="TaskPoints" unique_id=1321812407 instance=ExtResource("5_task_scene")]
+position = Vector2(12616, -195)
+
+[node name="TaskCoordinateC_Top6" parent="TaskPoints" unique_id=2133094793 instance=ExtResource("5_task_scene")]
+position = Vector2(11975, -3)
+
+[node name="TaskCoordinateC_Top8" parent="TaskPoints" unique_id=1544050990 instance=ExtResource("5_task_scene")]
+position = Vector2(9189, -194)
+
 [node name="TaskCoordinateC_Bottom2" parent="TaskPoints" unique_id=1157749122 instance=ExtResource("5_task_scene")]
 position = Vector2(13074, 193)
+assigned_player_id = 2
+
+[node name="TaskCoordinateC_Bottom5" parent="TaskPoints" unique_id=586837472 instance=ExtResource("5_task_scene")]
+position = Vector2(12612, 195)
+assigned_player_id = 2
+
+[node name="TaskCoordinateC_Bottom4" parent="TaskPoints" unique_id=1114927019 instance=ExtResource("5_task_scene")]
+position = Vector2(12131, 1)
+assigned_player_id = 2
+
+[node name="TaskCoordinateC_Bottom6" parent="TaskPoints" unique_id=538957965 instance=ExtResource("5_task_scene")]
+position = Vector2(10705, 3)
 assigned_player_id = 2
 
 [node name="Obstacles" type="Node2D" parent="." unique_id=1091223125]

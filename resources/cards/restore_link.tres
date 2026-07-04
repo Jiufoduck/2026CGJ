@@ -6,6 +6,6 @@
 script = ExtResource("1_card_definition")
 id = "restore_link"
 card_name = "恢复"
-tags = PackedStringArray("restore", "consumable")
-description = "消耗。恢复链接，回满血"
+tags = PackedStringArray("restore")
+description = "恢复链接，回满血"
 effect_id = "restore_link"

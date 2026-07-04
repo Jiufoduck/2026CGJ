@@ -18,10 +18,11 @@ class_name EnemySpawnPoint
 
 @export var enemy_scene: PackedScene
 @export var spawn_label := "敌人生成点"
+@export var spawn_distance = 1500
+@export_multiline var custom_script: String
 
 var spawned_enemy: Node2D
 var spawn_loop_generation := 0
-const SPAWN_DISTANCE = 1500
 
 @onready var marker_visual: Polygon2D = $Marker
 @onready var label_node: Label = $Label
@@ -54,8 +55,8 @@ func _run_spawn_loop(loop_generation: int) -> void:
 		if core == null or not is_instance_valid(core):
 			continue
 
-		var dis: float = (core.global_position - global_position).length()
-		if dis < SPAWN_DISTANCE:
+		var dis_x: float = absf((core.global_position - global_position).x)
+		if dis_x < spawn_distance:
 			spawn_enemy()
 			return
 
@@ -70,6 +71,11 @@ func spawn_enemy() -> Node2D:
 	var instance := enemy_scene.instantiate() as EnemyBase
 
 	spawned_enemy = instance
+	if not custom_script.is_empty():
+		var gds = GDScript.new()
+		gds.source_code = custom_script
+		if gds.reload() == OK:
+			gds.call('main', instance)
 	add_child(spawned_enemy)
 	spawned_enemy.position = Vector2.ZERO
 	

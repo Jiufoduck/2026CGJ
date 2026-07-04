@@ -19,7 +19,7 @@ func _ready() -> void:
 func _on_body_entered(body: Node) -> void:
 	if body.has_method("take_hit"):
 		body.take_hit(damage, source_enemy)
-		queue_free()
+	queue_free()
 		
 func self_destroy():
 	await get_tree().create_timer(10).timeout

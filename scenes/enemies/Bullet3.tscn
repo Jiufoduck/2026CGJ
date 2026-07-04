@@ -6,7 +6,7 @@
 
 [node name="Bullet3" type="RigidBody2D" unique_id=876274873]
 collision_layer = 0
-collision_mask = 2
+collision_mask = 2054
 mass = 0.001
 gravity_scale = 0.0
 contact_monitor = true

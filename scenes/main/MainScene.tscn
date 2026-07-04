@@ -980,6 +980,10 @@ enemy_scene = ExtResource("7_enemy_one_scene")
 [node name="EnemySpawnPoint4" parent="EnemySpawns" unique_id=1573557068 instance=ExtResource("10_enemy_spawn_scene")]
 position = Vector2(2265, 103)
 enemy_scene = ExtResource("9_enemy_three_scene")
+spawn_distance = 1200
+custom_script = "static func main(e):
+  e.can_move = false
+  e.shoot_range = 1000"
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1843929157]
 position = Vector2(640, 0)

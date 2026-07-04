@@ -459,6 +459,14 @@ scale = Vector2(0.19376716, 3.3958795)
 position = Vector2(1849.0001, 11)
 scale = Vector2(0.19376716, 1.9492921)
 
+[node name="RectangleObstacle24" parent="Obstacles" unique_id=1848800512 instance=ExtResource("6_obstacle_scene")]
+position = Vector2(158, -96.00001)
+scale = Vector2(0.16822106, 0.99079865)
+
+[node name="RectangleObstacle57" parent="Obstacles" unique_id=754722124 instance=ExtResource("6_obstacle_scene")]
+position = Vector2(158, 105.99998)
+scale = Vector2(0.16822106, 0.99079865)
+
 [node name="RectangleObstacle7" parent="Obstacles" unique_id=740624849 instance=ExtResource("6_obstacle_scene")]
 position = Vector2(2123, -59.000004)
 scale = Vector2(1.032782, 0.3517023)

@@ -1,22 +1,31 @@
 extends Panel
 
 # 脚本说明：
-# - ATTACK/ATTACK_UNCONSU/ENHANCE/ENHANCE_UNCONSU：四种卡面底图，按卡牌类型和是否消耗切换。
+# - PLAYER_CARD_FACES_BY_KEY：8 种玩家手牌卡面，按玩家、攻击/增益、可消耗/不可消耗切换。
 # - card_descrip/card_title/card_count_label：面板内文本节点，分别显示描述、标题和当前牌堆张数。
 # - load_card_and_theme(res)：兼容编辑器/资源直接预览入口，把 CardDefinition 转成运行时字典后显示。
-# - load_card_data(card_data, card_count, cooldown_remaining)：HUD 运行时入口，显示当前牌、牌数和冷却。
+# - load_card_data(card_data, card_count, cooldown_remaining, player_id)：HUD 运行时入口，显示当前牌、牌数和冷却。
 # - set_restore_hint_active(active)：断线期间当前牌是恢复牌时开启循环提示动画。
 # - restore_hint_tween：恢复牌提示动画 Tween，循环高亮/变暗/放大/缩小。
 # - base_scale/base_modulate：面板原始视觉状态，关闭提示动画时恢复。
+# - face_styleboxes_by_key：卡面 StyleBoxTexture 缓存，避免每次刷新面板都新建资源。
 # - _apply_card_theme(card_data)：根据运行时字典里的 type/tags 选择卡面。
+# - _get_card_face_key(card_data, player_id)：把玩家编号、类型和消耗词条组合成卡面 key。
+# - _get_or_create_face_stylebox(face_key)：从 PNG 素材生成可用于 Panel 的 StyleBoxTexture。
 # - _card_has_tag(card_data, tag)：兼容 Array 和 PackedStringArray 的词条判断。
 # - _play_restore_hint_loop()：启动恢复牌循环提示动画。
 # - _stop_restore_hint_loop()：停止提示动画并恢复视觉状态。
 
-const ATTACK = preload("uid://c7ole2s1378hw")
-const ATTACK_UNCONSU = preload("uid://s1u4hagxjvle")
-const ENHANCE = preload("uid://cwfyatongmryw")
-const ENHANCE_UNCONSU = preload("uid://cww82mdc165ql")
+const PLAYER_CARD_FACES_BY_KEY := {
+	"p1_attack_consumable": preload("res://assets/玩家手牌/攻击 可消耗 玩家1.png"),
+	"p1_attack_unconsumable": preload("res://assets/玩家手牌/攻击 不可消耗 玩家1.png"),
+	"p1_other_consumable": preload("res://assets/玩家手牌/增益 可消耗 玩家1.png"),
+	"p1_other_unconsumable": preload("res://assets/玩家手牌/增益 不可消耗 玩家1.png"),
+	"p2_attack_consumable": preload("res://assets/玩家手牌/攻击 可消耗 玩家2.png"),
+	"p2_attack_unconsumable": preload("res://assets/玩家手牌/攻击 不可消耗 玩家2.png"),
+	"p2_other_consumable": preload("res://assets/玩家手牌/增益 可消耗 玩家2.png"),
+	"p2_other_unconsumable": preload("res://assets/玩家手牌/增益 不可消耗 玩家2.png"),
+}
 const TAG_CONSUMABLE := "consumable"
 const CARD_TYPE_ATTACK := "attack"
 const CARD_TYPE_OTHER := "other"
@@ -29,6 +38,7 @@ var restore_hint_tween: Tween
 var restore_hint_active := false
 var base_scale := Vector2.ONE
 var base_modulate := Color.WHITE
+var face_styleboxes_by_key := {}
 
 
 func _ready() -> void:
@@ -50,7 +60,7 @@ func load_card_and_theme(res: CardDefinition) -> void:
 	load_card_data(res.to_card_data(), 0, 0.0)
 
 
-func load_card_data(card_data: Dictionary, card_count: int, cooldown_remaining: float) -> void:
+func load_card_data(card_data: Dictionary, card_count: int, cooldown_remaining: float, player_id := 0) -> void:
 	card_count_label.text = str(maxi(0, card_count))
 	if card_data.is_empty():
 		card_title.text = "无牌"
@@ -58,10 +68,10 @@ func load_card_data(card_data: Dictionary, card_count: int, cooldown_remaining: 
 		_apply_card_theme({
 			"type": CARD_TYPE_OTHER,
 			"tags": [],
-		})
+		}, player_id)
 		return
 
-	_apply_card_theme(card_data)
+	_apply_card_theme(card_data, player_id)
 	var cooldown_text := ""
 	if cooldown_remaining > 0.0:
 		cooldown_text = "  %.1fs" % cooldown_remaining
@@ -80,18 +90,31 @@ func set_restore_hint_active(active: bool) -> void:
 		_stop_restore_hint_loop()
 
 
-func _apply_card_theme(card_data: Dictionary) -> void:
+func _apply_card_theme(card_data: Dictionary, player_id := 0) -> void:
+	add_theme_stylebox_override("panel", _get_or_create_face_stylebox(_get_card_face_key(card_data, player_id)))
+
+
+func _get_card_face_key(card_data: Dictionary, player_id := 0) -> String:
+	var resolved_player_id := player_id
+	if resolved_player_id <= 0:
+		resolved_player_id = int(card_data.get("owner_player_id", 1))
+	resolved_player_id = 2 if resolved_player_id == 2 else 1
+
 	var card_type := str(card_data.get("type", CARD_TYPE_OTHER))
-	if _card_has_tag(card_data, TAG_CONSUMABLE):
-		if card_type == CARD_TYPE_ATTACK:
-			add_theme_stylebox_override("panel", ATTACK)
-		else:
-			add_theme_stylebox_override("panel", ENHANCE)
-	else:
-		if card_type == CARD_TYPE_ATTACK:
-			add_theme_stylebox_override("panel", ATTACK_UNCONSU)
-		else:
-			add_theme_stylebox_override("panel", ENHANCE_UNCONSU)
+	var type_key := "attack" if card_type == CARD_TYPE_ATTACK else "other"
+	var consume_key := "consumable" if _card_has_tag(card_data, TAG_CONSUMABLE) else "unconsumable"
+	return "p%d_%s_%s" % [resolved_player_id, type_key, consume_key]
+
+
+func _get_or_create_face_stylebox(face_key: String) -> StyleBoxTexture:
+	if face_styleboxes_by_key.has(face_key):
+		return face_styleboxes_by_key[face_key]
+
+	var texture: Texture2D = PLAYER_CARD_FACES_BY_KEY.get(face_key, PLAYER_CARD_FACES_BY_KEY["p1_other_unconsumable"])
+	var stylebox := StyleBoxTexture.new()
+	stylebox.texture = texture
+	face_styleboxes_by_key[face_key] = stylebox
+	return stylebox
 
 
 func _card_has_tag(card_data: Dictionary, tag: String) -> bool:

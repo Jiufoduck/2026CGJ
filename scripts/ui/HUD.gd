@@ -1136,14 +1136,14 @@ func set_link_state(is_active: bool, seconds_left: float) -> void:
 
 func set_player_deck_status(player_id: int, card_data: Dictionary, card_count: int, cooldown_remaining: float) -> void:
 	if player_id == 1:
-		_update_player_card_panel(player_one_card_panel, card_data, card_count, cooldown_remaining)
+		_update_player_card_panel(player_one_card_panel, card_data, card_count, cooldown_remaining, player_id)
 	elif player_id == 2:
-		_update_player_card_panel(player_two_card_panel, card_data, card_count, cooldown_remaining)
+		_update_player_card_panel(player_two_card_panel, card_data, card_count, cooldown_remaining, player_id)
 
 
-func _update_player_card_panel(card_panel: Node, card_data: Dictionary, card_count: int, cooldown_remaining: float) -> void:
+func _update_player_card_panel(card_panel: Node, card_data: Dictionary, card_count: int, cooldown_remaining: float, player_id: int) -> void:
 	if card_panel != null and card_panel.has_method("load_card_data"):
-		card_panel.load_card_data(card_data, card_count, cooldown_remaining)
+		card_panel.load_card_data(card_data, card_count, cooldown_remaining, player_id)
 		_set_restore_hint_for_panel(card_panel, not current_link_is_active and _card_has_tag(card_data, CARD_TAG_RESTORE))
 
 

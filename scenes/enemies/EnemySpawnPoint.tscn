@@ -11,6 +11,7 @@ color = Color(1, 0.72, 0.25, 0.42)
 polygon = PackedVector2Array(0, -24, 21, -12, 21, 12, 0, 24, -21, 12, -21, -12)
 
 [node name="Label" type="Label" parent="." unique_id=2128561327]
+visible = false
 offset_left = -74.0
 offset_top = 30.0
 offset_right = 74.0

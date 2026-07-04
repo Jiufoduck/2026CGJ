@@ -2,12 +2,12 @@
 
 [ext_resource type="Script" uid="uid://rhrx5sxw0wnp" path="res://scripts/game/GameController.gd" id="1_game_script"]
 [ext_resource type="PackedScene" uid="uid://borc38mwxop4l" path="res://scenes/characters/Player.tscn" id="2_player_scene"]
-[ext_resource type="PackedScene" uid="uid://daa7p53w1mhco" path="res://scenes/core/BodyCore.tscn" id="3_body_scene"]
+[ext_resource type="PackedScene" path="res://scenes/core/BodyCore.tscn" id="3_body_scene"]
 [ext_resource type="Texture2D" uid="uid://cyyphb8nc2ojn" path="res://assets/art/fire_2.png" id="3_xbdeh"]
 [ext_resource type="PackedScene" uid="uid://5rlcx22ksidf" path="res://scenes/ui/HUD.tscn" id="4_hud_scene"]
 [ext_resource type="Texture2D" uid="uid://blso6hjcbs8cq" path="res://assets/art/fire_1.png" id="4_ywwdm"]
 [ext_resource type="PackedScene" uid="uid://c18c3k5de2pyy" path="res://scenes/pickups/TaskPoint.tscn" id="5_task_scene"]
-[ext_resource type="PackedScene" uid="uid://bbx4ivqik1iqc" path="res://scenes/obstacles/NetObstacle.tscn" id="6_f6se4"]
+[ext_resource type="PackedScene" path="res://scenes/obstacles/NetObstacle.tscn" id="6_f6se4"]
 [ext_resource type="PackedScene" path="res://scenes/obstacles/RectangleObstacle.tscn" id="6_obstacle_scene"]
 [ext_resource type="PackedScene" uid="uid://253htnqnf3pa" path="res://scenes/enemies/EnemyType1.tscn" id="7_enemy_one_scene"]
 [ext_resource type="PackedScene" uid="uid://c2q4xwwctv2fl" path="res://scenes/enemies/EnemyType3.tscn" id="9_enemy_three_scene"]
@@ -404,32 +404,32 @@ position = Vector2(20238, 103)
 scale = Vector2(0.28293243, 1.1302236)
 
 [node name="RectangleObstacle62" parent="Obstacles" unique_id=42578494 instance=ExtResource("6_obstacle_scene")]
-position = Vector2(20597.002, 161)
-scale = Vector2(0.30203518, 1.7040768)
+position = Vector2(20597.002, 170)
+scale = Vector2(0.28062472, 1.5291779)
 
 [node name="RectangleObstacle67" parent="Obstacles" unique_id=371021150 instance=ExtResource("6_obstacle_scene")]
-position = Vector2(20593, -133)
-scale = Vector2(0.2646778, 2.3115108)
+position = Vector2(20593, -127.000015)
+scale = Vector2(0.2734653, 2.46256)
 
 [node name="RectangleObstacle73" parent="Obstacles" unique_id=471430841 instance=ExtResource("6_obstacle_scene")]
 position = Vector2(21780, -63.000008)
 scale = Vector2(0.34173098, 3.8647413)
 
 [node name="RectangleObstacle68" parent="Obstacles" unique_id=33561552 instance=ExtResource("6_obstacle_scene")]
-position = Vector2(20680, -9)
+position = Vector2(20681, 4.0000005)
 scale = Vector2(1.3762572, 0.37346226)
 
 [node name="RectangleObstacle71" parent="Obstacles" unique_id=931499839 instance=ExtResource("6_obstacle_scene")]
-position = Vector2(20791, -114)
-scale = Vector2(1.14491, 0.35442182)
+position = Vector2(20822, -112.00001)
+scale = Vector2(1.4137005, 0.35442182)
 
 [node name="RectangleObstacle69" parent="Obstacles" unique_id=767142578 instance=ExtResource("6_obstacle_scene")]
-position = Vector2(20752, 102)
+position = Vector2(20788, 118.99999)
 scale = Vector2(2.102491, 0.4260564)
 
 [node name="RectangleObstacle70" parent="Obstacles" unique_id=1736697385 instance=ExtResource("6_obstacle_scene")]
-position = Vector2(20902.002, -22.000002)
-scale = Vector2(0.23232482, 2.3771632)
+position = Vector2(20937, -13)
+scale = Vector2(0.2450858, 2.4985447)
 
 [node name="RectangleObstacle47" parent="Obstacles" unique_id=1692924264 instance=ExtResource("6_obstacle_scene")]
 position = Vector2(17311, -198)
@@ -937,22 +937,29 @@ position = Vector2(20174, 0)
 enemy_scene = ExtResource("10_hs7hk")
 
 [node name="EnemySpawnPoint115" parent="EnemySpawns" unique_id=1436739684 instance=ExtResource("10_enemy_spawn_scene")]
-position = Vector2(20643, -69)
+position = Vector2(20649, -59)
 enemy_scene = ExtResource("14_0ld34")
 
 [node name="EnemySpawnPoint117" parent="EnemySpawns" unique_id=1907887456 instance=ExtResource("10_enemy_spawn_scene")]
-position = Vector2(20904, -193)
+position = Vector2(20932, -178)
+enemy_scene = ExtResource("12_tdtes")
+custom_script = "static func main(e):
+  e.can_move = false
+  e.shoot_range = 1000"
+
+[node name="EnemySpawnPoint128" parent="EnemySpawns" unique_id=460020547 instance=ExtResource("10_enemy_spawn_scene")]
+position = Vector2(20857, -178)
 enemy_scene = ExtResource("12_tdtes")
 custom_script = "static func main(e):
   e.can_move = false
   e.shoot_range = 1000"
 
 [node name="EnemySpawnPoint125" parent="EnemySpawns" unique_id=1303256079 instance=ExtResource("10_enemy_spawn_scene")]
-position = Vector2(20946, -109)
+position = Vector2(20987, -109)
 enemy_scene = ExtResource("14_0ld34")
 
 [node name="EnemySpawnPoint126" parent="EnemySpawns" unique_id=946703946 instance=ExtResource("10_enemy_spawn_scene")]
-position = Vector2(20999, -109)
+position = Vector2(21045, -109)
 enemy_scene = ExtResource("14_0ld34")
 
 [node name="EnemySpawnPoint127" parent="EnemySpawns" unique_id=622706900 instance=ExtResource("10_enemy_spawn_scene")]

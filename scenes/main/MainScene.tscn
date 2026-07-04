@@ -176,6 +176,9 @@ position = Vector2(6371, -184)
 [node name="TaskCoordinateC_Top3" parent="TaskPoints" unique_id=1835141426 instance=ExtResource("5_task_scene")]
 position = Vector2(2078, 49)
 
+[node name="TaskCoordinateC_Top5" parent="TaskPoints" unique_id=1872490765 instance=ExtResource("5_task_scene")]
+position = Vector2(4959, -145)
+
 [node name="TaskCoordinateC_Top4" parent="TaskPoints" unique_id=1734627731 instance=ExtResource("5_task_scene")]
 position = Vector2(-2878, 5)
 
@@ -185,6 +188,10 @@ assigned_player_id = 2
 
 [node name="TaskCoordinateC_Bottom14" parent="TaskPoints" unique_id=1098027971 instance=ExtResource("5_task_scene")]
 position = Vector2(2077, 160)
+assigned_player_id = 2
+
+[node name="TaskCoordinateC_Bottom16" parent="TaskPoints" unique_id=2125799517 instance=ExtResource("5_task_scene")]
+position = Vector2(4964, 121)
 assigned_player_id = 2
 
 [node name="TaskCoordinateC_Bottom15" parent="TaskPoints" unique_id=325373151 instance=ExtResource("5_task_scene")]

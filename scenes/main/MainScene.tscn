@@ -190,7 +190,7 @@ position = Vector2(2077, 160)
 assigned_player_id = 2
 
 [node name="TaskCoordinateC_Bottom15" parent="TaskPoints" unique_id=325373151 instance=ExtResource("5_task_scene")]
-position = Vector2(-2148, -159)
+position = Vector2(-1869, -153)
 assigned_player_id = 2
 
 [node name="TaskCoordinateC_Bottom3" parent="TaskPoints" unique_id=1941571653 instance=ExtResource("5_task_scene")]

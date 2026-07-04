@@ -70,7 +70,7 @@ func spawn_enemy() -> Node2D:
 		return spawned_enemy
 	if spawned_enemy != null:
 		return spawned_enemy
-	
+
 	var instance := enemy_scene.instantiate() as EnemyBase
 
 	spawned_enemy = instance
@@ -81,7 +81,7 @@ func spawn_enemy() -> Node2D:
 			gds.call('main', instance)
 	add_child(spawned_enemy)
 	spawned_enemy.position = Vector2.ZERO
-	
+
 	print('enemy spawned: %d' % spawned_enemy.enemy_type_id)
 	return spawned_enemy
 

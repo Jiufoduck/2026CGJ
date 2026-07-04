@@ -176,9 +176,7 @@ const DEFAULT_INPUT_PRESET_BINDINGS := {
 @onready var root: Control = $Root
 @onready var sub_viewport: SubViewport = $Root/SubViewportContainer/SubViewport
 @onready var sub_viewport_camera: Camera2D = $Root/SubViewportContainer/SubViewport/ViewportCamera2D
-@onready var health_label: Label = $Root/TopStrip/HealthLabel
-@onready var health_bar: TextureProgressBar = $Root/TopStrip/HealthBar
-@onready var link_status_label: Label = $Root/TopStrip/LinkStatusLabel
+@onready var health_bar: TextureProgressBar = $Root/HealthBar
 @onready var death_countdown_panel: Control = $Root/DeathCountdownPanel
 @onready var death_countdown_label: Label = $Root/DeathCountdownPanel/DeathCountdownLabel
 @onready var player_one_card_label: Label = $Root/PlayerOnePanel/CardLabel
@@ -405,7 +403,6 @@ func show_game_over(reason := "断线结束", fade_seconds := DEFAULT_GAME_OVER_
 	game_over_try_again_button.modulate.a = 0.0
 	game_over_try_again_button.disabled = true
 	death_countdown_panel.visible = false
-	link_status_label.text = "Gameover"
 	message_label.text = reason
 
 	var fade_duration := maxf(0.01, fade_seconds)
@@ -459,7 +456,6 @@ func reset_runtime_ui_for_restart() -> void:
 	hide_reward_choice(false)
 	_hide_pause_menu_without_unpausing()
 	set_message("")
-	link_status_label.text = "连线稳定"
 	death_countdown_panel.visible = false
 	waiting_rebind_action = StringName()
 	_refresh_rebind_buttons()
@@ -1114,16 +1110,13 @@ func _save_settings() -> void:
 func set_health(current_health: float, max_health: float) -> void:
 	health_bar.max_value = max_health
 	health_bar.value = current_health
-	health_label.text = "HP %d / %d" % [roundi(current_health), roundi(max_health)]
 
 
 func set_link_state(is_active: bool, seconds_left: float) -> void:
 	if is_active:
-		link_status_label.text = "连线稳定"
 		death_countdown_panel.visible = false
 	else:
 		var clamped_seconds: float = maxf(0.0, seconds_left)
-		link_status_label.text = "断线 %.1fs" % clamped_seconds
 		death_countdown_label.text = "死亡倒计时 %.1f" % clamped_seconds
 		death_countdown_panel.visible = true
 
@@ -1146,7 +1139,6 @@ func set_message(message: String) -> void:
 
 
 func set_game_result(message: String) -> void:
-	link_status_label.text = message
 	message_label.text = message
 	death_countdown_panel.visible = false
 

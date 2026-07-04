@@ -32,7 +32,7 @@ func _ready() -> void:
 
 func start_behavior_loop():
 	var core = EnemyUtils.get_body_core()
-	while true:
+	while is_physics_processing():
 		await get_tree().physics_frame
 		if not is_instance_valid(core) or not is_inside_tree():
 			return

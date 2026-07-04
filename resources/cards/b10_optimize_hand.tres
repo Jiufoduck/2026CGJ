@@ -8,5 +8,5 @@ id = "b10_optimize_hand"
 card_name = "优化手牌"
 owner_player_id = 2
 tags = PackedStringArray("consumable", "restore_generation")
-description = "消耗：使用后这张牌会被移除。向自己的牌堆加入 1 张恢复连线，并随机让一张消耗牌失去消耗。"
+description = "消耗：使用后这张牌会被移除。获得一张恢复，随机一张消耗牌失去消耗。"
 effect_id = "optimize_hand"

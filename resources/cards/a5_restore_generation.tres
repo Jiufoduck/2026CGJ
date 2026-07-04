@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1_card_definition")
 id = "a5_restore_generation"
-card_name = "恢复生成"
+card_name = "恢复补充"
 owner_player_id = 1
-tags = PackedStringArray("consumable", "break", "restore_generation")
-description = "消耗：使用后这张牌会被移除。断裂。使用后向自己的牌堆加入 3 张恢复连线。"
+tags = PackedStringArray("consumable", "restore_generation")
+description = "消耗：使用后这张牌会被移除。获得3 张恢复。"
 effect_id = "restore_generation"

@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_card_definition")
 id = "restore_link"
-card_name = "恢复连线"
+card_name = "恢复"
 tags = PackedStringArray("restore", "consumable")
-description = "恢复牌。连线期间不能打出；断线期间打出后恢复肉体满血并重新连接两个玩家。"
+description = "恢复牌。连线期间不能打出；断线期间打出，恢复肉体满血并重新连接两个玩家。"
 effect_id = "restore_link"

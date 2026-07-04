@@ -1,14 +1,12 @@
-[gd_resource type="Resource" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="CardA6PhaseWalkDefinition" format=3 uid="uid://bar5qhdw7pi70"]
 
-[ext_resource type="Script" path="res://scripts/card/definitions/CardA6PhaseWalkDefinition.gd" id="1_card_definition"]
+[ext_resource type="Script" uid="uid://dwbwunx5h1mms" path="res://scripts/card/definitions/CardA6PhaseWalkDefinition.gd" id="1_card_definition"]
 
 [resource]
 script = ExtResource("1_card_definition")
 id = "a6_phase_walk"
-card_name = "穿墙"
+card_name = "加速"
 owner_player_id = 1
-card_type = "other"
 tags = PackedStringArray("break")
-description = "断裂。连线恢复前，两名玩家可以穿过墙和普通障碍。"
+description = "断裂。改了"
 effect_id = "phase_walk"
-base_cooldown = 2.0

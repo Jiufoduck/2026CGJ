@@ -8,5 +8,5 @@ id = "b9_group_freeze"
 card_name = "群体冻结"
 owner_player_id = 2
 tags = PackedStringArray("break", "consumable")
-description = "断裂。消耗：使用后这张牌会被移除。连线断裂期间，怪物停止行动。"
+description = "断裂。消耗：使用后这张牌会被移除。断裂期间，怪物停止行动。"
 effect_id = "group_freeze"

@@ -1,6 +1,6 @@
-[gd_resource type="Resource" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="CardB7KnockbackDefinition" format=3 uid="uid://bbdcng401mrfj"]
 
-[ext_resource type="Script" path="res://scripts/card/definitions/CardB7KnockbackDefinition.gd" id="1_card_definition"]
+[ext_resource type="Script" uid="uid://d4flbb68j4cbq" path="res://scripts/card/definitions/CardB7KnockbackDefinition.gd" id="1_card_definition"]
 
 [resource]
 script = ExtResource("1_card_definition")
@@ -9,9 +9,5 @@ card_name = "击退"
 owner_player_id = 2
 card_type = "attack"
 tags = PackedStringArray()
-description = "击退屏幕上所有怪物 260 像素，并对肉体造成 4 点伤害。"
+description = "击退所有怪物，对肉体造成 4 点伤害。"
 effect_id = "knockback"
-base_cooldown = 2.0
-body_damage_amount = 4.0
-knockback_distance = 260.0
-overwhelm_decay = 0.72

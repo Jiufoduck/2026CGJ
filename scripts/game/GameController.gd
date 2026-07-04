@@ -25,6 +25,10 @@ class_name GameController
 # - camera_follow_lerp_speed：摄像机追向目标位置的插值速度。数值越大，自动跟随越紧。
 # - camera_view_size：主视口可见区域尺寸，用于玩家专属边界限制；敌人不会使用这个限制。
 # - camera_player_margin：玩家距离摄像机视野边缘的最小安全距离。
+# - attack_card_camera_shake_impulse：攻击牌成功打出时注入的镜头晃动强度。
+# - attack_card_camera_shake_max_offset：攻击牌镜头晃动的最大像素偏移。
+# - attack_card_camera_shake_decay：镜头晃动强度每秒衰减量；越大越快停。
+# - attack_card_camera_shake_frequency：镜头晃动正弦频率；越高越紧。
 # - comfortable_link_length：连线无明显阻力的舒适长度。
 # - maximum_link_length：连线最大长度。超出后阻力和位置修正快速增大。
 # - taut_solo_mover_scale：只有一个玩家主动移动且连线拉紧时，主动玩家最低保留的速度比例，用来表达“拉动不动玩家会有阻力”。
@@ -50,6 +54,8 @@ class_name GameController
 # - restart_state：主场景初始位置快照。Try again 用它恢复玩家、肉体和相机起点。
 # - reward_world_pause_active：任务点选卡期间的世界暂停锁。它和 SceneTree.paused 配合，不使用 Engine.time_scale。
 # - reward_world_pause_process_modes：选卡暂停前保存的世界节点 process_mode，结束选卡后原样恢复。
+# - camera_base_offset：主相机原始 offset。晃动只叠加到 offset 上，不改相机真实世界坐标。
+# - camera_shake_trauma/camera_shake_time/camera_shake_seed：攻击牌镜头晃动状态。trauma 衰减到 0 后恢复原 offset。
 # - card_effect_runner：运行时创建的卡牌效果执行器。它只负责逻辑，不承担场景结构；世界暂停时随世界一起暂停。
 # - _ready()：读取节点、注册输入、建立牌堆、连接任务点/肉体信号，把主世界相机同步给 HUD 的 SubViewport，并初始化 HUD。
 # - _physics_process(delta)：每帧推进摄像机、移动、连线、卡牌冷却、任务终点和 HUD。
@@ -62,8 +68,11 @@ class_name GameController
 # - _handle_card_input()：处理玩家打牌和暂时不打牌。
 # - _play_card_for_player(player_id)：处理非法出牌、牌堆移动、卡牌效果执行和 HUD 反馈。
 # - _pass_card_for_player(player_id)：记录玩家选择不打出当前牌，把它放到牌堆底部，并按合法/非法状态设置冷却。
+# - _trigger_attack_card_camera_shake(card_data)：攻击牌成功打出后注入镜头晃动。
 # - _advance_camera(delta, snap_to_target)：让摄像机自动跟随两个玩家中心，同时保持向右推进，并限制在主场景边界内。
 # - _get_camera_target_position(delta)：计算摄像机本帧应追向的位置，综合玩家中心、前视距离、最低滚动速度和场景边界。
+# - _update_camera_shake(delta)：用连续正弦曲线生成平滑偏移，并让强度逐渐衰减到 0。
+# - _reset_camera_shake()：清空晃动状态并恢复相机 offset。
 # - _move_players(delta)：读取两个玩家输入，并根据连线是否断开选择弹性连线移动或独立移动。
 # - _get_player_move_speed(player)：读取玩家当前实际速度，支持 A2 临时移速倍率。
 # - _calculate_linked_velocities(input_one, input_two)：按参考牵引控制器的软距离/张力思路计算速度；反向移动可继续拉开，只有达到最大长度才挡住继续拉远。
@@ -132,6 +141,10 @@ const CardEffectRunnerScript = preload("res://scripts/card/CardEffectRunner.gd")
 @export var camera_follow_lerp_speed := 8.0
 @export var camera_view_size := Vector2(1280.0, 720.0)
 @export var camera_player_margin := 58.0
+@export var attack_card_camera_shake_impulse := 0.72
+@export var attack_card_camera_shake_max_offset := 16.0
+@export var attack_card_camera_shake_decay := 2.4
+@export var attack_card_camera_shake_frequency := 18.0
 @export var comfortable_link_length := 360.0
 @export var maximum_link_length := 420.0
 @export var taut_solo_mover_scale := 0.42
@@ -165,11 +178,16 @@ var pending_death_animation_players := {}
 var restart_state := {}
 var reward_world_pause_active := false
 var reward_world_pause_process_modes: Array = []
+var camera_base_offset := Vector2.ZERO
+var camera_shake_trauma := 0.0
+var camera_shake_time := 0.0
+var camera_shake_seed := 0.0
 var card_effect_runner
 
 
 func _ready() -> void:
 	camera.make_current()
+	camera_base_offset = camera.offset
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	_ensure_default_input_actions()
 	hud.initialize(camera)
@@ -359,6 +377,7 @@ func _play_card_for_player(player_id: int) -> void:
 
 	card_effect_runner.on_card_success_started(player_id, played_card)
 	card_effect_runner.apply_card(player_id, played_card)
+	_trigger_attack_card_camera_shake(played_card)
 	var _card_msg := "P%d 打出 %s" % [player_id, played_card.get("name", "未命名牌")]
 	if not body_core.is_link_active():
 		var promoted_by_player := _promote_restore_cards_while_link_broken()
@@ -385,15 +404,25 @@ func _pass_card_for_player(player_id: int) -> void:
 	hud.set_message("P%d 跳过 %s，放到牌堆底部" % [player_id, passed_card.get("name", "未命名牌")])
 
 
+func _trigger_attack_card_camera_shake(card_data: Dictionary) -> void:
+	if str(card_data.get("type", "")) != CardDeckScript.CARD_TYPE_ATTACK:
+		return
+
+	camera_shake_trauma = clampf(camera_shake_trauma + attack_card_camera_shake_impulse, 0.0, 1.0)
+	camera_shake_seed = randf_range(0.0, TAU)
+
+
 func _advance_camera(delta: float, snap_to_target := false) -> void:
 	var target_position: Vector2 = _get_camera_target_position(delta)
 	if snap_to_target:
 		camera.global_position = Vector2(target_position.x, 0.0)
+		_update_camera_shake(delta)
 		return
 
 	var follow_weight: float = clampf(delta * camera_follow_lerp_speed, 0.0, 1.0)
 	var next_x: float = lerpf(camera.global_position.x, target_position.x, follow_weight)
 	camera.global_position = Vector2(next_x, 0.0)
+	_update_camera_shake(delta)
 
 
 func _get_camera_target_position(delta: float) -> Vector2:
@@ -412,6 +441,34 @@ func _get_camera_target_position(delta: float) -> Vector2:
 		clampf(target_x, minimum_camera_x, maximum_camera_x),
 		clampf(target_y, minimum_camera_y, maximum_camera_y)
 	)
+
+
+func _update_camera_shake(delta: float) -> void:
+	if camera_shake_trauma <= 0.0:
+		camera.offset = camera_base_offset
+		return
+
+	camera_shake_time += delta
+	camera_shake_trauma = maxf(0.0, camera_shake_trauma - attack_card_camera_shake_decay * delta)
+	var strength: float = camera_shake_trauma * camera_shake_trauma
+	if strength <= 0.0:
+		camera.offset = camera_base_offset
+		return
+
+	var phase: float = camera_shake_time * attack_card_camera_shake_frequency
+	var smooth_offset := Vector2(
+		sin(phase + camera_shake_seed) + 0.35 * sin(phase * 1.73 + camera_shake_seed * 0.61),
+		cos(phase * 1.19 + camera_shake_seed * 1.37) + 0.30 * sin(phase * 2.11 + camera_shake_seed)
+	)
+	camera.offset = camera_base_offset + smooth_offset * attack_card_camera_shake_max_offset * strength
+
+
+func _reset_camera_shake() -> void:
+	camera_shake_trauma = 0.0
+	camera_shake_time = 0.0
+	camera_shake_seed = 0.0
+	if camera != null:
+		camera.offset = camera_base_offset
 
 
 func _move_players(delta: float) -> void:
@@ -741,6 +798,7 @@ func _end_game(message: String) -> void:
 
 	game_has_ended = true
 	get_tree().paused = false
+	_reset_camera_shake()
 	player_one.set_control_enabled(false)
 	player_two.set_control_enabled(false)
 	hud.set_game_result(message)
@@ -756,6 +814,7 @@ func _begin_game_over_sequence(reason: String) -> void:
 	reward_choice_active = false
 	_set_reward_world_pause(false, false)
 	get_tree().paused = false
+	_reset_camera_shake()
 	hud.hide_reward_choice(false)
 	player_one.set_control_enabled(false)
 	player_two.set_control_enabled(false)
@@ -830,6 +889,7 @@ func _restore_start_positions() -> void:
 	player_two.global_position = restart_state.get("player_two_position", player_two.global_position)
 	body_core.global_position = restart_state.get("body_core_position", body_core.global_position)
 	camera.global_position = restart_state.get("camera_position", camera.global_position)
+	_reset_camera_shake()
 	player_one.velocity = Vector2.ZERO
 	player_two.velocity = Vector2.ZERO
 	camera.make_current()

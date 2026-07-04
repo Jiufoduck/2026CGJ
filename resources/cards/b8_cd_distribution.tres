@@ -8,5 +8,5 @@ id = "b8_cd_distribution"
 card_name = "冷却加速"
 owner_player_id = 2
 tags = PackedStringArray("break")
-description = "断裂。冷却加快"
+description = "切断锚链。冷却加快"
 effect_id = "cd_distribution"

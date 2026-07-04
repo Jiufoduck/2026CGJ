@@ -26,6 +26,7 @@ class_name CardDeck
 # - add_card(card_data)：把一张牌副本加入牌堆底部。
 # - add_cards(card_list)：把多张牌副本依次加入牌堆底部。
 # - card_count()：返回当前牌堆张数。
+# - get_cards_snapshot()：读取整副牌的深拷贝，用于 HUD 堆叠显示，不改变牌堆。
 # - current_card_name()：返回当前牌名，没有牌时返回“无牌”。
 # - set_cooldown_remaining(seconds)：直接设置当前 CD，供特殊卡牌覆盖 CD。
 # - multiply_cooldown(multiplier)：按倍率调整当前剩余 CD，供 B8 CD 分配使用。
@@ -134,6 +135,14 @@ func add_cards(card_list: Array) -> void:
 
 func card_count() -> int:
 	return cards.size()
+
+
+func get_cards_snapshot() -> Array:
+	var snapshot := []
+	for card_data in cards:
+		if card_data is Dictionary:
+			snapshot.append((card_data as Dictionary).duplicate(true))
+	return snapshot
 
 
 func current_card_name() -> String:

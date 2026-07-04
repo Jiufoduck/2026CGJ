@@ -13,7 +13,11 @@ collision_layer = 8
 collision_mask = 2
 motion_mode = 1
 script = ExtResource("1_frla7")
+charge_range = 300
 enemy_type_id = 6
+max_health = 11.0
+contact_damage = 25.0
+contact_damage_cooldown = 1.5
 
 [node name="Visual" type="Polygon2D" parent="." unique_id=54952112]
 color = Color(0.95, 0.25, 0.25, 1)

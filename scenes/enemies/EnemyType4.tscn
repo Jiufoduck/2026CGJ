@@ -16,9 +16,11 @@ motion_mode = 1
 wall_min_slide_angle = 0.0
 script = ExtResource("1_tfd0a")
 bullet = ExtResource("2_jrb1x")
+bullet_damage = 6
 shoot_interval = 2.0
+is_elite = true
 enemy_type_id = 4
-max_health = 4.0
+max_health = 5.0
 
 [node name="Visual" type="Polygon2D" parent="." unique_id=1332585819]
 color = Color(0.25, 0.95, 0.65, 1)

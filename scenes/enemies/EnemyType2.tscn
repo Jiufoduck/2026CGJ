@@ -17,6 +17,8 @@ safe_margin = 0.001
 script = ExtResource("1_r8ucr")
 enemy_type_id = 2
 max_health = 9.0
+contact_damage = 20.0
+contact_damage_cooldown = 3.0
 
 [node name="Visual" type="Polygon2D" parent="." unique_id=1965926706]
 color = Color(0.75, 0.35, 1, 1)

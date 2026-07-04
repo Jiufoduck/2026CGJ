@@ -38,7 +38,7 @@ const ALL_DEFINITIONS := [
 
 const INITIAL_DECK_IDS_BY_PLAYER := {
 	1: ["a1_range_damage", "a2_collision_charge", "a4_clear_screen"],
-	2: ["b7_knockback", "b12_damage_boost", RESTORE_CARD_ID],
+	2: [RESTORE_CARD_ID, "b7_knockback", "b12_damage_boost"],
 }
 
 const REWARD_POOL_IDS_BY_PLAYER := {

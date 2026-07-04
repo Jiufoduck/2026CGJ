@@ -18,10 +18,13 @@ class_name BodyCore
 # - link_broken：当前连线是否已经断开。断开后 Line2D 隐藏，倒计时开始。
 # - broken_seconds_left：断线后剩余倒计时秒数。它只在 link_broken 为 true 时递减。
 # - game_over_requested_sent：断线倒计时归零后只允许发出一次 Gameover 请求，避免每帧重复触发。
+# - original_collision_mask：肉体初始碰撞掩码。B10 肉体穿墙结束后用它恢复普通碰撞。
+# - body_phase_enabled：肉体是否正在忽略普通墙/障碍碰撞。
+# - body_phase_collision_layer：B10 肉体穿墙时临时忽略的碰撞层编号，当前普通墙和矩形障碍是第 3 层。
 # - last_motion_blocker：肉体尝试回到连线中心时，最近一次挡住它的物体；主控制器用它识别 net。
 # - snapback_active：肉体是否正在从 net 中高速回弹到连线中心。
 # - snapback_speed：当前回弹速度。启动时较高，接近中心时逐渐降低。
-# - visual_polygon：肉体视觉节点引用。节点在 BodyCore.tscn 中编辑，脚本只更新颜色状态。
+# - visual_node：肉体视觉节点引用。兼容旧的 Visual 多边形和当前 Body 精灵。
 # - _ready()：初始化血量、信号和视觉状态。
 # - _physics_process(delta)：断线状态下推进 10 秒倒计时，到 0 后请求游戏结束。
 # - place_between(player_one_position, player_two_position)：把肉体放到两个玩家中点，满足“连线中心是受击点：肉体”的设定。
@@ -32,8 +35,10 @@ class_name BodyCore
 # - _move_with_obstacle_slide(motion)：移动肉体；普通障碍保留切向剩余位移，net 保持原来的阻挡手感。
 # - _should_stop_without_sliding(collider)：识别 net 等不应该被滑过的阻挡物。
 # - take_hit(amount, source_enemy)：处理受击扣血；血量归零时断开连线并启动 10 秒倒计时。
+# - heal(amount)：恢复肉体生命值但不改变连线状态，用于 A5 回血。
 # - force_break_link()：卡牌直接断线入口。它把肉体血量归零并启动断线倒计时。
 # - restore_link()：恢复连线并回满血量，用于恢复连线卡。
+# - set_body_phase_enabled(enabled, wall_layer_index)：切换肉体是否忽略普通墙/障碍碰撞，用于 B10 穿墙。
 # - reset_state()：Try again 时恢复肉体血量、连线、倒计时和 Gameover 请求锁。
 # - is_link_active()：返回连线是否仍然存在，主控制器据此决定是否施加弹性牵引。
 # - _break_link()：内部断线流程，集中设置状态和发信号。
@@ -57,14 +62,20 @@ var current_health := 100.0
 var link_broken := false
 var broken_seconds_left := 0.0
 var game_over_requested_sent := false
+var original_collision_mask := 0
+var body_phase_enabled := false
+var body_phase_collision_layer := 3
 var last_motion_blocker: Node
 var snapback_active := false
 var snapback_speed := 0.0
 
-@onready var visual_polygon: Polygon2D = $Visual
+@onready var visual_node: CanvasItem = get_node_or_null(^"Visual") as CanvasItem
 
 
 func _ready() -> void:
+	if visual_node == null:
+		visual_node = get_node_or_null(^"Body") as CanvasItem
+	original_collision_mask = collision_mask
 	current_health = max_health
 	link_broken = false
 	broken_seconds_left = 0.0
@@ -186,6 +197,19 @@ func take_hit(amount: float, source_enemy: Node = null) -> void:
 		_break_link()
 
 
+func heal(amount: float) -> float:
+	if amount <= 0.0:
+		return 0.0
+
+	var before_health := current_health
+	current_health = minf(max_health, current_health + amount)
+	var healed_amount := current_health - before_health
+	if healed_amount > 0.0:
+		health_changed.emit(current_health, max_health)
+	_refresh_visual_state()
+	return healed_amount
+
+
 func force_break_link() -> void:
 	if link_broken:
 		return
@@ -205,7 +229,21 @@ func restore_link() -> void:
 	_refresh_visual_state()
 
 
+func set_body_phase_enabled(enabled: bool, wall_layer_index := 3) -> void:
+	body_phase_collision_layer = wall_layer_index
+	if body_phase_enabled == enabled:
+		return
+
+	body_phase_enabled = enabled
+	if enabled:
+		set_collision_mask_value(body_phase_collision_layer, false)
+	else:
+		collision_mask = original_collision_mask
+	_refresh_visual_state()
+
+
 func reset_state() -> void:
+	set_body_phase_enabled(false)
 	current_health = max_health
 	link_broken = false
 	broken_seconds_left = 0.0
@@ -233,12 +271,21 @@ func _break_link() -> void:
 
 
 func _refresh_visual_state() -> void:
-	if visual_polygon == null:
+	if visual_node == null:
 		return
 
 	if link_broken:
-		visual_polygon.color = Color(0.55, 0.55, 0.55, 1.0)
+		_set_visual_color(Color(0.55, 0.55, 0.55, 1.0))
 	elif current_health <= max_health * 0.35:
-		visual_polygon.color = Color(1.0, 0.25, 0.2, 1.0)
+		_set_visual_color(Color(1.0, 0.25, 0.2, 1.0))
+	elif body_phase_enabled:
+		_set_visual_color(Color(0.45, 0.95, 1.0, 1.0))
 	else:
-		visual_polygon.color = Color(1.0, 0.82, 0.28, 1.0)
+		_set_visual_color(Color(1.0, 0.82, 0.28, 1.0))
+
+
+func _set_visual_color(color: Color) -> void:
+	if visual_node is Polygon2D:
+		(visual_node as Polygon2D).color = color
+	else:
+		visual_node.modulate = color

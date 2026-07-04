@@ -52,6 +52,7 @@ class_name GameController
 # - game_over_reason：当前失败原因文本，死亡动画结束后交给 HUD 显示。
 # - pending_death_animation_players：仍未发出 death_animation_finished 的玩家集合。
 # - restart_state：主场景初始位置快照。Try again 用它恢复玩家、肉体和相机起点。
+# - restore_promoted_for_first_break：本局第一次断线是否已经把恢复牌提到当前牌位，避免后续断线重复提牌。
 # - reward_world_pause_active：任务点选卡期间的世界暂停锁。它和 SceneTree.paused 配合，不使用 Engine.time_scale。
 # - reward_world_pause_process_modes：选卡暂停前保存的世界节点 weakref 和 process_mode，结束选卡后原样恢复。
 # - camera_base_offset：主相机原始 offset。晃动只叠加到 offset 上，不改相机真实世界坐标。
@@ -91,7 +92,8 @@ class_name GameController
 # - _update_body_and_line(delta, apply_net_strain, snap_to_center)：让肉体尝试回到两名玩家中点；如果被 net 挡住则停下，挣脱后用减速回弹运动回到中心。
 # - _apply_net_strain(blocker, body_target, delta)：肉体被 net 挡住时，把拉扯距离传给 net；挣脱后给 HUD 一条反馈。
 # - _update_hud()：集中刷新血量、连线状态、当前牌和牌堆数量。
-# - _promote_restore_cards_while_link_broken()：断线期间持续监测牌堆，发现恢复牌就提到当前牌位供 HUD 高亮提示。
+# - _promote_restore_cards_on_first_link_break()：仅本局第一次断线时把已有恢复牌提到当前牌位。
+# - _promote_restore_cards_to_top()：把各玩家牌堆里的第一张恢复牌提到当前牌位，不负责判断是否首次断线。
 # - _check_finish_condition()：两个玩家都抵达最右侧后结束游戏。
 # - _end_game(message)：统一处理胜利或失败，关闭控制并显示结果。
 # - _begin_game_over_sequence(reason)：死亡倒计时归零后的失败流程入口。
@@ -113,6 +115,7 @@ class_name GameController
 # - _on_link_broken_started(seconds_left)：断线倒计时时刷新 HUD。
 # - _on_link_restored()：恢复连线后刷新 HUD 和消息。
 # - _on_game_over_requested()：断线超过 10 秒后结束游戏。
+# - _filter_reward_cards(reward_cards)：过滤任务点奖励候选，确保恢复牌不会出现在奖励三选一里。
 # - _on_task_point_claimed(point, player_id, reward_cards)：任务点被指定玩家拾取后，优先使用手动奖励；为空时从玩家奖励池随机生成 3 张牌。
 
 const ACTION_P1_PLAY_CARD := "p1_play_card"
@@ -176,6 +179,7 @@ var restart_in_progress := false
 var game_over_reason := ""
 var pending_death_animation_players := {}
 var restart_state := {}
+var restore_promoted_for_first_break := false
 var reward_world_pause_active := false
 var reward_world_pause_process_modes: Array = []
 var camera_base_offset := Vector2.ZERO
@@ -288,6 +292,7 @@ func _build_initial_decks() -> void:
 
 	decks_by_player[1] = player_one_deck
 	decks_by_player[2] = player_two_deck
+	restore_promoted_for_first_break = false
 
 
 func _connect_task_points() -> void:
@@ -380,12 +385,7 @@ func _play_card_for_player(player_id: int) -> void:
 	_trigger_attack_card_camera_shake(played_card)
 	var _card_msg := "P%d 打出 %s" % [player_id, played_card.get("name", "未命名牌")]
 	if not body_core.is_link_active():
-		var promoted_by_player := _promote_restore_cards_while_link_broken()
-		for promoted_player_id in promoted_by_player.keys():
-			var promoted_card: Dictionary = promoted_by_player[promoted_player_id]
-			var restore_name: String = promoted_card.get("name", "恢复牌")
-			print("[断线] P%d 的 %s 已提到牌顶" % [promoted_player_id, restore_name])
-			_card_msg += " → P%d 的 %s 提到牌顶" % [promoted_player_id, restore_name]
+		_promote_restore_cards_on_first_link_break()
 	hud.set_message(_card_msg)
 
 
@@ -763,16 +763,24 @@ func _apply_net_strain(blocker: Node, body_target: Vector2, delta: float) -> voi
 func _update_hud() -> void:
 	hud.set_health(body_core.current_health, body_core.max_health)
 	hud.set_link_state(body_core.is_link_active(), body_core.broken_seconds_left)
-	_promote_restore_cards_while_link_broken()
 	for player_id in decks_by_player.keys():
 		var deck = decks_by_player[player_id]
 		hud.set_player_deck_status(player_id, deck.peek_current_card(), deck.card_count(), deck.cooldown_remaining)
 
 
-func _promote_restore_cards_while_link_broken() -> Dictionary:
+func _promote_restore_cards_on_first_link_break() -> Dictionary:
 	var promoted_by_player := {}
 	if body_core == null or body_core.is_link_active():
 		return promoted_by_player
+	if restore_promoted_for_first_break:
+		return promoted_by_player
+
+	restore_promoted_for_first_break = true
+	return _promote_restore_cards_to_top()
+
+
+func _promote_restore_cards_to_top() -> Dictionary:
+	var promoted_by_player := {}
 
 	for player_id in decks_by_player.keys():
 		var deck = decks_by_player[player_id]
@@ -1010,7 +1018,7 @@ func _on_body_health_changed(current_health: float, max_health: float) -> void:
 
 
 func _on_link_broken_started(seconds_left: float) -> void:
-	_promote_restore_cards_while_link_broken()
+	_promote_restore_cards_on_first_link_break()
 	hud.set_link_state(false, seconds_left)
 
 
@@ -1059,7 +1067,18 @@ func _on_game_over_requested() -> void:
 
 
 func _on_task_point_claimed(_point: Node, player_id: int, reward_cards: Array) -> void:
-	var final_reward_cards := reward_cards
+	var final_reward_cards := _filter_reward_cards(reward_cards)
 	if final_reward_cards.is_empty():
 		final_reward_cards = CardCatalogScript.make_reward_choices(player_id)
 	_start_reward_choice(player_id, final_reward_cards)
+
+
+func _filter_reward_cards(reward_cards: Array) -> Array:
+	var filtered_cards: Array = []
+	for card_data in reward_cards:
+		if not (card_data is Dictionary):
+			continue
+		if CardCatalogScript.card_is_restore(card_data):
+			continue
+		filtered_cards.append((card_data as Dictionary).duplicate(true))
+	return filtered_cards

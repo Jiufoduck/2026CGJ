@@ -7,7 +7,7 @@ class_name CardDeck
 # - CARD_RESTORE_LINK_ID：恢复连线卡的唯一 ID。恢复生成、非法出牌判断和旧接口都复用它。
 # - TAG_CONSUMABLE：消耗词条。带它的牌成功打出后会被移除。
 # - TAG_BREAK_LINK：断裂词条。带它的牌成功打出后会断线，断线期间不能打出。
-# - TAG_RESTORE：恢复词条。带它的牌只能在断线期间打出，并且恢复牌不是消耗牌。
+# - TAG_RESTORE：恢复词条。带它的牌只能在断线期间打出，并且恢复牌强制不是消耗牌。
 # - PLAY_COOLDOWN_SECONDS：没有资源冷却字段时使用的默认出牌 CD。
 # - PASS_COOLDOWN_SECONDS：合法跳过当前牌时使用的默认 CD；非法牌跳过会传入 0 秒。
 # - owner_player_id：这个牌堆属于哪个玩家。主控制器用它区分两个独立牌池。
@@ -169,6 +169,8 @@ static func card_has_tag(card_data: Dictionary, tag: String) -> bool:
 
 
 static func card_is_consumable(card_data: Dictionary) -> bool:
+	if card_has_tag(card_data, TAG_RESTORE):
+		return false
 	return card_has_tag(card_data, TAG_CONSUMABLE)
 
 

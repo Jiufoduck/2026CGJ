@@ -1,19 +1,21 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://daa7p53w1mhco"]
 
-[ext_resource type="Script" path="res://scripts/core/BodyCore.gd" id="1_body_script"]
+[ext_resource type="Script" uid="uid://cajawyiotkhue" path="res://scripts/core/BodyCore.gd" id="1_body_script"]
+[ext_resource type="Texture2D" uid="uid://v7oy671np62m" path="res://assets/art/body.png" id="2_nted3"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
 radius = 18.0
 
-[node name="BodyCore" type="AnimatableBody2D"]
+[node name="BodyCore" type="AnimatableBody2D" unique_id=2022257245]
 collision_layer = 2
 collision_mask = 20
 sync_to_physics = false
 script = ExtResource("1_body_script")
 
-[node name="Visual" type="Polygon2D" parent="."]
-color = Color(1, 0.82, 0.28, 1)
-polygon = PackedVector2Array(0, -24, 21, -12, 21, 12, 0, 24, -21, 12, -21, -12)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2067795787]
 shape = SubResource("CircleShape2D_body")
+
+[node name="Body" type="Sprite2D" parent="." unique_id=1125397488]
+rotation = -0.7853982
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("2_nted3")

@@ -21,6 +21,8 @@ class_name CardEffectRunner
 # - counterattack_feedback：A3 等待反杀期间跟随肉体的白模反馈节点。
 # - phase_walk_active：A6 加速状态是否正在断线期间生效。
 # - phase_walk_feedbacks：A6 加速期间跟随两名玩家的白模反馈节点。
+# - body_phase_active：B10 肉体穿墙状态是否正在生效，下一次断线或恢复时清理。
+# - body_phase_feedback：B10 肉体穿墙期间跟随肉体的白模反馈节点。
 # - group_freeze_active：B9 群体冻结状态是否正在断线期间生效。
 # - group_freeze_feedback：B9 冻结触发时的摄像机范围反馈节点。
 # - focused_fire_owner_id：B11 集中火力中无法出牌的玩家编号。0 表示未生效。
@@ -69,11 +71,13 @@ var counterattack_lifetime := 0.35
 var counterattack_feedback
 var phase_walk_active := false
 var phase_walk_feedbacks: Array = []
+var body_phase_active := false
+var body_phase_feedback
 var group_freeze_active := false
 var group_freeze_feedback
 var focused_fire_owner_id := 0
 var focused_fire_ally_id := 0
-var focused_fire_cooldown := 0.5
+var focused_fire_cooldown := 0.0
 var focused_fire_feedbacks: Array = []
 var next_damage_multiplier_by_player := {
 	1: 1.0,
@@ -186,6 +190,7 @@ func reset_all_effects() -> void:
 				player.set_move_speed_multiplier(1.0)
 	phase_walk_active = false
 	_clear_feedback_array(phase_walk_feedbacks)
+	_end_body_phase()
 
 	if group_freeze_active:
 		_set_all_enemies_frozen(false)
@@ -211,15 +216,20 @@ func _physics_process(delta: float) -> void:
 func _apply_range_damage(player_id: int, card_data: Dictionary) -> void:
 	var base_damage: float = float(card_data.get("damage_amount", 0.0))
 	var damage: float = apply_player_damage_multiplier(player_id, base_damage)
-	var radius: float = controller.player_one.global_position.distance_to(controller.player_two.global_position) * 0.5
+	var line_hit_radius: float = float(card_data.get("line_hit_radius", 42.0))
+	var player_one_position: Vector2 = controller.player_one.global_position
+	var player_two_position: Vector2 = controller.player_two.global_position
 	var center: Vector2 = controller.body_core.global_position
-	_spawn_ring(center, radius, Color(1.0, 0.16, 0.10, 1.0), "范围伤害")
+	_spawn_line(player_one_position, center, Color(1.0, 0.16, 0.10, 1.0), "锚线伤害", 0.45)
+	_spawn_line(center, player_two_position, Color(1.0, 0.16, 0.10, 1.0), "", 0.45)
 	for enemy in _get_alive_enemies(false):
-		if enemy.global_position.distance_to(center) <= radius and enemy.has_method("take_damage"):
+		var distance_to_link: float = minf(
+			_distance_to_segment(enemy.global_position, player_one_position, center),
+			_distance_to_segment(enemy.global_position, center, player_two_position)
+		)
+		if distance_to_link <= line_hit_radius and enemy.has_method("take_damage"):
 			enemy.take_damage(damage)
 			_spawn_marker(enemy.global_position, 30.0, Color(1.0, 0.25, 0.12, 1.0), "-%s" % _format_amount(damage), 0.45)
-	controller.body_core.take_hit(damage)
-	_spawn_marker(center, 38.0, Color(1.0, 0.25, 0.12, 1.0), "肉体 -%s" % _format_amount(damage), 0.5)
 
 
 func _apply_collision_charge(player_id: int, card_data: Dictionary) -> void:
@@ -246,19 +256,30 @@ func _apply_counterattack(card_data: Dictionary) -> void:
 func _apply_clear_screen(card_data: Dictionary) -> void:
 	var push_distance: float = float(card_data.get("push_distance", 0.0))
 	var overwhelm_decay: float = float(card_data.get("overwhelm_decay", 0.72))
-	_spawn_sweep(_get_camera_world_rect(), Vector2.LEFT, Color(0.3, 0.9, 1.0, 1.0), "清场")
-	for enemy in _get_alive_enemies(true):
+	_spawn_ring(controller.body_core.global_position, 92.0, Color(0.3, 0.9, 1.0, 1.0), "切断锚链")
+	controller.body_core.force_break_link()
+	_spawn_sweep(_get_camera_world_rect(), Vector2.LEFT, Color(0.3, 0.9, 1.0, 1.0), "怪物左推")
+	for enemy in _get_alive_enemies(false):
 		_overwhelm_enemy(enemy, Vector2.LEFT, push_distance, overwhelm_decay)
 		_spawn_marker(enemy.global_position, 24.0, Color(0.3, 0.9, 1.0, 1.0), "←", 0.35)
 
 
 func _apply_restore_generation(player_id: int, card_data: Dictionary) -> void:
-	_spawn_ring(controller.body_core.global_position, 96.0, Color(0.15, 1.0, 0.45, 1.0), "恢复生成")
-	#controller.body_core.force_break_link()
-	_add_restore_cards(player_id, int(card_data.get("restore_cards_to_add", 0)))
-	var player := _get_player(player_id)
-	if player != null:
-		_spawn_marker(player.global_position, 52.0, Color(0.15, 1.0, 0.45, 1.0), "+恢复牌", 0.75)
+	var heal_amount: float = float(card_data.get("heal_amount", 10.0))
+	var healed_amount := 0.0
+	if controller.body_core.has_method("heal"):
+		healed_amount = float(controller.body_core.heal(heal_amount))
+	else:
+		var before_health: float = float(controller.body_core.current_health)
+		controller.body_core.current_health = minf(controller.body_core.max_health, before_health + heal_amount)
+		healed_amount = float(controller.body_core.current_health) - before_health
+		controller.body_core.health_changed.emit(controller.body_core.current_health, controller.body_core.max_health)
+
+	var label := "HP已满"
+	if healed_amount > 0.0:
+		label = "HP +%s" % _format_amount(healed_amount)
+	_spawn_ring(controller.body_core.global_position, 96.0, Color(0.15, 1.0, 0.45, 1.0), "回血")
+	_spawn_marker(controller.body_core.global_position, 46.0, Color(0.15, 1.0, 0.45, 1.0), label, 0.75)
 
 
 func _apply_phase_walk(card_data: Dictionary) -> void:
@@ -278,7 +299,7 @@ func _apply_knockback(player_id: int, card_data: Dictionary) -> void:
 	var overwhelm_decay: float = float(card_data.get("overwhelm_decay", 0.72))
 	var center: Vector2 = controller.body_core.global_position
 	_spawn_ring(center, knockback_distance, Color(1.0, 0.45, 0.1, 1.0), "击退")
-	for enemy in _get_alive_enemies(true):
+	for enemy in _get_alive_enemies(false):
 		var direction: Vector2 = enemy.global_position - center
 		if direction.length() <= 0.001:
 			direction = Vector2.RIGHT
@@ -297,7 +318,7 @@ func _apply_cd_distribution(player_id: int, card_data: Dictionary) -> void:
 	var player := _get_player(player_id)
 	var other_player := _get_player(_get_other_player_id(player_id))
 	if player != null and other_player != null:
-		_spawn_line(player.global_position, other_player.global_position, Color(0.45, 0.7, 1.0, 1.0), "CD 分配", 0.65)
+		_spawn_line(player.global_position, other_player.global_position, Color(0.45, 0.7, 1.0, 1.0), "冷却加速", 0.65)
 		_spawn_marker(player.global_position, 42.0, Color(1.0, 0.25, 0.25, 1.0), "CD x%s" % _format_amount(float(card_data.get("cooldown_self_multiplier", 1.0))), 0.75)
 		_spawn_marker(other_player.global_position, 42.0, Color(0.25, 0.8, 1.0, 1.0), "CD x%s" % _format_amount(float(card_data.get("cooldown_other_multiplier", 1.0))), 0.75)
 	controller.body_core.force_break_link()
@@ -320,42 +341,38 @@ func _apply_group_freeze() -> void:
 
 
 func _apply_optimize_hand(player_id: int, card_data: Dictionary) -> void:
-	_add_restore_cards(player_id, int(card_data.get("restore_cards_to_add", 0)))
-	var deck = _get_deck(player_id)
-	if deck != null:
-		var optimized_card: Dictionary = deck.make_random_consumable_card_free(rng)
-		var player := _get_player(player_id)
-		if player != null:
-			_spawn_marker(player.global_position, 52.0, Color(0.3, 1.0, 0.45, 1.0), "+恢复", 0.6)
-			var optimized_name := str(optimized_card.get("name", "无消耗牌"))
-			_spawn_marker(player.global_position + Vector2(0.0, 56.0), 42.0, Color(1.0, 0.9, 0.25, 1.0), "优化 %s" % optimized_name, 0.85)
+	_end_body_phase()
+	body_phase_active = true
+	var wall_layer_index := int(card_data.get("body_phase_collision_layer", 3))
+	if controller.body_core.has_method("set_body_phase_enabled"):
+		controller.body_core.set_body_phase_enabled(true, wall_layer_index)
+	body_phase_feedback = _spawn_follow_marker(controller.body_core, 56.0, Color(0.45, 0.95, 1.0, 1.0), "肉体穿墙")
+	var player := _get_player(player_id)
+	if player != null:
+		_spawn_line(player.global_position, controller.body_core.global_position, Color(0.45, 0.95, 1.0, 1.0), "穿墙", 0.7)
 
 
 func _apply_focused_fire(player_id: int, card_data: Dictionary) -> void:
+	controller.body_core.force_break_link()
 	focused_fire_owner_id = player_id
 	focused_fire_ally_id = _get_other_player_id(player_id)
-	focused_fire_cooldown = float(card_data.get("focused_ally_cooldown", 0.5))
+	focused_fire_cooldown = float(card_data.get("focused_ally_cooldown", 0.0))
 	_clear_feedback_array(focused_fire_feedbacks)
 	var owner := _get_player(focused_fire_owner_id)
 	var ally := _get_player(focused_fire_ally_id)
 	if owner != null:
 		focused_fire_feedbacks.append(_spawn_follow_marker(owner, 46.0, Color(1.0, 0.2, 0.2, 1.0), "禁牌"))
 	if ally != null:
-		focused_fire_feedbacks.append(_spawn_follow_marker(ally, 46.0, Color(1.0, 0.9, 0.15, 1.0), "0.5s"))
+		focused_fire_feedbacks.append(_spawn_follow_marker(ally, 46.0, Color(1.0, 0.9, 0.15, 1.0), "无CD"))
 	if owner != null and ally != null:
-		_spawn_line(owner.global_position, ally.global_position, Color(1.0, 0.9, 0.15, 1.0), "集中火力", 0.65)
+		_spawn_line(owner.global_position, ally.global_position, Color(1.0, 0.9, 0.15, 1.0), "断裂集中", 0.65)
 
 
 func _apply_damage_boost(player_id: int, card_data: Dictionary) -> void:
 	var player := _get_player(player_id)
 	var other_player := _get_player(_get_other_player_id(player_id))
-	controller.body_core.force_break_link()
 	var other_player_id := _get_other_player_id(player_id)
-	var deck = _get_deck(player_id)
-	var card_count := 0
-	if deck != null:
-		card_count = deck.card_count()
-	var multiplier := pow(float(card_data.get("damage_multiplier_base", 2.0)), card_count)
+	var multiplier := float(card_data.get("damage_multiplier_base", 2.0))
 	next_damage_multiplier_by_player[other_player_id] = float(next_damage_multiplier_by_player.get(other_player_id, 1.0)) * multiplier
 	if player != null and other_player != null:
 		_spawn_line(player.global_position, other_player.global_position, Color(0.85, 0.35, 1.0, 1.0), "增伤 x%s" % _format_amount(multiplier), 0.85)
@@ -419,7 +436,7 @@ func _on_body_damaged_by_enemy(_amount: float, source_enemy: Node) -> void:
 
 
 func _on_link_broken_started(_seconds_left: float) -> void:
-	_end_focused_fire()
+	_end_body_phase()
 
 
 func _on_link_restored() -> void:
@@ -435,6 +452,9 @@ func _on_link_restored() -> void:
 		_free_feedback(group_freeze_feedback)
 		group_freeze_feedback = null
 		group_freeze_active = false
+
+	_end_body_phase()
+	_end_focused_fire()
 
 
 func _end_collision_charge() -> void:
@@ -462,8 +482,17 @@ func _end_counterattack() -> void:
 func _end_focused_fire() -> void:
 	focused_fire_owner_id = 0
 	focused_fire_ally_id = 0
-	focused_fire_cooldown = 0.5
+	focused_fire_cooldown = 0.0
 	_clear_feedback_array(focused_fire_feedbacks)
+
+
+func _end_body_phase() -> void:
+	if body_phase_active and controller != null and is_instance_valid(controller):
+		if controller.body_core.has_method("set_body_phase_enabled"):
+			controller.body_core.set_body_phase_enabled(false)
+	body_phase_active = false
+	_free_feedback(body_phase_feedback)
+	body_phase_feedback = null
 
 
 func _spawn_counter_projectile(source_enemy: Node) -> void:
@@ -586,6 +615,17 @@ func _overwhelm_enemy(enemy: Node, direction: Vector2, distance: float, decay: f
 func _distance_to_overwhelm_speed(distance: float, decay: float) -> float:
 	var ticks_per_second := float(Engine.physics_ticks_per_second)
 	return distance * maxf(0.02, 1.0 - decay) * ticks_per_second
+
+
+func _distance_to_segment(point: Vector2, segment_start: Vector2, segment_end: Vector2) -> float:
+	var segment := segment_end - segment_start
+	var segment_length_squared := segment.length_squared()
+	if segment_length_squared <= 0.001:
+		return point.distance_to(segment_start)
+
+	var t := clampf((point - segment_start).dot(segment) / segment_length_squared, 0.0, 1.0)
+	var closest_point := segment_start + segment * t
+	return point.distance_to(closest_point)
 
 
 func _format_amount(amount: float) -> String:

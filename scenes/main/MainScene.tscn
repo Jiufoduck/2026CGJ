@@ -875,6 +875,9 @@ enemy_scene = ExtResource("14_0ld34")
 [node name="EnemySpawnPoint117" parent="EnemySpawns" unique_id=1907887456 instance=ExtResource("10_enemy_spawn_scene")]
 position = Vector2(20904, -193)
 enemy_scene = ExtResource("12_tdtes")
+custom_script = "static func main(e):
+  e.can_move = false
+  e.shoot_range = 1000"
 
 [node name="EnemySpawnPoint125" parent="EnemySpawns" unique_id=1303256079 instance=ExtResource("10_enemy_spawn_scene")]
 position = Vector2(20946, -109)

@@ -8,5 +8,5 @@ id = "a4_clear_screen"
 card_name = "清场"
 owner_player_id = 1
 tags = PackedStringArray("consumable", "restore_generation")
-description = "消耗：使用后这张牌会被移除。所有怪物往左推。获得一张恢复。"
+description = "消耗。所有怪物往左推。获得一张恢复"
 effect_id = "clear_screen"

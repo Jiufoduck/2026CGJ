@@ -9,5 +9,5 @@ card_name = "反伤"
 owner_player_id = 1
 card_type = "attack"
 tags = PackedStringArray("consumable")
-description = "断裂前，怪物攻击肉体后，对自身造成等量伤害"
+description = "消耗。反伤怪物，直到断裂"
 effect_id = "counterattack"

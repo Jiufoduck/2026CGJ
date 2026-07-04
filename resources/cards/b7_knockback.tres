@@ -9,5 +9,5 @@ card_name = "击退"
 owner_player_id = 2
 card_type = "attack"
 tags = PackedStringArray()
-description = "击退所有怪物，对肉体造成 4 点伤害。"
+description = "击退所有怪物，消耗血量"
 effect_id = "knockback"

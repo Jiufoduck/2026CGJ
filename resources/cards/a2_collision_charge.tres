@@ -9,5 +9,5 @@ card_name = "撞击怪物"
 owner_player_id = 1
 card_type = "attack"
 tags = PackedStringArray()
-description = "你的移速减少，你撞到怪物时，造成 4 点伤害。直到有玩家出牌。"
+description = "你可以撞伤怪物"
 effect_id = "collision_charge"

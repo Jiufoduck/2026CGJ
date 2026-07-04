@@ -8,5 +8,5 @@ id = "b10_optimize_hand"
 card_name = "优化手牌"
 owner_player_id = 2
 tags = PackedStringArray("consumable", "restore_generation", "break")
-description = "断裂。消耗：使用后这张牌会被移除。获得一张恢复，随机一张牌失去消耗。"
+description = "消耗。断裂。获得一张恢复。一张消耗牌变为固定"
 effect_id = "optimize_hand"

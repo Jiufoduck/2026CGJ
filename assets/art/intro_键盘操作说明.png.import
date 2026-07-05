@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cqgnvqygka7il"
-path="res://.godot/imported/intro_background.png-51f4fafbe9497d3cc436eefa8a5f52d6.ctex"
+uid="uid://pl4qb0xf2m8g"
+path="res://.godot/imported/intro_键盘操作说明.png-8f5b5fc063061982778792b09ffc7a00.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/intro_background.png"
-dest_files=["res://.godot/imported/intro_background.png-51f4fafbe9497d3cc436eefa8a5f52d6.ctex"]
+source_file="res://assets/art/intro_键盘操作说明.png"
+dest_files=["res://.godot/imported/intro_键盘操作说明.png-8f5b5fc063061982778792b09ffc7a00.ctex"]
 
 [params]
 

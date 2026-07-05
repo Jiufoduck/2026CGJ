@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dyklvufmgfd3w"
-path="res://.godot/imported/intro_gamepad.png-3307cb92bed61ac175c44773ffeaee42.ctex"
+uid="uid://cqgnvqygka7il"
+path="res://.godot/imported/intro_剧情简介.png-f31ba30e84507fc33babe5002327c10f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/intro_gamepad.png"
-dest_files=["res://.godot/imported/intro_gamepad.png-3307cb92bed61ac175c44773ffeaee42.ctex"]
+source_file="res://assets/art/intro_剧情简介.png"
+dest_files=["res://.godot/imported/intro_剧情简介.png-f31ba30e84507fc33babe5002327c10f.ctex"]
 
 [params]
 

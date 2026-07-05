@@ -1,3 +1,17 @@
 .godot
 .DS_Store
 assets.zip
+webexport.zip
+webexport/index.apple-touch-icon.png
+webexport/index.apple-touch-icon.png.import
+webexport/index.audio.position.worklet.js
+webexport/index.audio.worklet.js
+webexport/index.html
+webexport/index.icon.png
+webexport/index.icon.png.import
+webexport/index.js
+webexport/index.pck
+webexport/index.png
+webexport/index.png.import
+webexport/index.wasm
+windowsexport/game.exe

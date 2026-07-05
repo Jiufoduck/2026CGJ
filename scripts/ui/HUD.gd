@@ -94,7 +94,7 @@ const GAME_OVER_ANIMATION_TEXTURE = preload("res://assets/art/game_over_animatio
 const INTRO_KEYBOARD_TEXTURE = preload("res://assets/art/intro_keyboard.png")
 const INTRO_GAMEPAD_TEXTURE = preload("res://assets/art/intro_gamepad.png")
 const GAME_OVER_ANIMATION_FRAME_COUNT := 4
-const GAME_OVER_ANIMATION_FRAME_SECONDS := 0.14
+const GAME_OVER_ANIMATION_FRAME_SECONDS := 1.0
 const TUTORIAL_IMAGE_TITLE := "操作提示"
 const REWARD_PANEL_PLAYER_ONE_TEXTURE = preload("res://assets/art/玩家1_奖励牌背景.png")
 const REWARD_PANEL_PLAYER_TWO_TEXTURE = preload("res://assets/art/玩家2_奖励牌背景.png")
@@ -108,6 +108,8 @@ const REWARD_PANEL_BLACK := Color(0.0, 0.0, 0.0, 1.0)
 const REWARD_TITLE_FONT_SIZE := 20
 const REWARD_TITLE_MINIMUM_SIZE := Vector2(100.0, 30.0)
 const REWARD_DESCRIPTION_MINIMUM_SIZE := Vector2(96.0, 44.0)
+const GAME_END_OVERLAY_Z_INDEX := 3000
+const COMBAT_DECK_END_OVERLAY_Z_INDEX := -1000
 const REWARD_STICK_NAVIGATION_PRESS_DEADZONE := 0.55
 const REWARD_STICK_NAVIGATION_RELEASE_DEADZONE := 0.30
 const INPUT_PRESET_KEYBOARD := "keyboard"
@@ -274,6 +276,10 @@ var waiting_rebind_action := StringName()
 var rebind_buttons_by_action := {}
 var settings_config := ConfigFile.new()
 var audio_sliders_connected := false
+var player_one_card_panel_normal_z_index := 0
+var player_two_card_panel_normal_z_index := 0
+var player_one_card_panel_normal_visible := true
+var player_two_card_panel_normal_visible := true
 
 
 func _ready() -> void:
@@ -282,6 +288,7 @@ func _ready() -> void:
 	_ensure_pause_menu_action_defaults()
 	_build_game_over_overlay()
 	_build_tutorial_overlay()
+	_cache_combat_deck_panel_draw_state()
 	_setup_reward_choice_card_buttons()
 	set_message("")
 	death_countdown_panel.visible = false
@@ -620,6 +627,8 @@ func _build_game_over_overlay() -> void:
 	game_over_overlay.grow_vertical = Control.GROW_DIRECTION_BOTH
 	game_over_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	game_over_overlay.color = Color(0.025, 0.018, 0.014, 1.0)
+	game_over_overlay.z_index = GAME_END_OVERLAY_Z_INDEX
+	game_over_overlay.z_as_relative = false
 	game_over_overlay.visible = false
 	root.add_child(game_over_overlay)
 
@@ -702,6 +711,8 @@ func _build_game_finished_overlay() -> void:
 	game_finished_overlay.grow_vertical = Control.GROW_DIRECTION_BOTH
 	game_finished_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	game_finished_overlay.color = Color.BLACK
+	game_finished_overlay.z_index = GAME_END_OVERLAY_Z_INDEX
+	game_finished_overlay.z_as_relative = false
 	game_finished_overlay.visible = false
 	root.add_child(game_finished_overlay)
 
@@ -742,6 +753,7 @@ func show_game_finished(message: String, fade_seconds := 0.35) -> void:
 	game_finished_message_label.text = message
 	game_finished_overlay.visible = true
 	game_finished_overlay.modulate.a = 0.0
+	_sync_combat_deck_end_overlay_state()
 	game_finished_tween = create_pause_independent_tween()
 	game_finished_tween.tween_property(game_finished_overlay, "modulate:a", 1.0, maxf(0.01, fade_seconds))
 	game_finished_tween.finished.connect(func() -> void:
@@ -755,12 +767,54 @@ func _hide_game_finished_overlay_without_signal() -> void:
 		return
 	game_finished_overlay.visible = false
 	game_finished_overlay.modulate.a = 1.0
+	_sync_combat_deck_end_overlay_state()
 
 
 func _kill_game_finished_tween() -> void:
 	if game_finished_tween != null and game_finished_tween.is_valid():
 		game_finished_tween.kill()
 	game_finished_tween = null
+
+
+func _cache_combat_deck_panel_draw_state() -> void:
+	player_one_card_panel_normal_z_index = player_one_card_panel.z_index
+	player_two_card_panel_normal_z_index = player_two_card_panel.z_index
+	player_one_card_panel_normal_visible = player_one_card_panel.visible
+	player_two_card_panel_normal_visible = player_two_card_panel.visible
+
+
+func _sync_combat_deck_end_overlay_state() -> void:
+	var end_overlay_active := _is_game_end_overlay_visible()
+	_apply_combat_deck_end_overlay_state(
+		player_one_card_panel,
+		player_one_card_panel_normal_z_index,
+		player_one_card_panel_normal_visible,
+		end_overlay_active
+	)
+	_apply_combat_deck_end_overlay_state(
+		player_two_card_panel,
+		player_two_card_panel_normal_z_index,
+		player_two_card_panel_normal_visible,
+		end_overlay_active
+	)
+
+
+func _is_game_end_overlay_visible() -> bool:
+	var game_over_active := game_over_overlay != null and game_over_overlay.visible
+	var game_finished_active := game_finished_overlay != null and game_finished_overlay.visible
+	return game_over_active or game_finished_active
+
+
+func _apply_combat_deck_end_overlay_state(panel: Control, normal_z_index: int, normal_visible: bool, end_overlay_active: bool) -> void:
+	if panel == null:
+		return
+
+	if end_overlay_active:
+		panel.z_index = COMBAT_DECK_END_OVERLAY_Z_INDEX
+		panel.visible = false
+	else:
+		panel.z_index = normal_z_index
+		panel.visible = normal_visible
 
 
 func show_game_over(reason := "断线结束", fade_seconds := DEFAULT_GAME_OVER_FADE_SECONDS) -> void:
@@ -773,6 +827,7 @@ func show_game_over(reason := "断线结束", fade_seconds := DEFAULT_GAME_OVER_
 	game_over_reason_label.text = reason
 	game_over_overlay.visible = true
 	game_over_overlay.modulate.a = 0.0
+	_sync_combat_deck_end_overlay_state()
 	game_over_reason_label.modulate.a = 0.0
 	game_over_try_again_button.modulate.a = 0.0
 	game_over_try_again_button.disabled = true
@@ -847,6 +902,7 @@ func _hide_game_over_overlay_without_signal() -> void:
 		return
 	game_over_overlay.visible = false
 	game_over_overlay.modulate.a = 1.0
+	_sync_combat_deck_end_overlay_state()
 	if game_over_title_label != null:
 		game_over_title_label.modulate.a = 1.0
 	if game_over_reason_label != null:

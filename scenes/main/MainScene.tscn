@@ -741,7 +741,7 @@ scale = Vector2(0.24854907, 0.33622134)
 texture = ExtResource("11_0hk17")
 
 [node name="网正方体积木2" type="Sprite2D" parent="Obstacles/NetObstacle3" unique_id=508705947]
-position = Vector2(-17990.795, -117.16803)
+position = Vector2(-17990.781, -115.46979)
 scale = Vector2(0.24854907, 0.33622134)
 texture = ExtResource("11_0hk17")
 

@@ -1,8 +1,7 @@
-[gd_scene format=3 uid="uid://c18c3k5de2pyy"]
+[gd_scene format=3 uid="uid://dn23ovv6j2koa"]
 
 [ext_resource type="Script" uid="uid://ck87ij34uvfwh" path="res://scripts/pickups/TaskPoint.gd" id="1_task_script"]
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_7tv4k"]
+[ext_resource type="SpriteFrames" uid="uid://ctemmdre14nbi" path="res://assets/art/task_points/purple_anim.tres" id="2_rqm0y"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_task"]
 radius = 34.0
@@ -12,7 +11,8 @@ collision_layer = 16
 script = ExtResource("1_task_script")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=495880550]
-sprite_frames = SubResource("SpriteFrames_7tv4k")
+scale = Vector2(0.5, 0.5)
+sprite_frames = ExtResource("2_rqm0y")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=399252269]
 shape = SubResource("CircleShape2D_task")

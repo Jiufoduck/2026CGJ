@@ -1,0 +1,39 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://ctemmdre14nbi"]
+
+[ext_resource type="Texture2D" uid="uid://bn0imegu353hy" path="res://assets/art/task_points/purple.PNG" id="1_wwrgf"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6c3o5"]
+atlas = ExtResource("1_wwrgf")
+region = Rect2(0, 0, 258, 209)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nyaix"]
+atlas = ExtResource("1_wwrgf")
+region = Rect2(258, 0, 258, 209)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dutih"]
+atlas = ExtResource("1_wwrgf")
+region = Rect2(516, 0, 258, 209)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_54rs3"]
+atlas = ExtResource("1_wwrgf")
+region = Rect2(774, 0, 258, 209)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6c3o5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nyaix")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dutih")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_54rs3")
+}],
+"loop": false,
+"name": &"default",
+"speed": 5.0
+}]

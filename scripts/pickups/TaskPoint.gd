@@ -43,8 +43,13 @@ var initial_visual_color := Color.WHITE
 @onready var visual_polygon: Polygon2D = get_node_or_null('Visual')
 @onready var label_node: Label = $Label
 
-
 func _ready() -> void:
+	if assigned_player_id == 1:
+		$AnimatedSprite2D.sprite_frames = load("res://assets/art/task_points/purple_anim.tres")
+	else:
+		$AnimatedSprite2D.sprite_frames = load("res://assets/art/task_points/green_anim.tres")
+	$AnimatedSprite2D.frame = 0
+	
 	add_to_group("task_points")
 	if visual_polygon != null:
 		initial_visual_color = visual_polygon.color
@@ -60,6 +65,7 @@ func try_claim(body: Node) -> void:
 	if claimed or not _body_is_allowed_player(body):
 		return
 
+	$AnimatedSprite2D.play("default")
 	var player_id: int = body.get_player_id()
 	task_point_claimed.emit(self, player_id, get_reward_cards())
 	if deactivate_after_pickup:

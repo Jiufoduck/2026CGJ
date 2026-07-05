@@ -193,6 +193,7 @@ const DEFAULT_PLAYER_TWO_ANCHOR_CHAIN_TEXTURE = preload("res://assets/art/玩家
 
 var decks_by_player := {}
 var game_has_ended := false
+var start_sequence_active := false
 var reward_choice_active := false
 var game_over_sequence_active := false
 var restart_in_progress := false
@@ -232,6 +233,8 @@ func _ready() -> void:
 	hud.card_reward_selected.connect(_finish_reward_choice)
 	hud.try_again_requested.connect(_on_try_again_requested)
 	hud.restart_fade_finished.connect(_on_restart_fade_finished)
+	if hud.has_signal("start_sequence_finished"):
+		hud.start_sequence_finished.connect(_on_start_sequence_finished)
 	body_core.health_changed.connect(_on_body_health_changed)
 	body_core.link_broken_started.connect(_on_link_broken_started)
 	body_core.link_restored.connect(_on_link_restored)
@@ -244,17 +247,14 @@ func _ready() -> void:
 	_update_body_and_line(0.0, false, true)
 	_advance_camera(0.0, true)
 	_update_hud()
-	SoundCue.play_music(self, &"battle", null, null, false, true)
-	if hud.has_method("show_tutorial_popup"):
-		hud.show_tutorial_popup(
-			"操作提示",
-			"P1：WASD 移动，Q 打牌，E 跳过。\nP2：方向键移动，K 打牌，L 跳过。\n断线后，当前牌会切到恢复牌；断线期间打出恢复牌可满血重连。",
-			true
-		)
+	_begin_start_sequence()
 
 
 func _physics_process(delta: float) -> void:
 	if game_has_ended:
+		return
+	if start_sequence_active:
+		_update_hud()
 		return
 	if get_tree().paused:
 		_update_hud()
@@ -346,6 +346,44 @@ func _capture_restart_state() -> void:
 		"body_core_position": body_core.global_position,
 		"camera_position": camera.global_position,
 	}
+
+
+func _begin_start_sequence() -> void:
+	start_sequence_active = true
+	player_one.set_control_enabled(false)
+	player_two.set_control_enabled(false)
+	_reset_camera_shake()
+	if hud.has_method("show_start_sequence"):
+		hud.show_start_sequence(_should_show_gamepad_start_instructions(), true)
+		return
+
+	_on_start_sequence_finished()
+
+
+func _on_start_sequence_finished() -> void:
+	if not start_sequence_active:
+		return
+
+	start_sequence_active = false
+	if game_over_sequence_active or restart_in_progress or game_has_ended:
+		return
+
+	get_tree().paused = false
+	SoundCue.play_music(self, &"battle", null, null, true, true)
+	player_one.set_control_enabled(true)
+	player_two.set_control_enabled(true)
+	hud.set_message("")
+	_update_hud()
+
+
+func _should_show_gamepad_start_instructions() -> bool:
+	if not Input.get_connected_joypads().is_empty():
+		return true
+
+	var input_router := get_node_or_null("/root/InputRouter")
+	if input_router != null and input_router.has_method("get_active_input_preset"):
+		return String(input_router.get_active_input_preset()) == "gamepad"
+	return false
 
 
 func _sync_level_length_from_scene() -> void:

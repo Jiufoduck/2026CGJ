@@ -83,6 +83,7 @@ signal card_reward_selected(player_id: int, card_data: Dictionary)
 signal try_again_requested
 signal game_over_cover_shown
 signal restart_fade_finished
+signal start_sequence_finished
 
 const SETTINGS_PATH := "user://settings.cfg"
 const DEFAULT_GAME_OVER_FADE_SECONDS := 3.0
@@ -91,12 +92,17 @@ const CARD_TAG_RESTORE := "restore"
 const REWARD_CARD_TYPE_ATTACK := "attack"
 const GAME_FINISHED_CG_TEXTURE = preload("res://assets/art/game_finished_CG.png")
 const GAME_OVER_ANIMATION_TEXTURE = preload("res://assets/art/game_over_animation.png")
-const INTRO_KEYBOARD_TEXTURE = preload("res://assets/art/intro_keyboard.png")
-const INTRO_GAMEPAD_TEXTURE = preload("res://assets/art/intro_gamepad.png")
-const INTRO_BACKGROUND_TEXTURE = preload("res://assets/art/intro_background.png")
+const START_SCREEN_TEXTURE = preload("res://assets/art/开始界面.png")
+const START_STORY_TEXTURE = preload("res://assets/art/intro_剧情简介.png")
+const START_EXTERNAL_CG_TEXTURE = preload("res://assets/art/外援CG.JPG")
+const START_KEYBOARD_TEXTURE = preload("res://assets/art/intro_键盘操作说明.png")
+const START_GAMEPAD_TEXTURE = preload("res://assets/art/intro_手柄操作说明.png")
 const GAME_OVER_ANIMATION_FRAME_COUNT := 3
 const GAME_OVER_ANIMATION_FRAME_SECONDS := 1.0
 const TUTORIAL_IMAGE_TITLE := "操作提示"
+const START_SEQUENCE_OVERLAY_Z_INDEX := 2950
+const START_SEQUENCE_FADE_SECONDS := 0.16
+const START_SEQUENCE_PROMPT_TEXT := "按确认继续"
 const REWARD_PANEL_PLAYER_ONE_TEXTURE = preload("res://assets/art/玩家1_奖励牌背景.png")
 const REWARD_PANEL_PLAYER_TWO_TEXTURE = preload("res://assets/art/玩家2_奖励牌背景.png")
 const REWARD_ATTACK_CONSUMABLE_FACE = preload("res://assets/art/card_face/attack.png")
@@ -262,6 +268,18 @@ var game_finished_overlay: ColorRect
 var game_finished_image_rect: TextureRect
 var game_finished_message_label: Label
 var game_finished_tween: Tween
+var start_sequence_overlay: ColorRect
+var start_sequence_content: Control
+var start_sequence_image_rect: TextureRect
+var start_sequence_placeholder: Control
+var start_sequence_placeholder_label: Label
+var start_sequence_prompt_label: Label
+var start_sequence_tween: Tween
+var start_sequence_steps: Array = []
+var start_sequence_index := 0
+var start_sequence_transitioning := false
+var start_sequence_pause_tree := false
+var start_sequence_prefer_gamepad_instructions := false
 var tutorial_overlay: ColorRect
 var tutorial_panel: Panel
 var tutorial_image_rect: TextureRect
@@ -289,6 +307,7 @@ func _ready() -> void:
 	_set_pause_independent_ui_tree(self)
 	_ensure_pause_menu_action_defaults()
 	_build_game_over_overlay()
+	_build_start_sequence_overlay()
 	_build_tutorial_overlay()
 	_cache_combat_deck_panel_draw_state()
 	_setup_reward_choice_card_buttons()
@@ -297,6 +316,7 @@ func _ready() -> void:
 	hide_reward_choice(false)
 	_hide_pause_menu_without_unpausing()
 	_hide_game_over_overlay_without_signal()
+	_hide_start_sequence_overlay_without_signal()
 	_hide_tutorial_overlay_without_unpausing()
 	for index in reward_choice_buttons.size():
 		reward_choice_buttons[index].pressed.connect(_on_reward_button_pressed.bind(index))
@@ -337,11 +357,16 @@ func _input(event: InputEvent) -> void:
 	if game_over_overlay != null and game_over_overlay.visible:
 		return
 
+	if start_sequence_overlay != null and start_sequence_overlay.visible:
+		if _handle_start_sequence_input(event):
+			get_viewport().set_input_as_handled()
+		return
+
 	if tutorial_overlay != null and tutorial_overlay.visible:
 		if event.is_action_pressed("ui_accept") or _is_pause_menu_event(event):
 			if tutorial_intro_showing_background:
 				tutorial_intro_showing_background = false
-				tutorial_image_rect.texture = INTRO_GAMEPAD_TEXTURE if active_input_preset == INPUT_PRESET_GAMEPAD else INTRO_KEYBOARD_TEXTURE
+				tutorial_image_rect.texture = START_GAMEPAD_TEXTURE if active_input_preset == INPUT_PRESET_GAMEPAD else START_KEYBOARD_TEXTURE
 			else:
 				hide_tutorial_popup()
 			get_viewport().set_input_as_handled()
@@ -411,6 +436,267 @@ func _set_centered_control_size(control: Control, target_size: Vector2) -> void:
 	control.offset_top = -target_size.y * 0.5
 	control.offset_right = target_size.x * 0.5
 	control.offset_bottom = target_size.y * 0.5
+
+
+func _build_start_sequence_overlay() -> void:
+	if start_sequence_overlay != null:
+		return
+
+	start_sequence_overlay = ColorRect.new()
+	start_sequence_overlay.name = "StartSequenceOverlay"
+	start_sequence_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	start_sequence_overlay.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	start_sequence_overlay.grow_vertical = Control.GROW_DIRECTION_BOTH
+	start_sequence_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	start_sequence_overlay.color = Color.BLACK
+	start_sequence_overlay.z_index = START_SEQUENCE_OVERLAY_Z_INDEX
+	start_sequence_overlay.z_as_relative = false
+	start_sequence_overlay.visible = false
+	root.add_child(start_sequence_overlay)
+
+	start_sequence_content = Control.new()
+	start_sequence_content.name = "StartSequenceContent"
+	start_sequence_content.set_anchors_preset(Control.PRESET_FULL_RECT)
+	start_sequence_content.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	start_sequence_content.grow_vertical = Control.GROW_DIRECTION_BOTH
+	start_sequence_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	start_sequence_overlay.add_child(start_sequence_content)
+
+	start_sequence_image_rect = TextureRect.new()
+	start_sequence_image_rect.name = "StartSequenceImage"
+	start_sequence_image_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	start_sequence_image_rect.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	start_sequence_image_rect.grow_vertical = Control.GROW_DIRECTION_BOTH
+	start_sequence_image_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	start_sequence_image_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	start_sequence_image_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	start_sequence_content.add_child(start_sequence_image_rect)
+
+	start_sequence_placeholder = Control.new()
+	start_sequence_placeholder.name = "OpeningAnimationPlaceholder"
+	start_sequence_placeholder.set_anchors_preset(Control.PRESET_FULL_RECT)
+	start_sequence_placeholder.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	start_sequence_placeholder.grow_vertical = Control.GROW_DIRECTION_BOTH
+	start_sequence_placeholder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	start_sequence_placeholder.visible = false
+	start_sequence_content.add_child(start_sequence_placeholder)
+
+	var placeholder_content := VBoxContainer.new()
+	placeholder_content.name = "PlaceholderContent"
+	placeholder_content.anchor_left = 0.5
+	placeholder_content.anchor_top = 0.5
+	placeholder_content.anchor_right = 0.5
+	placeholder_content.anchor_bottom = 0.5
+	placeholder_content.offset_left = -420.0
+	placeholder_content.offset_top = -92.0
+	placeholder_content.offset_right = 420.0
+	placeholder_content.offset_bottom = 92.0
+	placeholder_content.alignment = BoxContainer.ALIGNMENT_CENTER
+	placeholder_content.add_theme_constant_override("separation", 18)
+	start_sequence_placeholder.add_child(placeholder_content)
+
+	start_sequence_placeholder_label = Label.new()
+	start_sequence_placeholder_label.name = "PlaceholderTitle"
+	start_sequence_placeholder_label.text = "开场动画占位"
+	start_sequence_placeholder_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	start_sequence_placeholder_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	start_sequence_placeholder_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	start_sequence_placeholder_label.add_theme_font_size_override("font_size", 52)
+	start_sequence_placeholder_label.add_theme_color_override("font_color", Color(1.0, 0.86, 0.36, 1.0))
+	start_sequence_placeholder_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.9))
+	start_sequence_placeholder_label.add_theme_constant_override("shadow_offset_x", 4)
+	start_sequence_placeholder_label.add_theme_constant_override("shadow_offset_y", 4)
+	placeholder_content.add_child(start_sequence_placeholder_label)
+
+	start_sequence_prompt_label = Label.new()
+	start_sequence_prompt_label.name = "StartSequencePrompt"
+	start_sequence_prompt_label.text = START_SEQUENCE_PROMPT_TEXT
+	start_sequence_prompt_label.anchor_left = 0.0
+	start_sequence_prompt_label.anchor_top = 1.0
+	start_sequence_prompt_label.anchor_right = 1.0
+	start_sequence_prompt_label.anchor_bottom = 1.0
+	start_sequence_prompt_label.offset_left = 0.0
+	start_sequence_prompt_label.offset_top = -58.0
+	start_sequence_prompt_label.offset_right = 0.0
+	start_sequence_prompt_label.offset_bottom = -18.0
+	start_sequence_prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	start_sequence_prompt_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	start_sequence_prompt_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	start_sequence_prompt_label.add_theme_font_size_override("font_size", 24)
+	start_sequence_prompt_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.40, 0.86))
+	start_sequence_prompt_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.9))
+	start_sequence_prompt_label.add_theme_constant_override("shadow_offset_x", 3)
+	start_sequence_prompt_label.add_theme_constant_override("shadow_offset_y", 3)
+	start_sequence_content.add_child(start_sequence_prompt_label)
+	_set_pause_independent_ui_tree(start_sequence_overlay)
+
+
+func show_start_sequence(use_gamepad_instructions := false, should_pause_tree := true) -> void:
+	_build_start_sequence_overlay()
+	_kill_start_sequence_tween()
+	start_sequence_prefer_gamepad_instructions = use_gamepad_instructions
+	start_sequence_steps = [
+		{"kind": "image", "texture": START_SCREEN_TEXTURE, "prompt": START_SEQUENCE_PROMPT_TEXT},
+		{"kind": "placeholder", "prompt": START_SEQUENCE_PROMPT_TEXT},
+		{"kind": "image", "texture": START_STORY_TEXTURE, "prompt": START_SEQUENCE_PROMPT_TEXT},
+		{"kind": "image", "texture": START_EXTERNAL_CG_TEXTURE, "prompt": START_SEQUENCE_PROMPT_TEXT},
+		{"kind": "controls", "prompt": ""},
+	]
+	start_sequence_index = 0
+	start_sequence_transitioning = false
+	start_sequence_pause_tree = should_pause_tree
+	start_sequence_overlay.visible = true
+	start_sequence_overlay.modulate.a = 0.0
+	start_sequence_content.modulate.a = 1.0
+	_render_start_sequence_step()
+	if should_pause_tree:
+		get_tree().paused = true
+
+	start_sequence_tween = create_pause_independent_tween()
+	start_sequence_tween.tween_property(start_sequence_overlay, "modulate:a", 1.0, START_SEQUENCE_FADE_SECONDS)
+	_play_ui_sound(&"menu_next")
+
+
+func _render_start_sequence_step() -> void:
+	if start_sequence_steps.is_empty():
+		return
+
+	var step: Dictionary = start_sequence_steps[clampi(start_sequence_index, 0, start_sequence_steps.size() - 1)]
+	var kind := String(step.get("kind", "image"))
+	var is_placeholder := kind == "placeholder"
+	start_sequence_placeholder.visible = is_placeholder
+	start_sequence_image_rect.visible = not is_placeholder
+	if is_placeholder:
+		start_sequence_image_rect.texture = null
+	elif kind == "controls":
+		start_sequence_image_rect.texture = START_GAMEPAD_TEXTURE if _should_show_start_sequence_gamepad_controls() else START_KEYBOARD_TEXTURE
+	else:
+		start_sequence_image_rect.texture = step.get("texture", null)
+	start_sequence_prompt_label.text = String(step.get("prompt", START_SEQUENCE_PROMPT_TEXT))
+	start_sequence_prompt_label.visible = not start_sequence_prompt_label.text.is_empty()
+
+
+func _should_show_start_sequence_gamepad_controls() -> bool:
+	return start_sequence_prefer_gamepad_instructions or not Input.get_connected_joypads().is_empty()
+
+
+func _handle_start_sequence_input(event: InputEvent) -> bool:
+	if _is_start_sequence_advance_event(event):
+		_advance_start_sequence()
+		return true
+
+	return (
+		event is InputEventKey
+		or event is InputEventMouseButton
+		or event is InputEventJoypadButton
+	)
+
+
+func _is_start_sequence_advance_event(event: InputEvent) -> bool:
+	if start_sequence_transitioning:
+		return false
+
+	if (
+		event.is_action_pressed("ui_accept")
+		or event.is_action_pressed("p1_play_card")
+		or event.is_action_pressed("p1_pass_card")
+		or event.is_action_pressed("p2_play_card")
+		or event.is_action_pressed("p2_pass_card")
+		or _is_pause_menu_event(event)
+	):
+		return true
+
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		return mouse_event.pressed and mouse_event.button_index == MOUSE_BUTTON_LEFT
+
+	if event is InputEventKey:
+		var key_event := event as InputEventKey
+		if not key_event.pressed or key_event.echo:
+			return false
+		var keycode := _get_keycode_from_event(key_event)
+		return keycode == KEY_ENTER or keycode == KEY_KP_ENTER or keycode == KEY_SPACE
+
+	if event is InputEventJoypadButton:
+		var button_event := event as InputEventJoypadButton
+		if not button_event.pressed:
+			return false
+		return (
+			button_event.button_index == JOY_BUTTON_A
+			or button_event.button_index == JOY_BUTTON_START
+			or button_event.button_index == JOY_BUTTON_LEFT_SHOULDER
+			or button_event.button_index == JOY_BUTTON_RIGHT_SHOULDER
+		)
+
+	return false
+
+
+func _advance_start_sequence() -> void:
+	if start_sequence_transitioning:
+		return
+	if start_sequence_steps.is_empty() or start_sequence_index >= start_sequence_steps.size() - 1:
+		_finish_start_sequence()
+		return
+
+	start_sequence_transitioning = true
+	_kill_start_sequence_tween()
+	start_sequence_tween = create_pause_independent_tween()
+	start_sequence_tween.tween_property(start_sequence_content, "modulate:a", 0.0, START_SEQUENCE_FADE_SECONDS * 0.65)
+	start_sequence_tween.tween_callback(_show_next_start_sequence_step)
+	start_sequence_tween.tween_property(start_sequence_content, "modulate:a", 1.0, START_SEQUENCE_FADE_SECONDS)
+	start_sequence_tween.finished.connect(func() -> void:
+		start_sequence_transitioning = false
+		start_sequence_tween = null
+	)
+	_play_ui_sound(&"menu_next")
+
+
+func _show_next_start_sequence_step() -> void:
+	start_sequence_index = clampi(start_sequence_index + 1, 0, start_sequence_steps.size() - 1)
+	_render_start_sequence_step()
+	start_sequence_content.modulate.a = 0.0
+
+
+func _finish_start_sequence() -> void:
+	start_sequence_transitioning = true
+	_kill_start_sequence_tween()
+	start_sequence_tween = create_pause_independent_tween()
+	start_sequence_tween.tween_property(start_sequence_overlay, "modulate:a", 0.0, START_SEQUENCE_FADE_SECONDS)
+	start_sequence_tween.finished.connect(func() -> void:
+		start_sequence_tween = null
+		_release_start_sequence_pause_if_needed()
+		_hide_start_sequence_overlay_without_signal()
+		start_sequence_finished.emit()
+	)
+	_play_ui_sound(&"menu_next")
+
+
+func _release_start_sequence_pause_if_needed() -> void:
+	if start_sequence_pause_tree:
+		start_sequence_pause_tree = false
+		if not _another_overlay_keeps_tree_paused():
+			get_tree().paused = false
+
+
+func _hide_start_sequence_overlay_without_signal() -> void:
+	_kill_start_sequence_tween()
+	if start_sequence_overlay == null:
+		return
+
+	start_sequence_pause_tree = false
+	start_sequence_transitioning = false
+	start_sequence_overlay.visible = false
+	start_sequence_overlay.modulate.a = 1.0
+	start_sequence_content.modulate.a = 1.0
+	start_sequence_image_rect.texture = null
+	start_sequence_placeholder.visible = false
+	start_sequence_prompt_label.visible = false
+
+
+func _kill_start_sequence_tween() -> void:
+	if start_sequence_tween != null and start_sequence_tween.is_valid():
+		start_sequence_tween.kill()
+	start_sequence_tween = null
 
 
 func _build_tutorial_overlay() -> void:
@@ -513,7 +799,7 @@ func show_tutorial_popup(title: String, body: String, should_pause_tree := true)
 	var uses_intro_image := title == TUTORIAL_IMAGE_TITLE
 	if uses_intro_image:
 		_set_centered_control_size(tutorial_panel, Vector2(700.0, 700.0))
-		tutorial_image_rect.texture = INTRO_BACKGROUND_TEXTURE
+		tutorial_image_rect.texture = START_SCREEN_TEXTURE
 		tutorial_intro_showing_background = true
 		tutorial_image_rect.visible = true
 		tutorial_text_content.visible = false
@@ -887,6 +1173,7 @@ func fade_out_game_over_after_restart(fade_seconds := DEFAULT_GAME_OVER_FADE_SEC
 func reset_runtime_ui_for_restart() -> void:
 	hide_reward_choice(false)
 	_hide_pause_menu_without_unpausing()
+	_hide_start_sequence_overlay_without_signal()
 	_hide_tutorial_overlay_without_unpausing()
 	_hide_game_finished_overlay_without_signal()
 	set_message("")

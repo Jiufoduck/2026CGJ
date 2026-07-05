@@ -3,16 +3,17 @@
 [ext_resource type="Script" uid="uid://rhrx5sxw0wnp" path="res://scripts/game/GameController.gd" id="1_game_script"]
 [ext_resource type="PackedScene" uid="uid://borc38mwxop4l" path="res://scenes/characters/Player.tscn" id="2_player_scene"]
 [ext_resource type="Texture2D" uid="uid://bo1y33gcjnq6e" path="res://assets/art/墙_正方体_素材.png" id="2_ywwdm"]
-[ext_resource type="PackedScene" path="res://scenes/core/BodyCore.tscn" id="3_body_scene"]
+[ext_resource type="PackedScene" uid="uid://daa7p53w1mhco" path="res://scenes/core/BodyCore.tscn" id="3_body_scene"]
 [ext_resource type="Texture2D" uid="uid://cyyphb8nc2ojn" path="res://assets/art/fire_2.png" id="3_xbdeh"]
 [ext_resource type="Script" uid="uid://b5npda8ow6vep" path="res://scripts/effects/GhostFireLink.gd" id="4_50iuv"]
 [ext_resource type="PackedScene" uid="uid://5rlcx22ksidf" path="res://scenes/ui/HUD.tscn" id="4_hud_scene"]
 [ext_resource type="Texture2D" uid="uid://dubndsyihfyfd" path="res://assets/art/river.png" id="4_kclug"]
 [ext_resource type="Texture2D" uid="uid://blso6hjcbs8cq" path="res://assets/art/fire_1.png" id="4_ywwdm"]
-[ext_resource type="Script" path="res://scenes/main/RiverLayer.gd" id="5_t3dd6"]
-[ext_resource type="PackedScene" uid="uid://c18c3k5de2pyy" path="res://scenes/pickups/TaskPoint.tscn" id="5_task_scene"]
-[ext_resource type="PackedScene" uid="uid://cwuc6o2l33c3q" path="res://scenes/obstacles/NetObstacle.tscn" id="6_f6se4"]
+[ext_resource type="Script" uid="uid://u32idxw3tusp" path="res://scenes/main/RiverLayer.gd" id="5_t3dd6"]
+[ext_resource type="PackedScene" uid="uid://dn23ovv6j2koa" path="res://scenes/pickups/TaskPoint.tscn" id="5_task_scene"]
+[ext_resource type="PackedScene" uid="uid://bbx4ivqik1iqc" path="res://scenes/obstacles/NetObstacle.tscn" id="6_f6se4"]
 [ext_resource type="PackedScene" uid="uid://bmpjr75raqejp" path="res://scenes/obstacles/RectangleObstacle.tscn" id="6_obstacle_scene"]
+[ext_resource type="AudioStream" uid="uid://x5mbk3ef3w6c" path="res://assets/sound/asia.wav" id="6_t3dd6"]
 [ext_resource type="PackedScene" uid="uid://253htnqnf3pa" path="res://scenes/enemies/EnemyType1.tscn" id="7_enemy_one_scene"]
 [ext_resource type="Texture2D" uid="uid://c66wu8volsdub" path="res://assets/art/墙_正方体积木 2.png" id="7_g3m55"]
 [ext_resource type="PackedScene" uid="uid://c2q4xwwctv2fl" path="res://scenes/enemies/EnemyType3.tscn" id="9_enemy_three_scene"]
@@ -45,6 +46,15 @@ texture_region_size = Vector2i(500, 500)
 tile_size = Vector2i(500, 500)
 sources/0 = SubResource("TileSetAtlasSource_g3m55")
 sources/1 = SubResource("TileSetAtlasSource_50iuv")
+
+[sub_resource type="GDScript" id="GDScript_t3dd6"]
+script/source = "extends AudioStreamPlayer
+
+func _ready() -> void:
+	while true:
+		play()
+		await finished
+"
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_g3m55"]
 atlas = ExtResource("3_xbdeh")
@@ -319,6 +329,11 @@ region_enabled = true
 region_rect = Rect2(0, 0, 30000, 100)
 script = ExtResource("5_t3dd6")
 speed = 30
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="Level" unique_id=1368058711]
+stream = ExtResource("6_t3dd6")
+volume_db = -9.372
+script = SubResource("GDScript_t3dd6")
 
 [node name="ElasticLink" type="Line2D" parent="." unique_id=2010590503]
 width = 8.0

@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://dn23ovv6j2koa"]
+[gd_scene format=3 uid="uid://c18c3k5de2pyy"]
 
 [ext_resource type="Script" uid="uid://ck87ij34uvfwh" path="res://scripts/pickups/TaskPoint.gd" id="1_task_script"]
 
@@ -18,6 +18,7 @@ sprite_frames = SubResource("SpriteFrames_7tv4k")
 shape = SubResource("CircleShape2D_task")
 
 [node name="Label" type="Label" parent="." unique_id=232538686]
+visible = false
 offset_left = -58.0
 offset_top = -12.0
 offset_right = 58.0

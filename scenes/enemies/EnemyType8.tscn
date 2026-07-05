@@ -2,6 +2,22 @@
 
 [ext_resource type="Script" uid="uid://dr1m3b0x0jvh6" path="res://scripts/enemies/EnemyType7.gd" id="1_uoaw5"]
 [ext_resource type="PackedScene" uid="uid://dyasjuwpaa2df" path="res://scenes/enemies/Bullet3.tscn" id="2_mlp2u"]
+[ext_resource type="Texture2D" uid="uid://c6fu4kmguysvb" path="res://assets/art/enemies/_8/机关8+精英+序列动画.png" id="3_mlp2u"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_evcw5"]
+atlas = ExtResource("3_mlp2u")
+region = Rect2(0, 0, 770, 750)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_xgweq"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_evcw5")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_enemy_body"]
 radius = 22.0
@@ -22,9 +38,9 @@ contact_damage = 6.0
 contact_damage_cooldown = 1.5
 can_move = false
 
-[node name="Visual" type="Polygon2D" parent="." unique_id=1332585819]
-color = Color(0.25, 0.95, 0.65, 1)
-polygon = PackedVector2Array(0, -28, 25, 0, 0, 28, -25, 0)
+[node name="Visual" type="AnimatedSprite2D" parent="." unique_id=2090455250]
+scale = Vector2(0.1, 0.1)
+sprite_frames = SubResource("SpriteFrames_xgweq")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1992244347]
 shape = SubResource("CircleShape2D_enemy_body")

@@ -1,20 +1,24 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3 uid="uid://bmpjr75raqejp"]
 
-[ext_resource type="Shader" path="res://assets/shaders/obstacle_texture.gdshader" id="1_obstacle_shader"]
+[ext_resource type="Shader" uid="uid://b6wrpesmnb7dn" path="res://assets/shaders/obstacle_texture.gdshader" id="1_obstacle_shader"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_obstacle"]
 shader = ExtResource("1_obstacle_shader")
+shader_parameter/base_color = Color(0.92, 0.92, 0.88, 1)
+shader_parameter/line_color = Color(0.65, 0.66, 0.62, 1)
+shader_parameter/cell_size = 24.0
+shader_parameter/line_width = 1.4
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_obstacle"]
 size = Vector2(160, 92)
 
-[node name="RectangleObstacle" type="StaticBody2D"]
+[node name="RectangleObstacle" type="StaticBody2D" unique_id=581363370]
 collision_layer = 4
 collision_mask = 0
 
-[node name="Visual" type="Polygon2D" parent="."]
+[node name="Visual" type="Polygon2D" parent="." unique_id=1114775774]
 material = SubResource("ShaderMaterial_obstacle")
 polygon = PackedVector2Array(-80, -46, 80, -46, 80, 46, -80, 46)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2041024465]
 shape = SubResource("RectangleShape2D_obstacle")

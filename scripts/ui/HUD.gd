@@ -93,6 +93,7 @@ const GAME_FINISHED_CG_TEXTURE = preload("res://assets/art/game_finished_CG.png"
 const GAME_OVER_ANIMATION_TEXTURE = preload("res://assets/art/game_over_animation.png")
 const INTRO_KEYBOARD_TEXTURE = preload("res://assets/art/intro_keyboard.png")
 const INTRO_GAMEPAD_TEXTURE = preload("res://assets/art/intro_gamepad.png")
+const INTRO_BACKGROUND_TEXTURE = preload("res://assets/art/intro_background.png")
 const GAME_OVER_ANIMATION_FRAME_COUNT := 3
 const GAME_OVER_ANIMATION_FRAME_SECONDS := 1.0
 const TUTORIAL_IMAGE_TITLE := "操作提示"
@@ -270,6 +271,7 @@ var tutorial_body_label: Label
 var tutorial_close_button: Button
 var tutorial_tween: Tween
 var tutorial_pause_tree := false
+var tutorial_intro_showing_background := false
 var source_world_camera: Camera2D
 var active_input_preset := DEFAULT_INPUT_PRESET
 var waiting_rebind_action := StringName()
@@ -337,7 +339,11 @@ func _input(event: InputEvent) -> void:
 
 	if tutorial_overlay != null and tutorial_overlay.visible:
 		if event.is_action_pressed("ui_accept") or _is_pause_menu_event(event):
-			hide_tutorial_popup()
+			if tutorial_intro_showing_background:
+				tutorial_intro_showing_background = false
+				tutorial_image_rect.texture = INTRO_GAMEPAD_TEXTURE if active_input_preset == INPUT_PRESET_GAMEPAD else INTRO_KEYBOARD_TEXTURE
+			else:
+				hide_tutorial_popup()
 			get_viewport().set_input_as_handled()
 		return
 
@@ -507,7 +513,8 @@ func show_tutorial_popup(title: String, body: String, should_pause_tree := true)
 	var uses_intro_image := title == TUTORIAL_IMAGE_TITLE
 	if uses_intro_image:
 		_set_centered_control_size(tutorial_panel, Vector2(700.0, 700.0))
-		tutorial_image_rect.texture = INTRO_GAMEPAD_TEXTURE if active_input_preset == INPUT_PRESET_GAMEPAD else INTRO_KEYBOARD_TEXTURE
+		tutorial_image_rect.texture = INTRO_BACKGROUND_TEXTURE
+		tutorial_intro_showing_background = true
 		tutorial_image_rect.visible = true
 		tutorial_text_content.visible = false
 		tutorial_close_button.text = ""
@@ -589,6 +596,7 @@ func _hide_tutorial_overlay_without_unpausing() -> void:
 	if tutorial_overlay == null:
 		return
 	tutorial_pause_tree = false
+	tutorial_intro_showing_background = false
 	tutorial_overlay.visible = false
 	tutorial_overlay.modulate.a = 1.0
 	tutorial_panel.scale = Vector2.ONE

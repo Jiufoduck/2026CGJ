@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://c18c3k5de2pyy"]
+[gd_scene format=3 uid="uid://dn23ovv6j2koa"]
 
 [ext_resource type="Script" uid="uid://ck87ij34uvfwh" path="res://scripts/pickups/TaskPoint.gd" id="1_task_script"]
 

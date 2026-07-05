@@ -40,7 +40,7 @@ signal task_point_claimed(point: Node, player_id: int, reward_cards: Array)
 var claimed := false
 var initial_visual_color := Color.WHITE
 
-@onready var visual_polygon: Polygon2D = $Visual
+@onready var visual_polygon: Polygon2D = get_node_or_null('Visual')
 @onready var label_node: Label = $Label
 
 

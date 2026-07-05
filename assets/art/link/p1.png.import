@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://d4it82ox7te47"
-path="res://.godot/imported/玩家1+锚链+构成素材.png-f58991482f704d3e27d300cd11b053d3.ctex"
+path="res://.godot/imported/p1.png-a264020114e48c03b4a18d9003919336.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/玩家1+锚链+构成素材.png"
-dest_files=["res://.godot/imported/玩家1+锚链+构成素材.png-f58991482f704d3e27d300cd11b053d3.ctex"]
+source_file="res://assets/art/link/p1.png"
+dest_files=["res://.godot/imported/p1.png-a264020114e48c03b4a18d9003919336.ctex"]
 
 [params]
 

@@ -58,6 +58,7 @@ class_name GameController
 # - camera_base_offset：主相机原始 offset。晃动只叠加到 offset 上，不改相机真实世界坐标。
 # - camera_shake_trauma/camera_shake_time/camera_shake_seed：攻击牌镜头晃动状态。trauma 衰减到 0 后恢复原 offset。
 # - card_effect_runner：运行时创建的卡牌效果执行器。它只负责逻辑，不承担场景结构；世界暂停时随世界一起暂停。
+# - anchor_chain_root/player_one_anchor_chain_nodes/player_two_anchor_chain_nodes：运行时创建的玩家-肉体锁链视觉节点。
 # - _ready()：读取节点、注册输入、建立牌堆、连接任务点/肉体信号，把主世界相机同步给 HUD 的 SubViewport，并初始化 HUD。
 # - _physics_process(delta)：每帧推进摄像机、移动、连线、卡牌冷却、任务终点和 HUD。
 # - _ensure_default_input_actions()：注册默认键位，保证空项目运行时可以直接测试。
@@ -90,6 +91,7 @@ class_name GameController
 # - _clamp_players_to_camera()：把玩家限制在摄像机视野和场景矩形内，模拟玩家专属碰撞体积。
 # - _separate_players_from_body()：额外防止两个玩家、玩家和肉体重叠，补足碰撞边界极端情况。
 # - _update_body_and_line(delta, apply_net_strain, snap_to_center)：让肉体尝试回到两名玩家中点；如果被 net 挡住则停下，挣脱后用减速回弹运动回到中心。
+# - _setup_anchor_chain_visuals()/_update_anchor_chain_visuals()：把旧 Line2D 视觉替换为固定数量、随长度拉开间距的离散锁链节点。
 # - _apply_net_strain(blocker, body_target, delta)：肉体被 net 挡住时，把拉扯距离传给 net；挣脱后给 HUD 一条反馈。
 # - _update_hud()：集中刷新血量、连线状态、当前牌和牌堆数量。
 # - _promote_restore_cards_on_first_link_break()：仅本局第一次断线时把已有恢复牌提到当前牌位。
@@ -128,6 +130,8 @@ const CardDeckScript = preload("res://scripts/card/CardDeck.gd")
 const CardCatalogScript = preload("res://scripts/card/CardCatalog.gd")
 const CardEffectRunnerScript = preload("res://scripts/card/CardEffectRunner.gd")
 const SoundCue = preload("res://scripts/audio/SoundCue.gd")
+const DEFAULT_PLAYER_ONE_ANCHOR_CHAIN_TEXTURE = preload("res://assets/art/玩家1 锚链 构成素材.png")
+const DEFAULT_PLAYER_TWO_ANCHOR_CHAIN_TEXTURE = preload("res://assets/art/玩家2 锚链 构成素材.png")
 
 @export var player_one_path: NodePath = ^"Actors/PlayerOne"
 @export var player_two_path: NodePath = ^"Actors/PlayerTwo"
@@ -164,6 +168,20 @@ const SoundCue = preload("res://scripts/audio/SoundCue.gd")
 @export var body_drag_recoil_strength := 18.0
 @export var game_over_fade_seconds := 3.0
 
+@export_group("Anchor Chain Visual")
+@export var use_anchor_chain_visual := true
+@export var player_one_anchor_chain_texture: Texture2D = DEFAULT_PLAYER_ONE_ANCHOR_CHAIN_TEXTURE
+@export var player_two_anchor_chain_texture: Texture2D = DEFAULT_PLAYER_TWO_ANCHOR_CHAIN_TEXTURE
+@export_range(1, 48, 1) var anchor_chain_node_count := 4
+@export_range(0.0, 128.0, 1.0) var anchor_chain_body_padding := 18.0
+@export_range(0.0, 128.0, 1.0) var anchor_chain_player_padding := 26.0
+@export_range(0.001, 2.0, 0.001) var anchor_chain_body_end_scale := 0.055
+@export_range(0.001, 2.0, 0.001) var anchor_chain_player_end_scale := 0.115
+@export_range(0.1, 4.0, 0.05) var anchor_chain_scale_curve_power := 1.25
+@export var anchor_chain_rotate_to_link := true
+@export_range(-360.0, 360.0, 1.0) var anchor_chain_rotation_offset_degrees := 90.0
+@export_range(0.0, 1.0, 0.01) var anchor_chain_alpha := 1.0
+
 @onready var player_one = get_node(player_one_path)
 @onready var player_two = get_node(player_two_path)
 @onready var body_core = get_node(body_core_path)
@@ -183,11 +201,15 @@ var restart_state := {}
 var restore_promoted_for_first_break := false
 var reward_world_pause_active := false
 var reward_world_pause_process_modes: Array = []
+var active_reward_task_point: Node
 var camera_base_offset := Vector2.ZERO
 var camera_shake_trauma := 0.0
 var camera_shake_time := 0.0
 var camera_shake_seed := 0.0
 var card_effect_runner
+var anchor_chain_root: Node2D
+var player_one_anchor_chain_nodes: Array[Sprite2D] = []
+var player_two_anchor_chain_nodes: Array[Sprite2D] = []
 
 
 func _ready() -> void:
@@ -216,6 +238,7 @@ func _ready() -> void:
 		player_one.death_animation_finished.connect(_on_player_death_animation_finished)
 	if player_two.has_signal("death_animation_finished"):
 		player_two.death_animation_finished.connect(_on_player_death_animation_finished)
+	_setup_anchor_chain_visuals()
 	_update_body_and_line(0.0, false, true)
 	_advance_camera(0.0, true)
 	_update_hud()
@@ -784,15 +807,113 @@ func _update_body_and_line(delta := 0.0, apply_net_strain := true, snap_to_cente
 		if apply_net_strain:
 			_apply_net_strain(blocker, body_target, delta)
 
-	if body_core.is_link_active():
-		link_line.visible = true
-		link_line.points = PackedVector2Array([
-			player_one.global_position,
-			body_core.global_position,
-			player_two.global_position,
-		])
-	else:
-		link_line.visible = false
+	var link_is_active: bool = body_core.is_link_active()
+	link_line.points = PackedVector2Array([
+		player_one.global_position,
+		body_core.global_position,
+		player_two.global_position,
+	])
+	link_line.visible = link_is_active and not use_anchor_chain_visual
+	_update_anchor_chain_visuals(link_is_active)
+
+
+func _setup_anchor_chain_visuals() -> void:
+	if anchor_chain_root != null:
+		return
+
+	anchor_chain_root = Node2D.new()
+	anchor_chain_root.name = "AnchorChainVisuals"
+	anchor_chain_root.process_mode = Node.PROCESS_MODE_PAUSABLE
+
+	var visual_parent := link_line.get_parent()
+	if visual_parent == null:
+		visual_parent = self
+	visual_parent.add_child(anchor_chain_root)
+	if link_line.get_parent() == visual_parent:
+		visual_parent.move_child(anchor_chain_root, mini(link_line.get_index() + 1, visual_parent.get_child_count() - 1))
+
+	_rebuild_anchor_chain_nodes()
+
+
+func _rebuild_anchor_chain_nodes() -> void:
+	_resize_anchor_chain_nodes(player_one_anchor_chain_nodes, player_one_anchor_chain_texture, "PlayerOneAnchorChain")
+	_resize_anchor_chain_nodes(player_two_anchor_chain_nodes, player_two_anchor_chain_texture, "PlayerTwoAnchorChain")
+
+
+func _resize_anchor_chain_nodes(nodes: Array[Sprite2D], texture: Texture2D, prefix: String) -> void:
+	var target_count: int = maxi(1, anchor_chain_node_count)
+	while nodes.size() < target_count:
+		var node := Sprite2D.new()
+		node.name = "%s%02d" % [prefix, nodes.size() + 1]
+		node.centered = true
+		node.texture = texture
+		node.modulate = Color(1.0, 1.0, 1.0, anchor_chain_alpha)
+		anchor_chain_root.add_child(node)
+		nodes.append(node)
+
+	while nodes.size() > target_count:
+		var node_to_remove: Sprite2D = nodes.pop_back()
+		if node_to_remove != null:
+			node_to_remove.queue_free()
+
+	for node in nodes:
+		node.texture = texture
+		node.modulate = Color(1.0, 1.0, 1.0, anchor_chain_alpha)
+
+
+func _update_anchor_chain_visuals(link_is_active: bool) -> void:
+	if anchor_chain_root == null:
+		return
+
+	_rebuild_anchor_chain_nodes()
+	anchor_chain_root.visible = use_anchor_chain_visual and link_is_active
+	if not anchor_chain_root.visible:
+		return
+
+	_update_anchor_chain_segment(
+		player_one_anchor_chain_nodes,
+		body_core.global_position,
+		player_one.global_position
+	)
+	_update_anchor_chain_segment(
+		player_two_anchor_chain_nodes,
+		body_core.global_position,
+		player_two.global_position
+	)
+
+
+func _update_anchor_chain_segment(nodes: Array[Sprite2D], body_position: Vector2, player_position: Vector2) -> void:
+	var node_count := nodes.size()
+	if node_count <= 0:
+		return
+
+	var offset := player_position - body_position
+	var distance := offset.length()
+	if distance <= 0.001:
+		for node in nodes:
+			node.visible = false
+		return
+
+	var direction := offset / distance
+	var max_padding := distance * 0.45
+	var body_padding := minf(anchor_chain_body_padding, max_padding)
+	var player_padding := minf(anchor_chain_player_padding, max_padding)
+	var start_position := body_position + direction * body_padding
+	var end_position := player_position - direction * player_padding
+	var rotation := 0.0
+	if anchor_chain_rotate_to_link:
+		rotation = direction.angle() + deg_to_rad(anchor_chain_rotation_offset_degrees)
+
+	for index in node_count:
+		var node := nodes[index]
+		var t := (float(index) + 0.5) / float(node_count)
+		var scale_t := pow(t, anchor_chain_scale_curve_power)
+		var uniform_scale := lerpf(anchor_chain_body_end_scale, anchor_chain_player_end_scale, scale_t)
+		node.visible = true
+		node.global_position = start_position.lerp(end_position, t)
+		node.rotation = rotation
+		node.scale = Vector2.ONE * uniform_scale
+		node.modulate.a = anchor_chain_alpha
 
 
 func _apply_net_strain(blocker: Node, body_target: Vector2, delta: float) -> void:
@@ -867,6 +988,7 @@ func _begin_game_over_sequence(reason: String) -> void:
 	game_has_ended = true
 	game_over_reason = reason
 	reward_choice_active = false
+	active_reward_task_point = null
 	_set_reward_world_pause(false, false)
 	get_tree().paused = false
 	_reset_camera_shake()
@@ -911,6 +1033,7 @@ func _reset_game_state_for_restart() -> void:
 	_set_reward_world_pause(false, false)
 	get_tree().paused = true
 	reward_choice_active = false
+	active_reward_task_point = null
 	game_has_ended = true
 	pending_death_animation_players.clear()
 	player_one.set_control_enabled(false)
@@ -1035,11 +1158,12 @@ func _restore_reward_pause_process_modes() -> void:
 	reward_world_pause_active = false
 
 
-func _start_reward_choice(player_id: int, reward_cards: Array) -> void:
+func _start_reward_choice(player_id: int, reward_cards: Array, task_point: Node = null) -> void:
 	if reward_cards.is_empty() or not decks_by_player.has(player_id):
 		return
 
 	reward_choice_active = true
+	active_reward_task_point = task_point
 	player_one.set_control_enabled(false)
 	player_two.set_control_enabled(false)
 	SoundCue.play_random(self, [&"checkpoint1", &"checkpoint2"])
@@ -1058,6 +1182,9 @@ func _finish_reward_choice(player_id: int, selected_card: Dictionary) -> void:
 	hud.set_message("P%d 获得 %s" % [player_id, selected_card.get("name", "未命名牌")])
 	reward_choice_active = false
 	_set_reward_world_pause(false)
+	if is_instance_valid(active_reward_task_point) and active_reward_task_point.has_method("play_claim_animation"):
+		active_reward_task_point.play_claim_animation()
+	active_reward_task_point = null
 	if not game_has_ended:
 		player_one.set_control_enabled(true)
 		player_two.set_control_enabled(true)
@@ -1111,6 +1238,7 @@ func _on_restart_fade_finished() -> void:
 	game_has_ended = false
 	game_over_reason = ""
 	reward_choice_active = false
+	active_reward_task_point = null
 	_set_reward_world_pause(false, false)
 	get_tree().paused = false
 	SoundCue.play_music(self, &"battle", null, null, true, true)
@@ -1124,11 +1252,11 @@ func _on_game_over_requested() -> void:
 	_begin_game_over_sequence("断线结束")
 
 
-func _on_task_point_claimed(_point: Node, player_id: int, reward_cards: Array) -> void:
+func _on_task_point_claimed(point: Node, player_id: int, reward_cards: Array) -> void:
 	var final_reward_cards := _filter_reward_cards(reward_cards)
 	if final_reward_cards.is_empty():
 		final_reward_cards = CardCatalogScript.make_reward_choices(player_id)
-	_start_reward_choice(player_id, final_reward_cards)
+	_start_reward_choice(player_id, final_reward_cards, point)
 
 
 func _filter_reward_cards(reward_cards: Array) -> Array:

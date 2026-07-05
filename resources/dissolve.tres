@@ -1,0 +1,15 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://dasv46c0x1ux3"]
+
+[ext_resource type="Shader" uid="uid://2fi2ii5defh2" path="res://scripts/effects/card_burn_dissolve.gdshader" id="1_mbgiu"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_t3byq"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_jh736"]
+noise = SubResource("FastNoiseLite_t3byq")
+
+[resource]
+shader = ExtResource("1_mbgiu")
+shader_parameter/dissolve_texture = SubResource("NoiseTexture2D_jh736")
+shader_parameter/dissolve_value = 1.0
+shader_parameter/burn_size = 0.18999999575312
+shader_parameter/burn_color = Color(0, 0, 1, 1)

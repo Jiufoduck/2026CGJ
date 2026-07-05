@@ -28,7 +28,6 @@ const BurnDissolveShader = preload("res://scripts/effects/card_burn_dissolve.gds
 const TEXTURE_SIZE := 1024
 const NOISE_TEXTURE_SIZE := 1024
 
-@export var noise:FastNoiseLite
 @export var card_size := Vector2(126.0, 172.0)
 @export var effect_duration := 1.15
 @export var burn_size := 0.085
@@ -52,6 +51,8 @@ func play(card_data: Dictionary, world_position: Vector2, seed: float) -> void:
 	end_position = position + Vector2(0.0, -44.0)
 	rotation = deg_to_rad(lerpf(-8.0, 8.0, fmod(absf(seed), 1000.0) / 1000.0))
 	scale = Vector2.ONE
+	age = 0.0
+	finished = false
 	_build_card_body()
 	_build_card_label(card_data)
 	dissolve_texture = _make_dissolve_texture(seed)
@@ -60,7 +61,7 @@ func play(card_data: Dictionary, world_position: Vector2, seed: float) -> void:
 
 
 func _process(delta: float) -> void:
-	if finished:
+	if finished or shader_material == null:
 		return
 
 	age += delta
@@ -86,6 +87,8 @@ func _build_card_body() -> void:
 	)
 	shader_material = ShaderMaterial.new()
 	shader_material.shader = BurnDissolveShader
+	shader_material.set_shader_parameter("burn_size", burn_size)
+	shader_material.set_shader_parameter("burn_color", burn_color)
 	body_sprite.material = shader_material
 	add_child(body_sprite)
 

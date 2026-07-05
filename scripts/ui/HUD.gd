@@ -89,6 +89,13 @@ const DEFAULT_GAME_OVER_FADE_SECONDS := 3.0
 const REWARD_TAG_CONSUMABLE := "consumable"
 const CARD_TAG_RESTORE := "restore"
 const REWARD_CARD_TYPE_ATTACK := "attack"
+const GAME_FINISHED_CG_TEXTURE = preload("res://assets/art/game_finished_CG.png")
+const GAME_OVER_ANIMATION_TEXTURE = preload("res://assets/art/game_over_animation.png")
+const INTRO_KEYBOARD_TEXTURE = preload("res://assets/art/intro_keyboard.png")
+const INTRO_GAMEPAD_TEXTURE = preload("res://assets/art/intro_gamepad.png")
+const GAME_OVER_ANIMATION_FRAME_COUNT := 4
+const GAME_OVER_ANIMATION_FRAME_SECONDS := 0.14
+const TUTORIAL_IMAGE_TITLE := "操作提示"
 const REWARD_PANEL_PLAYER_ONE_TEXTURE = preload("res://assets/art/玩家1_奖励牌背景.png")
 const REWARD_PANEL_PLAYER_TWO_TEXTURE = preload("res://assets/art/玩家2_奖励牌背景.png")
 const REWARD_ATTACK_CONSUMABLE_FACE = preload("res://assets/art/card_face/attack.png")
@@ -242,8 +249,17 @@ var game_over_title_label: Label
 var game_over_reason_label: Label
 var game_over_try_again_button: Button
 var game_over_tween: Tween
+var game_over_animation_rect: TextureRect
+var game_over_animation_frames: Array[Texture2D] = []
+var game_over_animation_tween: Tween
+var game_finished_overlay: ColorRect
+var game_finished_image_rect: TextureRect
+var game_finished_message_label: Label
+var game_finished_tween: Tween
 var tutorial_overlay: ColorRect
 var tutorial_panel: Panel
+var tutorial_image_rect: TextureRect
+var tutorial_text_content: Control
 var tutorial_title_label: Label
 var tutorial_body_label: Label
 var tutorial_close_button: Button
@@ -367,6 +383,20 @@ func create_pause_independent_tween() -> Tween:
 	return tween
 
 
+func _set_centered_control_size(control: Control, target_size: Vector2) -> void:
+	if control == null:
+		return
+
+	control.anchor_left = 0.5
+	control.anchor_top = 0.5
+	control.anchor_right = 0.5
+	control.anchor_bottom = 0.5
+	control.offset_left = -target_size.x * 0.5
+	control.offset_top = -target_size.y * 0.5
+	control.offset_right = target_size.x * 0.5
+	control.offset_bottom = target_size.y * 0.5
+
+
 func _build_tutorial_overlay() -> void:
 	if tutorial_overlay != null:
 		return
@@ -384,14 +414,10 @@ func _build_tutorial_overlay() -> void:
 	tutorial_panel = Panel.new()
 	tutorial_panel.name = "TutorialPanel"
 	tutorial_panel.set_anchors_preset(Control.PRESET_CENTER)
-	tutorial_panel.offset_left = -320.0
-	tutorial_panel.offset_top = -160.0
-	tutorial_panel.offset_right = 320.0
-	tutorial_panel.offset_bottom = 160.0
 	tutorial_overlay.add_child(tutorial_panel)
 
 	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.08, 0.08, 0.10, 0.96)
+	panel_style.bg_color = Color(0.08, 0.08, 0.10, 0.88)
 	panel_style.border_color = Color(0.95, 0.82, 0.42, 0.92)
 	panel_style.border_width_left = 2
 	panel_style.border_width_top = 2
@@ -403,14 +429,29 @@ func _build_tutorial_overlay() -> void:
 	panel_style.corner_radius_bottom_right = 8
 	tutorial_panel.add_theme_stylebox_override("panel", panel_style)
 
+	tutorial_image_rect = TextureRect.new()
+	tutorial_image_rect.name = "TutorialImage"
+	tutorial_image_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	tutorial_image_rect.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	tutorial_image_rect.grow_vertical = Control.GROW_DIRECTION_BOTH
+	tutorial_image_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tutorial_image_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tutorial_image_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tutorial_panel.add_child(tutorial_image_rect)
+
+	var margin := MarginContainer.new()
+	margin.name = "TutorialTextMargin"
+	margin.anchor_left = 0.08
+	margin.anchor_top = 0.12
+	margin.anchor_right = 0.92
+	margin.anchor_bottom = 0.78
+	tutorial_panel.add_child(margin)
+	tutorial_text_content = margin
+
 	var content := VBoxContainer.new()
 	content.name = "TutorialContent"
-	content.anchor_left = 0.08
-	content.anchor_top = 0.12
-	content.anchor_right = 0.92
-	content.anchor_bottom = 0.88
 	content.add_theme_constant_override("separation", 16)
-	tutorial_panel.add_child(content)
+	margin.add_child(content)
 
 	tutorial_title_label = Label.new()
 	tutorial_title_label.name = "TutorialTitleLabel"
@@ -436,9 +477,16 @@ func _build_tutorial_overlay() -> void:
 	tutorial_close_button = Button.new()
 	tutorial_close_button.name = "TutorialCloseButton"
 	tutorial_close_button.text = "继续"
-	tutorial_close_button.custom_minimum_size = Vector2(150.0, 46.0)
-	tutorial_close_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	content.add_child(tutorial_close_button)
+	tutorial_close_button.anchor_left = 0.5
+	tutorial_close_button.anchor_top = 1.0
+	tutorial_close_button.anchor_right = 0.5
+	tutorial_close_button.anchor_bottom = 1.0
+	tutorial_close_button.offset_left = -120.0
+	tutorial_close_button.offset_top = -74.0
+	tutorial_close_button.offset_right = 120.0
+	tutorial_close_button.offset_bottom = -18.0
+	tutorial_panel.add_child(tutorial_close_button)
+	_set_centered_control_size(tutorial_panel, Vector2(640.0, 320.0))
 	_set_pause_independent_ui_tree(tutorial_overlay)
 
 
@@ -446,8 +494,31 @@ func show_tutorial_popup(title: String, body: String, should_pause_tree := true)
 	_build_tutorial_overlay()
 	_kill_tutorial_tween()
 	tutorial_pause_tree = should_pause_tree
-	tutorial_title_label.text = title
-	tutorial_body_label.text = body
+	var uses_intro_image := title == TUTORIAL_IMAGE_TITLE
+	if uses_intro_image:
+		_set_centered_control_size(tutorial_panel, Vector2(700.0, 700.0))
+		tutorial_image_rect.texture = INTRO_GAMEPAD_TEXTURE if active_input_preset == INPUT_PRESET_GAMEPAD else INTRO_KEYBOARD_TEXTURE
+		tutorial_image_rect.visible = true
+		tutorial_text_content.visible = false
+		tutorial_close_button.text = ""
+		tutorial_close_button.flat = true
+		tutorial_close_button.offset_left = -170.0
+		tutorial_close_button.offset_top = -108.0
+		tutorial_close_button.offset_right = 170.0
+		tutorial_close_button.offset_bottom = -24.0
+	else:
+		_set_centered_control_size(tutorial_panel, Vector2(640.0, 320.0))
+		tutorial_image_rect.texture = null
+		tutorial_image_rect.visible = false
+		tutorial_text_content.visible = true
+		tutorial_close_button.text = "继续"
+		tutorial_close_button.flat = false
+		tutorial_close_button.offset_left = -120.0
+		tutorial_close_button.offset_top = -74.0
+		tutorial_close_button.offset_right = 120.0
+		tutorial_close_button.offset_bottom = -18.0
+		tutorial_title_label.text = title
+		tutorial_body_label.text = body
 	tutorial_close_button.disabled = false
 	tutorial_overlay.visible = true
 	tutorial_overlay.modulate.a = 0.0
@@ -545,28 +616,53 @@ func _build_game_over_overlay() -> void:
 	game_over_overlay.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	game_over_overlay.grow_vertical = Control.GROW_DIRECTION_BOTH
 	game_over_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	game_over_overlay.color = Color.BLACK
+	game_over_overlay.color = Color(0.025, 0.018, 0.014, 1.0)
 	game_over_overlay.visible = false
 	root.add_child(game_over_overlay)
 
 	var content := VBoxContainer.new()
 	content.name = "GameOverContent"
 	content.set_anchors_preset(Control.PRESET_CENTER)
-	content.offset_left = -270.0
-	content.offset_top = -126.0
-	content.offset_right = 270.0
-	content.offset_bottom = 170.0
+	content.offset_left = -290.0
+	content.offset_top = -315.0
+	content.offset_right = 290.0
+	content.offset_bottom = 315.0
 	content.alignment = BoxContainer.ALIGNMENT_CENTER
-	content.add_theme_constant_override("separation", 22)
+	content.add_theme_constant_override("separation", 12)
 	game_over_overlay.add_child(content)
+
+	var animation_backdrop := PanelContainer.new()
+	animation_backdrop.name = "GameOverAnimationBackdrop"
+	animation_backdrop.custom_minimum_size = Vector2(540.0, 468.0)
+	animation_backdrop.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var animation_backdrop_style := StyleBoxFlat.new()
+	animation_backdrop_style.bg_color = Color(0.88, 0.72, 0.48, 1.0)
+	animation_backdrop_style.border_color = Color(0.23, 0.12, 0.06, 1.0)
+	animation_backdrop_style.border_width_left = 3
+	animation_backdrop_style.border_width_top = 3
+	animation_backdrop_style.border_width_right = 3
+	animation_backdrop_style.border_width_bottom = 3
+	animation_backdrop.add_theme_stylebox_override("panel", animation_backdrop_style)
+	content.add_child(animation_backdrop)
+
+	game_over_animation_rect = TextureRect.new()
+	game_over_animation_rect.name = "GameOverAnimation"
+	game_over_animation_rect.custom_minimum_size = Vector2(505.0, 458.0)
+	game_over_animation_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	game_over_animation_rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	game_over_animation_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	game_over_animation_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	game_over_animation_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	animation_backdrop.add_child(game_over_animation_rect)
 
 	game_over_title_label = Label.new()
 	game_over_title_label.name = "GameOverTitleLabel"
 	game_over_title_label.text = "Gameover"
+	game_over_title_label.visible = false
 	game_over_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	game_over_title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	game_over_title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	game_over_title_label.custom_minimum_size = Vector2(540.0, 82.0)
+	game_over_title_label.custom_minimum_size = Vector2(540.0, 0.0)
 	game_over_title_label.add_theme_font_size_override("font_size", 72)
 	game_over_title_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
 	game_over_title_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.9))
@@ -592,33 +688,99 @@ func _build_game_over_overlay() -> void:
 	content.add_child(game_over_try_again_button)
 
 
+func _build_game_finished_overlay() -> void:
+	if game_finished_overlay != null:
+		return
+
+	game_finished_overlay = ColorRect.new()
+	game_finished_overlay.name = "GameFinishedOverlay"
+	game_finished_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	game_finished_overlay.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	game_finished_overlay.grow_vertical = Control.GROW_DIRECTION_BOTH
+	game_finished_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	game_finished_overlay.color = Color.BLACK
+	game_finished_overlay.visible = false
+	root.add_child(game_finished_overlay)
+
+	game_finished_image_rect = TextureRect.new()
+	game_finished_image_rect.name = "GameFinishedCG"
+	game_finished_image_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	game_finished_image_rect.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	game_finished_image_rect.grow_vertical = Control.GROW_DIRECTION_BOTH
+	game_finished_image_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	game_finished_image_rect.texture = GAME_FINISHED_CG_TEXTURE
+	game_finished_image_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	game_finished_image_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	game_finished_overlay.add_child(game_finished_image_rect)
+
+	game_finished_message_label = Label.new()
+	game_finished_message_label.name = "GameFinishedMessage"
+	game_finished_message_label.anchor_left = 0.0
+	game_finished_message_label.anchor_top = 0.78
+	game_finished_message_label.anchor_right = 1.0
+	game_finished_message_label.anchor_bottom = 0.94
+	game_finished_message_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	game_finished_message_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	game_finished_message_label.add_theme_font_size_override("font_size", 34)
+	game_finished_message_label.add_theme_color_override("font_color", Color(1.0, 0.86, 0.52, 1.0))
+	game_finished_message_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.85))
+	game_finished_message_label.add_theme_constant_override("shadow_offset_x", 3)
+	game_finished_message_label.add_theme_constant_override("shadow_offset_y", 3)
+	game_finished_overlay.add_child(game_finished_message_label)
+
+
+func show_game_finished(message: String, fade_seconds := 0.35) -> void:
+	_build_game_finished_overlay()
+	hide_reward_choice(false)
+	_hide_pause_menu_without_unpausing()
+	_hide_game_over_overlay_without_signal()
+	_kill_game_finished_tween()
+
+	game_finished_message_label.text = message
+	game_finished_overlay.visible = true
+	game_finished_overlay.modulate.a = 0.0
+	game_finished_tween = create_pause_independent_tween()
+	game_finished_tween.tween_property(game_finished_overlay, "modulate:a", 1.0, maxf(0.01, fade_seconds))
+	game_finished_tween.finished.connect(func() -> void:
+		game_finished_tween = null
+	)
+
+
+func _hide_game_finished_overlay_without_signal() -> void:
+	_kill_game_finished_tween()
+	if game_finished_overlay == null:
+		return
+	game_finished_overlay.visible = false
+	game_finished_overlay.modulate.a = 1.0
+
+
+func _kill_game_finished_tween() -> void:
+	if game_finished_tween != null and game_finished_tween.is_valid():
+		game_finished_tween.kill()
+	game_finished_tween = null
+
+
 func show_game_over(reason := "断线结束", fade_seconds := DEFAULT_GAME_OVER_FADE_SECONDS) -> void:
 	_build_game_over_overlay()
+	_hide_game_finished_overlay_without_signal()
 	hide_reward_choice(false)
 	_hide_pause_menu_without_unpausing()
 	_kill_game_over_tween()
 
-	game_over_title_label.text = "Gameover"
 	game_over_reason_label.text = reason
 	game_over_overlay.visible = true
 	game_over_overlay.modulate.a = 0.0
-	game_over_title_label.modulate.a = 0.0
 	game_over_reason_label.modulate.a = 0.0
 	game_over_try_again_button.modulate.a = 0.0
 	game_over_try_again_button.disabled = true
 	death_countdown_panel.visible = false
 	message_label.text = reason
+	_play_game_over_frame_animation()
 
 	var fade_duration := maxf(0.01, fade_seconds)
 	game_over_tween = create_pause_independent_tween()
 	game_over_tween.set_parallel(true)
 	game_over_tween.tween_property(game_over_overlay, "modulate:a", 1.0, fade_duration)
-	game_over_tween.tween_property(
-		game_over_title_label,
-		"modulate:a",
-		1.0,
-		maxf(0.01, fade_duration * 0.32)
-	).set_delay(fade_duration * 0.18)
 	game_over_tween.tween_property(
 		game_over_reason_label,
 		"modulate:a",
@@ -660,6 +822,7 @@ func reset_runtime_ui_for_restart() -> void:
 	hide_reward_choice(false)
 	_hide_pause_menu_without_unpausing()
 	_hide_tutorial_overlay_without_unpausing()
+	_hide_game_finished_overlay_without_signal()
 	set_message("")
 	death_countdown_panel.visible = false
 	waiting_rebind_action = StringName()
@@ -688,12 +851,58 @@ func _hide_game_over_overlay_without_signal() -> void:
 	if game_over_try_again_button != null:
 		game_over_try_again_button.modulate.a = 1.0
 		game_over_try_again_button.disabled = true
+	_kill_game_over_animation_tween()
 
 
 func _kill_game_over_tween() -> void:
 	if game_over_tween != null and game_over_tween.is_valid():
 		game_over_tween.kill()
 	game_over_tween = null
+	_kill_game_over_animation_tween()
+
+
+func _play_game_over_frame_animation() -> void:
+	_build_game_over_animation_frames()
+	_kill_game_over_animation_tween()
+	if game_over_animation_rect == null or game_over_animation_frames.is_empty():
+		return
+
+	_set_game_over_animation_frame(0)
+	game_over_animation_tween = create_pause_independent_tween()
+	for index in range(1, game_over_animation_frames.size()):
+		game_over_animation_tween.tween_interval(GAME_OVER_ANIMATION_FRAME_SECONDS)
+		game_over_animation_tween.tween_callback(_set_game_over_animation_frame.bind(index))
+	game_over_animation_tween.finished.connect(func() -> void:
+		_set_game_over_animation_frame(game_over_animation_frames.size() - 1)
+		game_over_animation_tween = null
+	)
+
+
+func _build_game_over_animation_frames() -> void:
+	if not game_over_animation_frames.is_empty():
+		return
+
+	var frame_width := int(GAME_OVER_ANIMATION_TEXTURE.get_width() / GAME_OVER_ANIMATION_FRAME_COUNT)
+	var frame_height := int(GAME_OVER_ANIMATION_TEXTURE.get_height())
+	for index in range(GAME_OVER_ANIMATION_FRAME_COUNT):
+		var frame_texture := AtlasTexture.new()
+		frame_texture.atlas = GAME_OVER_ANIMATION_TEXTURE
+		frame_texture.region = Rect2(index * frame_width, 0, frame_width, frame_height)
+		game_over_animation_frames.append(frame_texture)
+
+
+func _set_game_over_animation_frame(index: int) -> void:
+	if game_over_animation_rect == null or game_over_animation_frames.is_empty():
+		return
+
+	var clamped_index := clampi(index, 0, game_over_animation_frames.size() - 1)
+	game_over_animation_rect.texture = game_over_animation_frames[clamped_index]
+
+
+func _kill_game_over_animation_tween() -> void:
+	if game_over_animation_tween != null and game_over_animation_tween.is_valid():
+		game_over_animation_tween.kill()
+	game_over_animation_tween = null
 
 
 func _is_pause_menu_event(event: InputEvent) -> bool:
@@ -1382,6 +1591,7 @@ func set_message(message: String) -> void:
 func set_game_result(message: String) -> void:
 	message_label.text = message
 	death_countdown_panel.visible = false
+	show_game_finished(message)
 
 
 func show_reward_choice(player_id: int, reward_cards: Array) -> void:

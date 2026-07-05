@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://bbx4ivqik1iqc"]
+[gd_scene format=3 uid="uid://cwuc6o2l33c3q"]
 
 [ext_resource type="Script" uid="uid://dc78a3p4wbi37" path="res://scripts/obstacles/NetObstacle.gd" id="1_net_script"]
 
@@ -11,26 +11,31 @@ collision_mask = 0
 script = ExtResource("1_net_script")
 
 [node name="Visual" type="Polygon2D" parent="." unique_id=1367066814]
+visible = false
 color = Color(0.1, 0.78, 0.95, 0.36)
 polygon = PackedVector2Array(-43, -150, 43, -150, 43, 150, -43, 150)
 
 [node name="Border" type="Line2D" parent="." unique_id=1778139630]
+visible = false
 points = PackedVector2Array(-43, -150, 43, -150, 43, 150, -43, 150, -43, -150)
 closed = true
 width = 5.0
 default_color = Color(0.55, 0.95, 1, 0.86)
 
 [node name="VerticalStrands" type="Line2D" parent="." unique_id=871516049]
+visible = false
 points = PackedVector2Array(-24, -144, -24, 144, 0, 144, 0, -144, 24, -144, 24, 144)
 width = 3.0
 default_color = Color(0.75, 1, 1, 0.72)
 
 [node name="DiagonalStrandsA" type="Line2D" parent="." unique_id=857773177]
+visible = false
 points = PackedVector2Array(-38, -138, 38, -62, -38, 14, 38, 90)
 width = 2.5
 default_color = Color(0.75, 1, 1, 0.62)
 
 [node name="DiagonalStrandsB" type="Line2D" parent="." unique_id=520503463]
+visible = false
 points = PackedVector2Array(38, -138, -38, -62, 38, 14, -38, 90)
 width = 2.5
 default_color = Color(0.75, 1, 1, 0.62)

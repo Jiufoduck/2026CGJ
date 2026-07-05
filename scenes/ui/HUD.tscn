@@ -34,7 +34,7 @@ void fragment() {
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_reward_focus_outline"]
 shader = SubResource("Shader_reward_focus_outline")
-shader_parameter/outline_color = Color(1, 0.82, 0.08, 0.95)
+shader_parameter/outline_color = Color(0.3623873, 0.9285813, 0.82765293, 0.98039216)
 
 [sub_resource type="LabelSettings" id="LabelSettings_jlufg"]
 font_size = 20
@@ -172,7 +172,6 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="RewardChoiceOverlay" type="ColorRect" parent="Root" unique_id=1071400036]
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -204,7 +203,6 @@ icon_alignment = 1
 expand_icon = true
 
 [node name="FocusOutline" type="TextureRect" parent="Root/RewardChoiceOverlay/Panel/choice1" unique_id=1876380722]
-visible = false
 show_behind_parent = true
 material = SubResource("ShaderMaterial_reward_focus_outline")
 layout_mode = 0

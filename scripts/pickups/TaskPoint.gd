@@ -19,6 +19,7 @@ class_name TaskPoint
 # - _on_body_entered(body)：玩家进入任务点时尝试领取；非玩家或错误玩家不会触发奖励。
 # - try_claim(body)：集中处理领取规则、发信号和关闭任务点。
 # - reset_task_point()：Try again 时恢复未领取状态、碰撞监控和标签。
+# - _reset_child_animations()：把任务点所有动画节点停回初始帧，避免 Try again 后停在上局领取动画末尾。
 # - get_reward_cards()：把 tscn 中编辑的候选牌字段组装成标准卡牌字典数组；未配置时返回空数组。
 # - _get_reward_value(values, index, fallback)：安全读取某个手动候选牌字段；字段缺失时使用 fallback。
 # - _body_is_allowed_player(body)：判断碰到任务点的物体是否是允许拾取的玩家。
@@ -41,14 +42,16 @@ var claimed := false
 var initial_visual_color := Color.WHITE
 
 @onready var visual_polygon: Polygon2D = get_node_or_null('Visual')
+@onready var animated_sprite: AnimatedSprite2D = get_node_or_null(^"AnimatedSprite2D") as AnimatedSprite2D
 @onready var label_node: Label = $Label
 
 func _ready() -> void:
-	if assigned_player_id == 1:
-		$AnimatedSprite2D.sprite_frames = load("res://assets/art/task_points/purple_anim.tres")
-	else:
-		$AnimatedSprite2D.sprite_frames = load("res://assets/art/task_points/green_anim.tres")
-	$AnimatedSprite2D.frame = 0
+	if animated_sprite != null:
+		if assigned_player_id == 1:
+			animated_sprite.sprite_frames = load("res://assets/art/task_points/purple_anim.tres")
+		else:
+			animated_sprite.sprite_frames = load("res://assets/art/task_points/green_anim.tres")
+	_reset_child_animations()
 
 	add_to_group("task_points")
 	if visual_polygon != null:
@@ -65,7 +68,8 @@ func try_claim(body: Node) -> void:
 	if claimed or not _body_is_allowed_player(body):
 		return
 
-	$AnimatedSprite2D.play("default")
+	if animated_sprite != null:
+		animated_sprite.play("default")
 	var player_id: int = body.get_player_id()
 	task_point_claimed.emit(self, player_id, get_reward_cards())
 	if deactivate_after_pickup:
@@ -77,9 +81,32 @@ func reset_task_point() -> void:
 	claimed = false
 	monitoring = true
 	monitorable = true
+	_reset_child_animations()
 	if visual_polygon != null:
 		visual_polygon.color = initial_visual_color
 	_refresh_label()
+
+
+func _reset_child_animations() -> void:
+	_reset_animation_node(self)
+
+
+func _reset_animation_node(node: Node) -> void:
+	if node is AnimatedSprite2D:
+		var sprite := node as AnimatedSprite2D
+		sprite.stop()
+		if sprite.sprite_frames != null and sprite.sprite_frames.has_animation(&"default"):
+			sprite.animation = &"default"
+		sprite.frame = 0
+		sprite.frame_progress = 0.0
+	elif node is AnimationPlayer:
+		var animation_player := node as AnimationPlayer
+		animation_player.stop()
+		if not animation_player.current_animation.is_empty():
+			animation_player.seek(0.0, true)
+
+	for child in node.get_children():
+		_reset_animation_node(child)
 
 
 func get_reward_cards() -> Array:

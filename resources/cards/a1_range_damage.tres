@@ -4,6 +4,7 @@
 
 [resource]
 script = ExtResource("1_card_definition")
+damage_amount = 7.0
 id = "a1_range_damage"
 card_name = "范围伤害"
 owner_player_id = 1

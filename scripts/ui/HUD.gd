@@ -817,7 +817,7 @@ func _apply_combat_deck_end_overlay_state(panel: Control, normal_z_index: int, n
 		panel.visible = normal_visible
 
 
-func show_game_over(reason := "断线结束", fade_seconds := DEFAULT_GAME_OVER_FADE_SECONDS) -> void:
+func show_game_over(reason := "游戏结束", fade_seconds := DEFAULT_GAME_OVER_FADE_SECONDS) -> void:
 	_build_game_over_overlay()
 	_hide_game_finished_overlay_without_signal()
 	hide_reward_choice(false)

@@ -49,7 +49,7 @@ func _ready() -> void:
 	else:
 		$AnimatedSprite2D.sprite_frames = load("res://assets/art/task_points/green_anim.tres")
 	$AnimatedSprite2D.frame = 0
-	
+
 	add_to_group("task_points")
 	if visual_polygon != null:
 		initial_visual_color = visual_polygon.color

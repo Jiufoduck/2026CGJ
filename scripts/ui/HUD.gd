@@ -105,6 +105,9 @@ const REWARD_ENHANCE_UNCONSUMABLE_FACE = preload("res://assets/art/card_face/enh
 const REWARD_FOCUS_MODULATE := Color(1.16, 1.10, 0.86, 1.0)
 const REWARD_UNFOCUSED_MODULATE := Color.WHITE
 const REWARD_PANEL_BLACK := Color(0.0, 0.0, 0.0, 1.0)
+const REWARD_TITLE_FONT_SIZE := 20
+const REWARD_TITLE_MINIMUM_SIZE := Vector2(100.0, 30.0)
+const REWARD_DESCRIPTION_MINIMUM_SIZE := Vector2(96.0, 44.0)
 const REWARD_STICK_NAVIGATION_PRESS_DEADZONE := 0.55
 const REWARD_STICK_NAVIGATION_RELEASE_DEADZONE := 0.30
 const INPUT_PRESET_KEYBOARD := "keyboard"
@@ -1733,13 +1736,31 @@ func _clear_reward_choice_button(button: Button) -> void:
 func _setup_reward_choice_button_labels(button: Button) -> void:
 	var title_label := button.get_node_or_null("title") as Label
 	var description_label := button.get_node_or_null("descript") as Label
-	for label in [title_label, description_label]:
-		if label == null:
-			continue
-		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		label.clip_text = true
+	if title_label != null:
+		title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		title_label.clip_text = false
+		title_label.custom_minimum_size = REWARD_TITLE_MINIMUM_SIZE
+		title_label.size = Vector2(
+			max(title_label.size.x, REWARD_TITLE_MINIMUM_SIZE.x),
+			max(title_label.size.y, REWARD_TITLE_MINIMUM_SIZE.y)
+		)
+		if title_label.label_settings != null:
+			title_label.label_settings.font_size = REWARD_TITLE_FONT_SIZE
+		else:
+			title_label.add_theme_font_size_override("font_size", REWARD_TITLE_FONT_SIZE)
+	if description_label != null:
+		description_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		description_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		description_label.clip_text = true
+		description_label.custom_minimum_size = REWARD_DESCRIPTION_MINIMUM_SIZE
+		description_label.size = Vector2(
+			max(description_label.size.x, REWARD_DESCRIPTION_MINIMUM_SIZE.x),
+			max(description_label.size.y, REWARD_DESCRIPTION_MINIMUM_SIZE.y)
+		)
 
 
 func _handle_reward_choice_input(event: InputEvent) -> bool:

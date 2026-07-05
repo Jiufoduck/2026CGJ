@@ -11,9 +11,10 @@
 [ext_resource type="Texture2D" uid="uid://blso6hjcbs8cq" path="res://assets/art/fire_1.png" id="4_ywwdm"]
 [ext_resource type="Script" uid="uid://u32idxw3tusp" path="res://scenes/main/RiverLayer.gd" id="5_t3dd6"]
 [ext_resource type="PackedScene" uid="uid://dn23ovv6j2koa" path="res://scenes/pickups/TaskPoint.tscn" id="5_task_scene"]
-[ext_resource type="PackedScene" uid="uid://bbx4ivqik1iqc" path="res://scenes/obstacles/NetObstacle.tscn" id="6_f6se4"]
+[ext_resource type="PackedScene" uid="uid://cwuc6o2l33c3q" path="res://scenes/obstacles/NetObstacle.tscn" id="6_f6se4"]
 [ext_resource type="PackedScene" uid="uid://bmpjr75raqejp" path="res://scenes/obstacles/RectangleObstacle.tscn" id="6_obstacle_scene"]
 [ext_resource type="AudioStream" uid="uid://x5mbk3ef3w6c" path="res://assets/sound/asia.wav" id="6_t3dd6"]
+[ext_resource type="Texture2D" uid="uid://bkqprfvqx2qk1" path="res://assets/art/goal_line.png" id="7_1fl3h"]
 [ext_resource type="PackedScene" uid="uid://253htnqnf3pa" path="res://scenes/enemies/EnemyType1.tscn" id="7_enemy_one_scene"]
 [ext_resource type="Texture2D" uid="uid://c66wu8volsdub" path="res://assets/art/墙_正方体积木 2.png" id="7_g3m55"]
 [ext_resource type="PackedScene" uid="uid://c2q4xwwctv2fl" path="res://scenes/enemies/EnemyType3.tscn" id="9_enemy_three_scene"]
@@ -334,6 +335,11 @@ speed = 30
 stream = ExtResource("6_t3dd6")
 volume_db = -9.372
 script = SubResource("GDScript_t3dd6")
+
+[node name="GoalLine" type="Sprite2D" parent="Level" unique_id=561807027]
+position = Vector2(26034, 10)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("7_1fl3h")
 
 [node name="ElasticLink" type="Line2D" parent="." unique_id=2010590503]
 width = 8.0

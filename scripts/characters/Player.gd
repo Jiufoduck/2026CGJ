@@ -119,6 +119,7 @@ func play_death_animation() -> void:
 	death_animation_playing = true
 	set_control_enabled(false)
 	death_animation_started.emit(player_id)
+	_kill_death_animation_tween()
 
 	if not auto_finish_death_animation_placeholder:
 		return
@@ -128,7 +129,42 @@ func play_death_animation() -> void:
 		finish_death_animation.call_deferred()
 		return
 
-	_kill_death_animation_tween()
+	if visual == null:
+		finish_death_animation.call_deferred()
+		return
+
+	visual.visible = true
+	visual.scale = visual_base_scale
+	visual.modulate = visual_base_modulate
+
+	var pop_duration: float = maxf(0.01, duration * 0.36)
+	var vanish_duration: float = maxf(0.01, duration - pop_duration)
+	death_animation_tween = create_tween()
+	death_animation_tween.tween_property(
+		visual,
+		"scale",
+		visual_base_scale * 1.32,
+		pop_duration
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	death_animation_tween.parallel().tween_property(
+		visual,
+		"modulate",
+		Color(1.0, 0.34, 0.22, 1.0),
+		pop_duration
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	death_animation_tween.tween_property(
+		visual,
+		"scale",
+		visual_base_scale * 0.05,
+		vanish_duration
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	death_animation_tween.parallel().tween_property(
+		visual,
+		"modulate:a",
+		0.0,
+		vanish_duration
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	death_animation_tween.finished.connect(finish_death_animation)
 
 
 
@@ -145,6 +181,10 @@ func reset_death_animation_state() -> void:
 	death_animation_playing = false
 	_kill_death_animation_tween()
 	velocity = Vector2.ZERO
+	if visual != null:
+		visual.visible = true
+		visual.scale = visual_base_scale
+		visual.modulate = visual_base_modulate
 
 func set_control_enabled(enabled: bool) -> void:
 	control_enabled = enabled

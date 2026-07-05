@@ -167,6 +167,7 @@ const DEFAULT_PLAYER_TWO_ANCHOR_CHAIN_TEXTURE = preload("res://assets/art/玩家
 @export var body_drag_recoil_start := 190.0
 @export var body_drag_recoil_strength := 18.0
 @export var game_over_fade_seconds := 3.0
+@export var game_over_death_animation_timeout_seconds := 2.0
 
 @export_group("Anchor Chain Visual")
 @export var use_anchor_chain_visual := true
@@ -197,6 +198,7 @@ var game_over_sequence_active := false
 var restart_in_progress := false
 var game_over_reason := ""
 var pending_death_animation_players := {}
+var game_over_death_sequence_id := 0
 var restart_state := {}
 var restore_promoted_for_first_break := false
 var reward_world_pause_active := false
@@ -999,6 +1001,8 @@ func _begin_game_over_sequence(reason: String) -> void:
 
 
 func _play_player_death_animations() -> void:
+	game_over_death_sequence_id += 1
+	var sequence_id := game_over_death_sequence_id
 	pending_death_animation_players.clear()
 	for player in [player_one, player_two]:
 		if player == null or not is_instance_valid(player):
@@ -1017,6 +1021,9 @@ func _play_player_death_animations() -> void:
 
 	if pending_death_animation_players.is_empty():
 		_show_game_over_after_death_animations.call_deferred()
+	else:
+		var timeout_seconds := maxf(0.05, game_over_death_animation_timeout_seconds)
+		get_tree().create_timer(timeout_seconds).timeout.connect(_on_death_animation_timeout.bind(sequence_id))
 
 
 func _show_game_over_after_death_animations() -> void:
@@ -1029,12 +1036,33 @@ func _show_game_over_after_death_animations() -> void:
 	hud.show_game_over(game_over_reason, game_over_fade_seconds)
 
 
+func _on_death_animation_timeout(sequence_id: int) -> void:
+	if sequence_id != game_over_death_sequence_id:
+		return
+	if not game_over_sequence_active or restart_in_progress:
+		return
+	if pending_death_animation_players.is_empty():
+		return
+
+	var timed_out_players := pending_death_animation_players.keys()
+	pending_death_animation_players.clear()
+	for player in [player_one, player_two]:
+		if player == null or not is_instance_valid(player):
+			continue
+		if not player.has_method("get_player_id") or not player.has_method("finish_death_animation"):
+			continue
+		if timed_out_players.has(int(player.get_player_id())):
+			player.finish_death_animation()
+	_show_game_over_after_death_animations()
+
+
 func _reset_game_state_for_restart() -> void:
 	_set_reward_world_pause(false, false)
 	get_tree().paused = true
 	reward_choice_active = false
 	active_reward_task_point = null
 	game_has_ended = true
+	game_over_death_sequence_id += 1
 	pending_death_animation_players.clear()
 	player_one.set_control_enabled(false)
 	player_two.set_control_enabled(false)

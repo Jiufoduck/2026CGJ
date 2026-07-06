@@ -2,8 +2,6 @@ extends EnemyBase
 
 class_name EnemyType5
 
-const SoundCueScript = preload("res://scripts/audio/SoundCue.gd")
-
 @export var charge_range = 200
 @export var charge_startup = 1.0
 @export var charge_recovery = 0.5
@@ -59,7 +57,7 @@ func do_charge():
 	calib_movedir(false)
 	await get_tree().create_timer(charge_startup).timeout
 	move_speed = initial_move_speed * 10
-	SoundCueScript.play(self, &"snake_strike")
+	SoundManager.play(&"snake_strike")
 	$Visual.play("charging")
 
 	# d = m / a

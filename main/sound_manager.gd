@@ -18,9 +18,9 @@ const SOUND_CONFIG := {
 
 	&"attack": {"path": "res://assets/sound/attack.wav", "volume_db": -3.0},
 	&"enhance": {"path": "res://assets/sound/enhance.wav", "volume_db": -4.0},
-	&"acquire_card": {"path": "res://assets/sound/acquire_card.mp3", "volume_db": -4.0},
-	&"checkpoint1": {"path": "res://assets/sound/checkpoint1.mp3", "volume_db": -4.0},
-	&"checkpoint2": {"path": "res://assets/sound/checkpoint2.wav", "volume_db": -4.0},
+	&"acquire_card": {"path": "res://assets/sound/acquire_card.mp3", "volume_db": -15.0},
+	&"checkpoint1": {"path": "res://assets/sound/checkpoint1.mp3", "volume_db": -1.0},
+	&"checkpoint2": {"path": "res://assets/sound/checkpoint2.wav", "volume_db": -1.0},
 	&"line_broken": {"path": "res://assets/sound/line_broken.mp3", "volume_db": -2.0},
 	&"net_break": {"path": "res://assets/sound/net_break.mp3", "volume_db": -2.0},
 	&"emitting_bullet": {"path": "res://assets/sound/emmiting_bullet.mp3", "volume_db": -4.0},
@@ -45,7 +45,8 @@ const AUDIO_BUS_NAMES := {
 }
 const MAX_PLAYERS := 36
 const MAX_PER_SOUND := 12
-const MIN_VOLUME_DB := -30.0
+const MIN_VOLUME_DB := -80.0
+const SILENT_SOUND_VOLUME_DB := -60.0
 const SAME_SOUND_STEP_DB := 0.5
 const GLOBAL_STEP_DB := 0.5
 
@@ -121,6 +122,12 @@ func play(sound_name: StringName, volume_db = null, pitch = null, delay = null) 
 	var final_delay = delay if delay != null else defaults.get("delay", 0.0)
 	var final_bus = defaults.get("bus", SFX_BUS_NAME)
 	_play_stream(stream, final_volume, final_pitch, sound_name, final_delay, final_bus)
+
+func play_random(sound_names: Array[StringName], volume_db = null, pitch = null, delay = null) -> void:
+	if sound_names.is_empty():
+		return
+	var chosen_index := randi() % sound_names.size()
+	play(sound_names[chosen_index], volume_db, pitch, delay)
 
 func _warn_missing_sound(sound_name: StringName, path: String) -> void:
 	if _missing_sound_warnings.has(sound_name):
@@ -230,6 +237,8 @@ func _resolve_bus_name(bus_key: StringName) -> String:
 func _play_stream(stream: AudioStream, volume_db: float, pitch: float, sound_name: StringName, delay: float = 0.0, bus_name := SFX_BUS_NAME) -> void:
 	if delay > 0.0:
 		await get_tree().create_timer(delay).timeout
+	if volume_db <= SILENT_SOUND_VOLUME_DB:
+		return
 	var current_per_sound := _count_playing(sound_name)
 	if current_per_sound >= MAX_PER_SOUND:
 		return
@@ -242,7 +251,8 @@ func _play_stream(stream: AudioStream, volume_db: float, pitch: float, sound_nam
 	player.bus = bus_name
 	player.pitch_scale = pitch
 	var attenuation = float(current_per_sound) * SAME_SOUND_STEP_DB + max(current_total - 4, 0) * GLOBAL_STEP_DB
-	player.volume_db = clamp(volume_db - attenuation, MIN_VOLUME_DB, volume_db)
+	var maximum_volume: float = maxf(volume_db, MIN_VOLUME_DB)
+	player.volume_db = clampf(volume_db - attenuation, MIN_VOLUME_DB, maximum_volume)
 	player.play()
 
 

@@ -1,8 +1,6 @@
 extends AnimatableBody2D
 class_name BodyCore
 
-const SoundCue = preload("res://scripts/audio/SoundCue.gd")
-
 # 脚本说明：
 # - health_changed(current_health, max_health)：血量变化信号。HUD 监听它，把肉体血量放在醒目位置。
 # - link_broken_started(seconds_left)：血量见底并断开连线时发出。HUD 用它显示 10 秒倒计时。
@@ -191,7 +189,7 @@ func take_hit(amount: float, source_enemy: Node = null) -> void:
 		return
 
 	current_health = maxf(0.0, current_health - amount)
-	SoundCue.play_random(self, [&"body_hurt1", &"body_hurt2", &"body_hurt3"])
+	SoundManager.play_random([&"body_hurt1", &"body_hurt2", &"body_hurt3"])
 	health_changed.emit(current_health, max_health)
 	if source_enemy != null:
 		damaged_by_enemy.emit(amount, source_enemy)
@@ -267,7 +265,7 @@ func _break_link() -> void:
 		return
 
 	link_broken = true
-	SoundCue.play(self, &"line_broken")
+	SoundManager.play(&"line_broken")
 	broken_seconds_left = broken_game_over_seconds
 	game_over_requested_sent = false
 	link_broken_started.emit(broken_seconds_left)

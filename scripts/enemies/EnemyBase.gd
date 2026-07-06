@@ -1,8 +1,6 @@
 extends CharacterBody2D
 class_name EnemyBase
 
-const SoundCue = preload("res://scripts/audio/SoundCue.gd")
-
 # 脚本说明：
 # - enemy_type_id：敌人类型编号。不同敌人场景可以通过它区分视觉和后续行为。
 # - move_speed：敌人基础移动速度。卡牌冻结时不会清空它，只是临时停止移动。
@@ -99,7 +97,7 @@ func take_damage(amount: float) -> void:
 	if current_health <= 0.0:
 		_disable_enemy()
 	else:
-		SoundCue.play(self, &"enemy_hitted")
+		SoundManager.play(&"enemy_hitted")
 
 
 func force_defeat() -> void:
@@ -159,7 +157,7 @@ func _refresh_visual_style() -> void:
 
 
 func _disable_enemy() -> void:
-	SoundCue.play(self, &"enemy_death")
+	SoundManager.play(&"enemy_death")
 	hide()
 	set_physics_process(false)
 	set_collision_layer_value(4, false)

@@ -2,8 +2,6 @@ extends RangedEnemyBase
 
 class_name EnemyType7
 
-const SoundCueScript = preload("res://scripts/audio/SoundCue.gd")
-
 @export var bullet: PackedScene
 @export var bullet_speed: float = 200
 @export var bullet_damage: int = 5
@@ -28,7 +26,7 @@ func shoot():
 	can_shoot = false
 	var pos = global_position
 	var angle = rotation_degrees
-	SoundCueScript.play(self, &"emitting_bullet")
+	SoundManager.play(&"emitting_bullet")
 	for dir in [
 		Vector2.UP.rotated(angle),
 		Vector2.DOWN.rotated(angle),

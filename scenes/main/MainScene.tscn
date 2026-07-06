@@ -337,6 +337,7 @@ speed = 30
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="Level" unique_id=1368058711]
 stream = ExtResource("6_t3dd6")
 volume_db = -9.372
+bus = &"Music"
 script = SubResource("GDScript_t3dd6")
 
 [node name="GoalLine" type="Sprite2D" parent="Level" unique_id=561807027]
@@ -356,14 +357,14 @@ script = ExtResource("4_50iuv")
 
 [node name="PlayerOne" parent="Actors" unique_id=2026057950 instance=ExtResource("2_player_scene")]
 position = Vector2(62, -96)
-collision_mask = 2051
+collision_mask = 2048
 animation = SubResource("SpriteFrames_0ld34")
 move_speed = 150
 player_color = Color(0.18, 0.62, 1, 1)
 
 [node name="PlayerTwo" parent="Actors" unique_id=671970584 instance=ExtResource("2_player_scene")]
 position = Vector2(61, 96)
-collision_mask = 2051
+collision_mask = 2048
 animation = SubResource("SpriteFrames_uvfrc")
 player_id = 2
 move_speed = 150

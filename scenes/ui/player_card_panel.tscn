@@ -5,9 +5,11 @@
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_root"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_title"]
+font_color = Color(0, 0, 0, 1)
 
 [sub_resource type="LabelSettings" id="LabelSettings_description"]
 font_size = 12
+font_color = Color(0, 0, 0, 1)
 
 [node name="PlayerOnePanel" type="Panel" unique_id=1608253230]
 custom_minimum_size = Vector2(300, 214)

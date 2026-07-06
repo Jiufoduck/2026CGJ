@@ -532,16 +532,17 @@ func _build_start_sequence_overlay() -> void:
 
 
 func show_start_sequence(use_gamepad_instructions := false, should_pause_tree := true) -> void:
-	_build_start_sequence_overlay()
+	#_build_start_sequence_overlay()
 	_kill_start_sequence_tween()
 	start_sequence_prefer_gamepad_instructions = use_gamepad_instructions
 	start_sequence_steps = [
 		{"kind": "image", "texture": START_SCREEN_TEXTURE, "prompt": START_SEQUENCE_PROMPT_TEXT},
-		{"kind": "placeholder", "prompt": START_SEQUENCE_PROMPT_TEXT},
+		#{"kind": "placeholder", "prompt": START_SEQUENCE_PROMPT_TEXT},
 		{"kind": "image", "texture": START_STORY_TEXTURE, "prompt": START_SEQUENCE_PROMPT_TEXT},
 		{"kind": "image", "texture": START_EXTERNAL_CG_TEXTURE, "prompt": START_SEQUENCE_PROMPT_TEXT},
 		{"kind": "controls", "prompt": ""},
 	]
+
 	start_sequence_index = 0
 	start_sequence_transitioning = false
 	start_sequence_pause_tree = should_pause_tree
@@ -549,11 +550,13 @@ func show_start_sequence(use_gamepad_instructions := false, should_pause_tree :=
 	start_sequence_overlay.modulate.a = 0.0
 	start_sequence_content.modulate.a = 1.0
 	_render_start_sequence_step()
+
 	if should_pause_tree:
 		get_tree().paused = true
 
 	start_sequence_tween = create_pause_independent_tween()
 	start_sequence_tween.tween_property(start_sequence_overlay, "modulate:a", 1.0, START_SEQUENCE_FADE_SECONDS)
+
 	_play_ui_sound(&"menu_next")
 
 

@@ -38,8 +38,10 @@ shader_parameter/outline_color = Color(0.3623873, 0.9285813, 0.82765293, 0.98039
 
 [sub_resource type="LabelSettings" id="LabelSettings_jlufg"]
 font_size = 20
+font_color = Color(0, 0, 0, 1)
 
 [sub_resource type="LabelSettings" id="LabelSettings_l20r4"]
+font_color = Color(0, 0, 0, 1)
 
 [node name="HUD" type="CanvasLayer" unique_id=1619752691]
 script = ExtResource("1_hud_script")

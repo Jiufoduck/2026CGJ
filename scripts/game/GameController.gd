@@ -89,7 +89,7 @@ class_name GameController
 # - _inputs_are_opposing(input_one, input_two)：判断两个玩家是否正在反向用力，用来在最大长度附近加强“不可继续拉远”的限制。
 # - _inputs_are_shared_direction(input_one, input_two)：判断两个玩家是否正在共同移动。
 # - _clamp_players_to_camera()：把玩家限制在摄像机视野和场景矩形内，模拟玩家专属碰撞体积。
-# - _separate_players_from_body()：额外防止两个玩家、玩家和肉体重叠，补足碰撞边界极端情况。
+# - _separate_players_from_body()：额外防止两个玩家重叠；玩家和肉体只在 collision layer/mask 允许互相碰撞时才手动分离。
 # - _update_body_and_line(delta, apply_net_strain, snap_to_center)：让肉体尝试回到两名玩家中点；如果被 net 挡住则停下，挣脱后用减速回弹运动回到中心。
 # - _setup_anchor_chain_visuals()/_update_anchor_chain_visuals()：把旧 Line2D 视觉替换为固定数量、随长度拉开间距的离散锁链节点。
 # - _apply_net_strain(blocker, body_target, delta)：肉体被 net 挡住时，把拉扯距离传给 net；挣脱后给 HUD 一条反馈。
@@ -129,7 +129,6 @@ const SHARED_INPUT_DOT := 0.65
 const CardDeckScript = preload("res://scripts/card/CardDeck.gd")
 const CardCatalogScript = preload("res://scripts/card/CardCatalog.gd")
 const CardEffectRunnerScript = preload("res://scripts/card/CardEffectRunner.gd")
-const SoundCue = preload("res://scripts/audio/SoundCue.gd")
 const DEFAULT_PLAYER_ONE_ANCHOR_CHAIN_TEXTURE = preload("res://assets/art/玩家1 锚链 构成素材.png")
 const DEFAULT_PLAYER_TWO_ANCHOR_CHAIN_TEXTURE = preload("res://assets/art/玩家2 锚链 构成素材.png")
 
@@ -369,7 +368,7 @@ func _on_start_sequence_finished() -> void:
 		return
 
 	get_tree().paused = false
-	SoundCue.play_music(self, &"battle", null, null, true, true)
+	SoundManager.play_music(&"battle", null, null, true, true)
 	player_one.set_control_enabled(true)
 	player_two.set_control_enabled(true)
 	hud.set_message("")
@@ -515,9 +514,9 @@ func _trigger_attack_card_camera_shake(card_data: Dictionary) -> void:
 
 func _play_card_sound(card_data: Dictionary) -> void:
 	if str(card_data.get("type", "")) == CardDeckScript.CARD_TYPE_ATTACK:
-		SoundCue.play(self, &"attack")
+		SoundManager.play(&"attack")
 	else:
-		SoundCue.play(self, &"enhance")
+		SoundManager.play(&"enhance")
 
 
 func _advance_camera(delta: float, snap_to_target := false) -> void:
@@ -829,9 +828,36 @@ func _separate_players_from_body() -> void:
 		player_two.global_position += correction
 
 	for player in [player_one, player_two]:
+		if not _collision_objects_interact(player, body_core):
+			continue
+
 		var body_offset: Vector2 = player.global_position - body_core.global_position
 		if body_offset.length() > 0.0 and body_offset.length() < body_minimum_distance:
 			player.global_position += body_offset.normalized() * (body_minimum_distance - body_offset.length())
+
+
+func _collision_objects_interact(first: Node, second: Node) -> bool:
+	var first_object := first as CollisionObject2D
+	var second_object := second as CollisionObject2D
+	if first_object == null or second_object == null:
+		return true
+
+	if not _has_enabled_collision_shape(first_object) or not _has_enabled_collision_shape(second_object):
+		return false
+
+	return (
+		(first_object.collision_mask & second_object.collision_layer) != 0
+		or (second_object.collision_mask & first_object.collision_layer) != 0
+	)
+
+
+func _has_enabled_collision_shape(node: Node) -> bool:
+	for child in node.get_children():
+		if child is CollisionShape2D and not (child as CollisionShape2D).disabled:
+			return true
+		if _has_enabled_collision_shape(child):
+			return true
+	return false
 
 
 func _update_body_and_line(delta := 0.0, apply_net_strain := true, snap_to_center := false) -> void:
@@ -1012,8 +1038,8 @@ func _end_game(message: String) -> void:
 
 	game_has_ended = true
 	get_tree().paused = false
-	SoundCue.stop_music(self)
-	SoundCue.play_music(self, &"egypt_victory", null, null, true, false)
+	SoundManager.stop_music()
+	SoundManager.play_music(&"egypt_victory", null, null, true, false)
 	_reset_camera_shake()
 	player_one.set_control_enabled(false)
 	player_two.set_control_enabled(false)
@@ -1069,8 +1095,8 @@ func _show_game_over_after_death_animations() -> void:
 		return
 
 	get_tree().paused = true
-	SoundCue.stop_music(self)
-	SoundCue.play_music(self, &"game_over", null, null, true, false)
+	SoundManager.stop_music()
+	SoundManager.play_music(&"game_over", null, null, true, false)
 	hud.show_game_over(game_over_reason, game_over_fade_seconds)
 
 
@@ -1232,7 +1258,6 @@ func _start_reward_choice(player_id: int, reward_cards: Array, task_point: Node 
 	active_reward_task_point = task_point
 	player_one.set_control_enabled(false)
 	player_two.set_control_enabled(false)
-	SoundCue.play_random(self, [&"checkpoint1", &"checkpoint2"])
 	hud.show_reward_choice(player_id, reward_cards)
 	hud.set_message("P%d 抵达专属任务点，选择 1 张奖励牌" % player_id)
 	_set_reward_world_pause(true)
@@ -1243,7 +1268,7 @@ func _finish_reward_choice(player_id: int, selected_card: Dictionary) -> void:
 		return
 
 	decks_by_player[player_id].add_card(selected_card)
-	SoundCue.play(self, &"acquire_card")
+	SoundManager.play(&"acquire_card")
 	hud.hide_reward_choice()
 	hud.set_message("P%d 获得 %s" % [player_id, selected_card.get("name", "未命名牌")])
 	reward_choice_active = false
@@ -1307,7 +1332,7 @@ func _on_restart_fade_finished() -> void:
 	active_reward_task_point = null
 	_set_reward_world_pause(false, false)
 	get_tree().paused = false
-	SoundCue.play_music(self, &"battle", null, null, true, true)
+	SoundManager.play_music(&"battle", null, null, true, true)
 	player_one.set_control_enabled(true)
 	player_two.set_control_enabled(true)
 	hud.set_message("")
